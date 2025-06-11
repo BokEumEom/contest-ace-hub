@@ -1,8 +1,9 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Contest Management App Design System */
 
 @layer base {
   :root {
@@ -37,20 +38,21 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Contest App Color Palette */
+    --contest-orange: 14 100% 57%;
+    --contest-coral: 11 83% 69%;
+    --contest-blue: 221 83% 53%;
+    --contest-light-blue: 199 89% 48%;
+    --contest-gradient-start: 14 100% 57%;
+    --contest-gradient-end: 11 83% 69%;
   }
 
   .dark {
@@ -89,6 +91,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Contest App Dark Mode Colors */
+    --contest-orange: 14 100% 57%;
+    --contest-coral: 11 83% 69%;
+    --contest-blue: 221 83% 53%;
+    --contest-light-blue: 199 89% 48%;
+    --contest-gradient-start: 14 90% 50%;
+    --contest-gradient-end: 11 73% 60%;
   }
 }
 
@@ -99,5 +109,32 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .contest-card {
+    @apply bg-gradient-to-br from-white to-gray-50 border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1;
+  }
+  
+  .contest-button-primary {
+    @apply bg-contest-gradient text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105;
+  }
+  
+  .contest-status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .contest-deadline-urgent {
+    @apply bg-red-100 text-red-700 border border-red-200;
+  }
+  
+  .contest-deadline-soon {
+    @apply bg-yellow-100 text-yellow-700 border border-yellow-200;
+  }
+  
+  .contest-deadline-normal {
+    @apply bg-green-100 text-green-700 border border-green-200;
   }
 }
