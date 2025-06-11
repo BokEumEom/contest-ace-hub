@@ -11,9 +11,10 @@ interface StatsCardProps {
     isPositive: boolean;
   };
   color: 'orange' | 'blue' | 'coral' | 'light-blue';
+  onClick?: () => void;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, color }) => {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, color, onClick }) => {
   const colorClasses = {
     orange: 'bg-contest-orange/10 text-contest-orange border-contest-orange/20',
     blue: 'bg-contest-blue/10 text-contest-blue border-contest-blue/20',
@@ -22,7 +23,10 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, 
   };
 
   return (
-    <div className="contest-card p-6">
+    <div 
+      className={`contest-card p-6 ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{title}</p>

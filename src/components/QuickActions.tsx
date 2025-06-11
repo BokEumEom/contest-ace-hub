@@ -1,33 +1,40 @@
 
 import React from 'react';
-import { Plus, Search, Calendar, Bell } from 'lucide-react';
+import { Plus, Search, Calendar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const QuickActions = () => {
+  const navigate = useNavigate();
+
   const actions = [
     {
       icon: Plus,
       label: '새 공모전 등록',
       description: '참여할 공모전을 추가하세요',
-      color: 'orange'
+      color: 'orange',
+      onClick: () => navigate('/new-contest')
     },
     {
       icon: Search,
       label: '공모전 탐색',
       description: '새로운 기회를 찾아보세요',
-      color: 'blue'
+      color: 'blue',
+      onClick: () => navigate('/explore')
     },
     {
       icon: Calendar,
       label: '일정 확인',
       description: '마감일과 일정을 관리하세요',
-      color: 'coral'
+      color: 'coral',
+      onClick: () => navigate('/calendar')
     },
     {
-      icon: Bell,
-      label: '알림 설정',
-      description: '중요한 일정을 놓치지 마세요',
-      color: 'light-blue'
+      icon: Sparkles,
+      label: 'AI 어시스턴트',
+      description: 'AI로 아이디어와 검토를 받아보세요',
+      color: 'light-blue',
+      onClick: () => navigate('/ai-helper')
     }
   ];
 
@@ -57,7 +64,8 @@ const QuickActions = () => {
         <Button
           key={index}
           variant="outline"
-          className={`h-auto p-4 flex flex-col items-center text-center space-y-2 transition-all duration-300 ${getColorClasses(action.color)}`}
+          onClick={action.onClick}
+          className={`h-auto p-4 flex flex-col items-center text-center space-y-2 transition-all duration-300 cursor-pointer ${getColorClasses(action.color)}`}
         >
           <action.icon className={`h-8 w-8 ${getIconColor(action.color)}`} />
           <div>
