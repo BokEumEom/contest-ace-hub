@@ -1,17 +1,22 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, Star, Calendar, Trophy } from 'lucide-react';
+import { Search, Filter, Star, Calendar, Trophy, Globe } from 'lucide-react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CrawlSetup from '@/components/CrawlSetup';
+import ContestCrawler from '@/components/ContestCrawler';
+import { CrawlService } from '@/services/crawlService';
 
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('all');
   const [sortBy, setSortBy] = useState('deadline');
+  const [showCrawlSetup, setShowCrawlSetup] = useState(!CrawlService.getApiKey());
 
   // 샘플 공모전 데이터 - 실제로는 API에서 가져올 데이터
   const sampleContests = [
@@ -87,104 +92,127 @@ const Explore = () => {
           </p>
         </div>
 
-        {/* 검색 및 필터 */}
-        <div className="mb-8 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="공모전 제목이나 주최기관으로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <Tabs defaultValue="browse" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="browse" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              공모전 검색
+            </TabsTrigger>
+            <TabsTrigger value="crawl" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              사이트 크롤링
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="browse" className="space-y-6">
+            {/* 검색 및 필터 */}
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="공모전 제목이나 주최기관으로 검색..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="카테고리 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체 카테고리</SelectItem>
+                    <SelectItem value="IT/기술">IT/기술</SelectItem>
+                    <SelectItem value="창업/비즈니스">창업/비즈니스</SelectItem>
+                    <SelectItem value="디자인">디자인</SelectItem>
+                    <SelectItem value="마케팅">마케팅</SelectItem>
+                    <SelectItem value="기획">기획</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="정렬 기준" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deadline">마감일순</SelectItem>
+                    <SelectItem value="participants">참가자순</SelectItem>
+                    <SelectItem value="prize">상금순</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="카테고리 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 카테고리</SelectItem>
-                <SelectItem value="IT/기술">IT/기술</SelectItem>
-                <SelectItem value="창업/비즈니스">창업/비즈니스</SelectItem>
-                <SelectItem value="디자인">디자인</SelectItem>
-                <SelectItem value="마케팅">마케팅</SelectItem>
-                <SelectItem value="기획">기획</SelectItem>
-              </SelectContent>
-            </Select>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="정렬 기준" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="deadline">마감일순</SelectItem>
-                <SelectItem value="participants">참가자순</SelectItem>
-                <SelectItem value="prize">상금순</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            {/* 공모전 목록 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedContests.map((contest) => (
+                <Card key={contest.id} className="contest-card hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg line-clamp-2 mb-2">
+                          {contest.title}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">{contest.organization}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-contest-orange">
+                        <Star className={`h-4 w-4 ${contest.isBookmarked ? 'fill-current' : ''}`} />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {contest.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <Badge variant="secondary">{contest.category}</Badge>
+                      <span className="font-medium text-contest-orange">{contest.prize}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>D-{contest.daysLeft}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4" />
+                        <span>{contest.participants}명 참가</span>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full contest-button-primary">
+                      공모전 등록하기
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-        {/* 공모전 목록 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedContests.map((contest) => (
-            <Card key={contest.id} className="contest-card hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg line-clamp-2 mb-2">
-                      {contest.title}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">{contest.organization}</p>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-contest-orange">
-                    <Star className={`h-4 w-4 ${contest.isBookmarked ? 'fill-current' : ''}`} />
-                  </Button>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {contest.description}
+            {sortedContests.length === 0 && (
+              <div className="text-center py-12">
+                <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  검색 결과가 없습니다
+                </h3>
+                <p className="text-muted-foreground">
+                  다른 검색어나 필터 조건을 시도해보세요.
                 </p>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <Badge variant="secondary">{contest.category}</Badge>
-                  <span className="font-medium text-contest-orange">{contest.prize}</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>D-{contest.daysLeft}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4" />
-                    <span>{contest.participants}명 참가</span>
-                  </div>
-                </div>
-                
-                <Button className="w-full contest-button-primary">
-                  공모전 등록하기
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            )}
+          </TabsContent>
 
-        {sortedContests.length === 0 && (
-          <div className="text-center py-12">
-            <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">
-              검색 결과가 없습니다
-            </h3>
-            <p className="text-muted-foreground">
-              다른 검색어나 필터 조건을 시도해보세요.
-            </p>
-          </div>
-        )}
+          <TabsContent value="crawl" className="space-y-6">
+            {showCrawlSetup ? (
+              <CrawlSetup onSetupComplete={() => setShowCrawlSetup(false)} />
+            ) : (
+              <ContestCrawler />
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
