@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import NewContest from "./pages/NewContest";
 import ContestDetail from "./pages/ContestDetail";
 import AIHelper from "./pages/AIHelper";
+import Explore from "./pages/Explore";
+import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ const App = () => (
           <Route path="/new-contest" element={<NewContest />} />
           <Route path="/contest/:id" element={<ContestDetail />} />
           <Route path="/ai-helper" element={<AIHelper />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/calendar" element={<Calendar />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

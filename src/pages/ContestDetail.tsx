@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Users, Trophy, FileText, Lightbulb } from 'lucide-react';
@@ -7,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useContests } from '@/hooks/useContests';
 import AIAssistant from '@/components/AIAssistant';
+import ProgressManager from '@/components/ProgressManager';
+import FileManager from '@/components/FileManager';
 
 const ContestDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getContestById } = useContests();
+  const { getContestById, updateContest } = useContests();
 
   const contest = id ? getContestById(id) : null;
 
@@ -30,6 +31,10 @@ const ContestDetail = () => {
       </div>
     );
   }
+
+  const handleProgressUpdate = (progress: number) => {
+    updateContest(contest.id, { progress });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -133,6 +138,16 @@ const ContestDetail = () => {
               </CardContent>
             </Card>
 
+            {/* 진행 상황 관리 */}
+            <ProgressManager 
+              contestId={contest.id}
+              currentProgress={contest.progress}
+              onProgressUpdate={handleProgressUpdate}
+            />
+
+            {/* 파일 관리 */}
+            <FileManager contestId={contest.id} />
+
             {/* AI 어시스턴트 */}
             <Card>
               <CardHeader>
@@ -149,10 +164,10 @@ const ContestDetail = () => {
 
           {/* 사이드바 */}
           <div className="space-y-6">
-            {/* 진행률 */}
+            {/* 진행률 요약 */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">진행률</CardTitle>
+                <CardTitle className="text-lg">진행률 요약</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -181,7 +196,7 @@ const ContestDetail = () => {
               <CardContent className="space-y-3">
                 <Button variant="outline" className="w-full justify-start" size="sm">
                   <FileText className="h-4 w-4 mr-2" />
-                  파일 업로드
+                  상태 변경
                 </Button>
                 <Button variant="outline" className="w-full justify-start" size="sm">
                   <Users className="h-4 w-4 mr-2" />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar, Bell, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ interface ContestCardProps {
   daysLeft: number;
   progress: number;
   teamMembers: number;
+  onClick?: () => void;
 }
 
 const ContestCard: React.FC<ContestCardProps> = ({
@@ -25,7 +25,8 @@ const ContestCard: React.FC<ContestCardProps> = ({
   status,
   daysLeft,
   progress,
-  teamMembers
+  teamMembers,
+  onClick
 }) => {
   const getStatusBadge = () => {
     const statusConfig = {
@@ -44,7 +45,10 @@ const ContestCard: React.FC<ContestCardProps> = ({
   };
 
   return (
-    <div className="contest-card p-6 animate-fade-in">
+    <div 
+      className={`contest-card p-6 animate-fade-in ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="font-semibold text-lg text-foreground mb-1 line-clamp-2">
