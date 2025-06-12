@@ -12,10 +12,48 @@ interface GeminiResponse {
 }
 
 export class GeminiService {
+  private static API_KEY_STORAGE_KEY = 'gemini_api_key';
   private apiKey: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+  }
+
+  static saveApiKey(apiKey: string): void {
+    localStorage.setItem(this.API_KEY_STORAGE_KEY, apiKey);
+    console.log('Gemini API key saved successfully');
+  }
+
+  static getApiKey(): string | null {
+    return localStorage.getItem(this.API_KEY_STORAGE_KEY);
+  }
+
+  static async testApiKey(apiKey: string): Promise<boolean> {
+    try {
+      console.log('Testing Gemini API key');
+      const response = await fetch(`${GEMINI_API_BASE_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: 'Hello'
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 10,
+          }
+        }),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error testing Gemini API key:', error);
+      return false;
+    }
   }
 
   async generateIdeas(contestTitle: string, contestDescription: string): Promise<string[]> {

@@ -1,16 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Sparkles, FileText, Lightbulb, Loader2 } from 'lucide-react';
+import { Sparkles, FileText, Lightbulb, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { GeminiService } from '@/services/geminiService';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 const AIAssistant: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
+  const [isKeyValid, setIsKeyValid] = useState<boolean | null>(null);
+  const [testingKey, setTestingKey] = useState(false);
   const [contestTitle, setContestTitle] = useState('');
   const [contestDescription, setContestDescription] = useState('');
   const [documentContent, setDocumentContent] = useState('');
@@ -19,15 +21,72 @@ const AIAssistant: React.FC = () => {
   const [review, setReview] = useState('');
   const [loadingIdeas, setLoadingIdeas] = useState(false);
   const [loadingReview, setLoadingReview] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const savedKey = GeminiService.getApiKey();
+    if (savedKey) {
+      setApiKey(savedKey);
+      setIsKeyValid(true);
+    }
+  }, []);
+
+  const testApiKey = async () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "오류",
+        description: "API 키를 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTestingKey(true);
+    try {
+      const isValid = await GeminiService.testApiKey(apiKey);
+      setIsKeyValid(isValid);
+      
+      if (isValid) {
+        GeminiService.saveApiKey(apiKey);
+        toast({
+          title: "성공",
+          description: "API 키가 유효하며 저장되었습니다."
+        });
+      } else {
+        toast({
+          title: "오류",
+          description: "유효하지 않은 API 키입니다.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setIsKeyValid(false);
+      toast({
+        title: "오류",
+        description: "API 키 테스트 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingKey(false);
+    }
+  };
 
   const generateIdeas = async () => {
-    if (!apiKey) {
-      toast.error('Gemini API 키를 입력해주세요.');
+    if (!isKeyValid) {
+      toast({
+        title: "오류",
+        description: "먼저 유효한 API 키를 설정해주세요.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (!contestTitle || !contestDescription) {
-      toast.error('공모전 제목과 설명을 입력해주세요.');
+      toast({
+        title: "오류",
+        description: "공모전 제목과 설명을 입력해주세요.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -36,9 +95,16 @@ const AIAssistant: React.FC = () => {
       const gemini = new GeminiService(apiKey);
       const generatedIdeas = await gemini.generateIdeas(contestTitle, contestDescription);
       setIdeas(generatedIdeas);
-      toast.success('아이디어가 생성되었습니다!');
+      toast({
+        title: "성공",
+        description: "아이디어가 생성되었습니다!"
+      });
     } catch (error) {
-      toast.error('아이디어 생성에 실패했습니다. API 키를 확인해주세요.');
+      toast({
+        title: "오류",
+        description: "아이디어 생성에 실패했습니다.",
+        variant: "destructive"
+      });
       console.error(error);
     } finally {
       setLoadingIdeas(false);
@@ -46,13 +112,21 @@ const AIAssistant: React.FC = () => {
   };
 
   const reviewDocument = async () => {
-    if (!apiKey) {
-      toast.error('Gemini API 키를 입력해주세요.');
+    if (!isKeyValid) {
+      toast({
+        title: "오류",
+        description: "먼저 유효한 API 키를 설정해주세요.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (!documentContent) {
-      toast.error('검토할 문서 내용을 입력해주세요.');
+      toast({
+        title: "오류",
+        description: "검토할 문서 내용을 입력해주세요.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -61,9 +135,16 @@ const AIAssistant: React.FC = () => {
       const gemini = new GeminiService(apiKey);
       const reviewResult = await gemini.reviewDocument(documentContent, documentType);
       setReview(reviewResult);
-      toast.success('문서 검토가 완료되었습니다!');
+      toast({
+        title: "성공",
+        description: "문서 검토가 완료되었습니다!"
+      });
     } catch (error) {
-      toast.error('문서 검토에 실패했습니다. API 키를 확인해주세요.');
+      toast({
+        title: "오류",
+        description: "문서 검토에 실패했습니다.",
+        variant: "destructive"
+      });
       console.error(error);
     } finally {
       setLoadingReview(false);
@@ -80,16 +161,43 @@ const AIAssistant: React.FC = () => {
             AI 어시스턴트 설정
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="apiKey">Gemini API 키</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Gemini API 키를 입력하세요"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="apiKey"
+                type="password"
+                value={apiKey}
+                onChange={(e) => {
+                  setApiKey(e.target.value);
+                  setIsKeyValid(null);
+                }}
+                placeholder="Gemini API 키를 입력하세요"
+                className="flex-1"
+              />
+              <Button 
+                onClick={testApiKey} 
+                disabled={testingKey}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                {testingKey ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isKeyValid === true ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : isKeyValid === false ? (
+                  <XCircle className="h-4 w-4 text-red-500" />
+                ) : null}
+                {testingKey ? "테스트 중..." : "테스트"}
+              </Button>
+            </div>
+            {isKeyValid === true && (
+              <p className="text-xs text-green-600">✓ API 키가 유효합니다</p>
+            )}
+            {isKeyValid === false && (
+              <p className="text-xs text-red-600">✗ API 키가 유효하지 않습니다</p>
+            )}
             <p className="text-xs text-muted-foreground">
               API 키는 <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="text-contest-orange hover:underline">Google AI Studio</a>에서 발급받을 수 있습니다.
             </p>
@@ -129,7 +237,7 @@ const AIAssistant: React.FC = () => {
 
           <Button 
             onClick={generateIdeas} 
-            disabled={loadingIdeas}
+            disabled={loadingIdeas || !isKeyValid}
             className="w-full contest-button-primary"
           >
             {loadingIdeas ? (
@@ -187,7 +295,7 @@ const AIAssistant: React.FC = () => {
 
           <Button 
             onClick={reviewDocument} 
-            disabled={loadingReview}
+            disabled={loadingReview || !isKeyValid}
             className="w-full contest-button-primary"
           >
             {loadingReview ? (
