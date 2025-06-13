@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { CrawlService } from '@/services/crawlService';
-import { Globe, Loader2, Calendar, Trophy, Star, Filter } from 'lucide-react';
+import { Globe, Search, MapPin, Layers, Clock, Building2, Award } from 'lucide-react';
 
 interface CrawledContest {
   title: string;
@@ -23,51 +24,79 @@ interface CrawledContest {
 
 const ContestCrawler: React.FC = () => {
   const [url, setUrl] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [keywords, setKeywords] = useState('');
-  const [crawling, setCrawling] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [crawledContests, setCrawledContests] = useState<CrawledContest[]>([]);
-  const [filteredContests, setFilteredContests] = useState<CrawledContest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [contests, setContests] = useState<CrawledContest[]>([]);
+  const [scrapedData, setScrapedData] = useState<any>(null);
+  const [mapData, setMapData] = useState<string[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const { toast } = useToast();
+
+  const apiKey = CrawlService.getApiKey();
+
+  if (!apiKey) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            API 키 필요
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4">
+            크롤링 기능을 사용하려면 먼저 설정에서 Firecrawl API 키를 설정해주세요.
+          </p>
+          <Button onClick={() => window.location.href = '/settings'} className="w-full">
+            설정으로 이동
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleCrawl = async () => {
     if (!url.trim()) {
       toast({
         title: "오류",
-        description: "크롤링할 URL을 입력해주세요.",
+        description: "URL을 입력해주세요.",
         variant: "destructive"
       });
       return;
     }
 
-    setCrawling(true);
-    setProgress(0);
-    setCrawledContests([]);
-    setFilteredContests([]);
-
+    setIsLoading(true);
+    setContests([]);
+    
     try {
-      // 진행률 시뮬레이션
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 500);
-
-      const result = await CrawlService.crawlContestSite(url);
+      console.log('Starting crawl for URL:', url);
+      const result = await CrawlService.crawlContestSite(url, {
+        limit: 30,
+        scrapeOptions: {
+          formats: ['markdown']
+        }
+      });
       
-      clearInterval(progressInterval);
-      setProgress(100);
-
       if (result.success && result.contests) {
-        setCrawledContests(result.contests);
-        applyKeywordFilter(result.contests, keywords);
+        let filteredContests = result.contests;
+        
+        // 키워드 필터링
+        if (keywords.trim()) {
+          const keywordList = keywords.split(',').map(k => k.trim().toLowerCase());
+          filteredContests = result.contests.filter(contest =>
+            keywordList.some(keyword =>
+              contest.title.toLowerCase().includes(keyword) ||
+              contest.description.toLowerCase().includes(keyword) ||
+              contest.category.toLowerCase().includes(keyword)
+            )
+          );
+        }
+        
+        setContests(filteredContests);
         toast({
           title: "성공",
-          description: `${result.contests.length}개의 공모전을 찾았습니다.`
+          description: `${filteredContests.length}개의 공모전을 찾았습니다.`
         });
       } else {
         toast({
@@ -77,230 +106,391 @@ const ContestCrawler: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Crawl error:', error);
       toast({
         title: "오류",
         description: "크롤링 중 오류가 발생했습니다.",
         variant: "destructive"
       });
-      console.error(error);
     } finally {
-      setCrawling(false);
+      setIsLoading(false);
     }
   };
 
-  const applyKeywordFilter = (contests: CrawledContest[], filterKeywords: string) => {
-    if (!filterKeywords.trim()) {
-      setFilteredContests(contests);
+  const handleScrape = async () => {
+    if (!url.trim()) {
+      toast({
+        title: "오류",
+        description: "URL을 입력해주세요.",
+        variant: "destructive"
+      });
       return;
     }
 
-    const keywordList = filterKeywords.toLowerCase().split(',').map(k => k.trim());
-    const filtered = contests.filter(contest => {
-      const searchText = `${contest.title} ${contest.description} ${contest.category} ${contest.organization}`.toLowerCase();
-      return keywordList.some(keyword => searchText.includes(keyword));
-    });
-
-    setFilteredContests(filtered);
+    setIsLoading(true);
+    
+    try {
+      const result = await CrawlService.scrapePage(url);
+      
+      if (result.success) {
+        setScrapedData(result.data);
+        toast({
+          title: "성공",
+          description: "페이지를 성공적으로 스크래핑했습니다."
+        });
+      } else {
+        toast({
+          title: "오류",
+          description: result.error || "스크래핑에 실패했습니다.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "스크래핑 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleKeywordFilter = () => {
-    applyKeywordFilter(crawledContests, keywords);
-    toast({
-      title: "필터 적용됨",
-      description: `${filteredContests.length}개의 공모전이 필터링되었습니다.`
-    });
+  const handleMap = async () => {
+    if (!url.trim()) {
+      toast({
+        title: "오류",
+        description: "URL을 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const result = await CrawlService.mapWebsite(url);
+      
+      if (result.success && result.links) {
+        setMapData(result.links);
+        toast({
+          title: "성공",
+          description: `${result.links.length}개의 링크를 발견했습니다.`
+        });
+      } else {
+        toast({
+          title: "오류",
+          description: result.error || "웹사이트 매핑에 실패했습니다.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "매핑 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addToMyContests = (contest: CrawledContest) => {
-    // 여기서 실제로는 useContests 훅을 사용하여 공모전을 추가할 수 있습니다
-    toast({
-      title: "추가됨",
-      description: `"${contest.title}"이(가) 내 공모전에 추가되었습니다.`
-    });
-  };
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "오류",
+        description: "검색어를 입력해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const displayContests = keywords.trim() ? filteredContests : crawledContests;
+    setIsLoading(true);
+    
+    try {
+      const result = await CrawlService.searchWebsite(searchQuery);
+      
+      if (result.success && result.data) {
+        setSearchResults(result.data);
+        toast({
+          title: "성공",
+          description: `${result.data.length}개의 결과를 찾았습니다.`
+        });
+      } else {
+        toast({
+          title: "오류",
+          description: result.error || "검색에 실패했습니다.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "검색 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-contest-blue" />
-            웹사이트 크롤링
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">크롤링할 URL</label>
-              <div className="flex gap-2">
+    <div className="w-full space-y-6">
+      <Tabs defaultValue="crawl" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="crawl">크롤링</TabsTrigger>
+          <TabsTrigger value="scrape">스크래핑</TabsTrigger>
+          <TabsTrigger value="map">매핑</TabsTrigger>
+          <TabsTrigger value="search">검색</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="crawl" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                웹사이트 크롤링
+              </CardTitle>
+              <CardDescription>
+                웹사이트 전체를 크롤링하여 공모전 정보를 추출합니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">웹사이트 URL</label>
                 <Input
-                  type="url"
                   placeholder="https://example.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="flex-1"
                 />
-                <Button
-                  onClick={handleCrawl}
-                  disabled={crawling}
-                  className="contest-button-primary"
-                >
-                  {crawling ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Globe className="h-4 w-4 mr-2" />
-                  )}
-                  {crawling ? "크롤링 중..." : "크롤링 시작"}
-                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                공모전 정보가 포함된 웹사이트 URL을 입력하세요.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">키워드 필터 (선택사항)</label>
-              <div className="flex gap-2">
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">키워드 필터 (쉼표로 구분)</label>
                 <Input
-                  placeholder="IT, 디자인, 창업 (쉼표로 구분)"
+                  placeholder="공모전, 대회, 경진대회"
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
-                  className="flex-1"
                 />
-                <Button
-                  onClick={handleKeywordFilter}
-                  variant="outline"
-                  disabled={crawledContests.length === 0}
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  필터 적용
-                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                관심 있는 키워드로 공모전을 필터링하세요.
-              </p>
-            </div>
-          </div>
+              
+              <Button
+                onClick={handleCrawl}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? "크롤링 중..." : "크롤링 시작"}
+              </Button>
+            </CardContent>
+          </Card>
 
-          {crawling && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>크롤링 진행률</span>
-                <span>{progress}%</span>
+          {contests.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">발견된 공모전 ({contests.length}개)</h3>
+              <div className="grid gap-4">
+                {contests.map((contest, index) => (
+                  <Card key={index} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">{contest.title}</CardTitle>
+                        <Badge variant="secondary">{contest.category}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span>{contest.organization}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {contest.deadline}
+                            {contest.daysLeft !== undefined && (
+                              <span className="ml-1 text-orange-600">
+                                (D-{contest.daysLeft})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Award className="h-4 w-4 text-muted-foreground" />
+                          <span>{contest.prize}</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground">
+                        {contest.description}
+                      </p>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(contest.url, '_blank')}
+                      >
+                        자세히 보기
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <Progress value={progress} className="w-full" />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* 크롤링 결과 */}
-      {displayContests.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">
-              {keywords.trim() ? '필터링된 ' : ''}크롤링 결과 ({displayContests.length}개)
-            </h3>
-            {keywords.trim() && crawledContests.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                전체 {crawledContests.length}개 중 {displayContests.length}개 표시
-              </p>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {displayContests.map((contest, index) => (
-              <Card key={index} className="contest-card hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-base line-clamp-2 mb-2">
-                        {contest.title}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">{contest.organization}</p>
+        <TabsContent value="scrape" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                페이지 스크래핑
+              </CardTitle>
+              <CardDescription>
+                단일 페이지의 내용을 추출합니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">페이지 URL</label>
+                <Input
+                  placeholder="https://example.com/page"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              </div>
+              
+              <Button
+                onClick={handleScrape}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? "스크래핑 중..." : "페이지 스크래핑"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {scrapedData && (
+            <Card>
+              <CardHeader>
+                <CardTitle>스크래핑 결과</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
+                  {JSON.stringify(scrapedData, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="map" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                웹사이트 매핑
+              </CardTitle>
+              <CardDescription>
+                웹사이트의 구조를 파악하고 모든 링크를 찾습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">웹사이트 URL</label>
+                <Input
+                  placeholder="https://example.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              </div>
+              
+              <Button
+                onClick={handleMap}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? "매핑 중..." : "웹사이트 매핑"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {mapData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>발견된 링크 ({mapData.length}개)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-96 overflow-auto">
+                  {mapData.map((link, index) => (
+                    <div key={index} className="p-2 bg-gray-50 rounded text-sm">
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {link}
+                      </a>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-contest-orange">
-                      <Star className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {contest.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <Badge variant="secondary">{contest.category}</Badge>
-                    {contest.prize && (
-                      <span className="font-medium text-contest-orange">{contest.prize}</span>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>{contest.deadline}</span>
-                      {contest.daysLeft !== undefined && (
-                        <span className="text-contest-coral">D-{contest.daysLeft}</span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="search" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                웹 검색
+              </CardTitle>
+              <CardDescription>
+                특정 검색어로 웹에서 관련 내용을 찾습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">검색어</label>
+                <Input
+                  placeholder="공모전 2024"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <Button
+                onClick={handleSearch}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? "검색 중..." : "검색 시작"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {searchResults.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>검색 결과 ({searchResults.length}개)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-96 overflow-auto">
+                  {searchResults.map((result, index) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">{result.title || `결과 ${index + 1}`}</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {result.description || result.content?.substring(0, 200) + '...'}
+                      </p>
+                      {result.url && (
+                        <a href={result.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
+                          {result.url}
+                        </a>
                       )}
                     </div>
-                    {contest.participants && (
-                      <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4" />
-                        <span>{contest.participants}명</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => addToMyContests(contest)}
-                      className="flex-1 contest-button-primary"
-                      size="sm"
-                    >
-                      내 공모전에 추가
-                    </Button>
-                    <Button
-                      onClick={() => window.open(contest.url, '_blank')}
-                      variant="outline"
-                      size="sm"
-                    >
-                      원본 보기
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {displayContests.length === 0 && !crawling && crawledContests.length === 0 && (
-        <div className="text-center py-12">
-          <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            크롤링 결과가 없습니다
-          </h3>
-          <p className="text-muted-foreground">
-            공모전 정보가 포함된 웹사이트를 크롤링해보세요.
-          </p>
-        </div>
-      )}
-
-      {displayContests.length === 0 && !crawling && crawledContests.length > 0 && keywords.trim() && (
-        <div className="text-center py-12">
-          <Filter className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            필터 조건에 맞는 공모전이 없습니다
-          </h3>
-          <p className="text-muted-foreground">
-            다른 키워드로 필터링하거나 전체 결과를 확인해보세요.
-          </p>
-        </div>
-      )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

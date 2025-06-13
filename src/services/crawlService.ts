@@ -19,6 +19,24 @@ interface CrawlResult {
   error?: string;
 }
 
+interface ScrapeResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+interface MapResult {
+  success: boolean;
+  links?: string[];
+  error?: string;
+}
+
+interface SearchResult {
+  success: boolean;
+  data?: any[];
+  error?: string;
+}
+
 export class CrawlService {
   private static API_KEY_STORAGE_KEY = 'firecrawl_api_key';
   private static firecrawlApp: FirecrawlApp | null = null;
@@ -26,6 +44,7 @@ export class CrawlService {
   static saveApiKey(apiKey: string): void {
     localStorage.setItem(this.API_KEY_STORAGE_KEY, apiKey);
     this.firecrawlApp = new FirecrawlApp({ apiKey });
+    console.log('Firecrawl API key saved successfully');
   }
 
   static getApiKey(): string | null {
@@ -34,30 +53,74 @@ export class CrawlService {
 
   static async testApiKey(apiKey: string): Promise<boolean> {
     try {
-      this.firecrawlApp = new FirecrawlApp({ apiKey });
-      return true;
+      console.log('Testing Firecrawl API key');
+      const testApp = new FirecrawlApp({ apiKey });
+      
+      // 간단한 스크래핑 테스트로 API 키 유효성 검증
+      const testResult = await testApp.scrapeUrl('https://example.com', {
+        formats: ['markdown']
+      });
+      
+      return testResult.success;
     } catch (error) {
-      console.error('Error testing API key:', error);
+      console.error('Error testing Firecrawl API key:', error);
       return false;
     }
   }
 
-  static async crawlContestSite(url: string): Promise<CrawlResult> {
+  static getFirecrawlApp(): FirecrawlApp | null {
     const apiKey = this.getApiKey();
-    if (!apiKey) {
+    if (!apiKey) return null;
+    
+    if (!this.firecrawlApp) {
+      this.firecrawlApp = new FirecrawlApp({ apiKey });
+    }
+    return this.firecrawlApp;
+  }
+
+  // /scrape - 단일 페이지 스크래핑
+  static async scrapePage(url: string, options: any = {}): Promise<ScrapeResult> {
+    const app = this.getFirecrawlApp();
+    if (!app) {
       return { success: false, error: 'API key not found' };
     }
 
     try {
-      if (!this.firecrawlApp) {
-        this.firecrawlApp = new FirecrawlApp({ apiKey });
+      console.log('Scraping page:', url);
+      const result = await app.scrapeUrl(url, {
+        formats: ['markdown', 'html'],
+        ...options
+      });
+
+      if (!result.success) {
+        return { success: false, error: 'Failed to scrape page' };
       }
 
-      const crawlResponse = await this.firecrawlApp.crawlUrl(url, {
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('Error scraping page:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to scrape page' 
+      };
+    }
+  }
+
+  // /crawl - 여러 페이지 크롤링
+  static async crawlContestSite(url: string, options: any = {}): Promise<CrawlResult> {
+    const app = this.getFirecrawlApp();
+    if (!app) {
+      return { success: false, error: 'API key not found' };
+    }
+
+    try {
+      console.log('Crawling website:', url);
+      const crawlResponse = await app.crawlUrl(url, {
         limit: 50,
         scrapeOptions: {
           formats: ['markdown'],
-        }
+        },
+        ...options
       });
 
       if (!crawlResponse.success) {
@@ -79,6 +142,67 @@ export class CrawlService {
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to crawl website' 
+      };
+    }
+  }
+
+  // /map - 웹사이트 구조 매핑
+  static async mapWebsite(url: string, options: any = {}): Promise<MapResult> {
+    const app = this.getFirecrawlApp();
+    if (!app) {
+      return { success: false, error: 'API key not found' };
+    }
+
+    try {
+      console.log('Mapping website:', url);
+      const result = await app.mapUrl(url, {
+        ...options
+      });
+
+      if (!result.success) {
+        return { success: false, error: 'Failed to map website' };
+      }
+
+      return { 
+        success: true, 
+        links: result.links 
+      };
+    } catch (error) {
+      console.error('Error mapping website:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to map website' 
+      };
+    }
+  }
+
+  // /search - 웹사이트 내 검색
+  static async searchWebsite(query: string, options: any = {}): Promise<SearchResult> {
+    const app = this.getFirecrawlApp();
+    if (!app) {
+      return { success: false, error: 'API key not found' };
+    }
+
+    try {
+      console.log('Searching website:', query);
+      const result = await app.search(query, {
+        limit: 10,
+        ...options
+      });
+
+      if (!result.success) {
+        return { success: false, error: 'Failed to search' };
+      }
+
+      return { 
+        success: true, 
+        data: result.data 
+      };
+    } catch (error) {
+      console.error('Error searching website:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to search' 
       };
     }
   }
