@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CrawlService } from '@/services/crawlService';
 import { Globe, Search, MapPin, Layers, Clock, Building2, Award, Settings } from 'lucide-react';
@@ -26,21 +27,35 @@ interface CrawledContest {
 
 interface CrawlOptions {
   limit: number;
+  maxDepth?: number;
   allowBackwardCrawling: boolean;
   allowExternalContentLinks: boolean;
-  includeTags: string[];
-  excludeTags: string[];
-  onlyMainContent: boolean;
-  waitFor: number;
+  excludePaths: string;
+  includeOnlyPaths: string;
+  ignoreSitemap: boolean;
+  scrapeOptions: {
+    formats: string[];
+    includeTags: string;
+    excludeTags: string;
+    onlyMainContent: boolean;
+    waitFor: number;
+    timeout: number;
+    screenshot: boolean;
+    screenshotMode: string;
+    removeBase64Images: boolean;
+  };
 }
 
 interface ScrapeOptions {
   formats: string[];
-  includeTags: string[];
-  excludeTags: string[];
+  includeTags: string;
+  excludeTags: string;
   onlyMainContent: boolean;
   waitFor: number;
   timeout: number;
+  screenshot: boolean;
+  screenshotMode: string;
+  removeBase64Images: boolean;
 }
 
 interface MapOptions {
@@ -71,22 +86,36 @@ const ContestCrawler: React.FC = () => {
   
   // Options state
   const [crawlOptions, setCrawlOptions] = useState<CrawlOptions>({
-    limit: 50,
+    limit: 10,
+    maxDepth: undefined,
     allowBackwardCrawling: false,
     allowExternalContentLinks: false,
-    includeTags: [],
-    excludeTags: [],
-    onlyMainContent: true,
-    waitFor: 0
+    excludePaths: '',
+    includeOnlyPaths: '',
+    ignoreSitemap: false,
+    scrapeOptions: {
+      formats: ['markdown'],
+      includeTags: '',
+      excludeTags: 'script, .ad, #footer',
+      onlyMainContent: true,
+      waitFor: 1000,
+      timeout: 30000,
+      screenshot: false,
+      screenshotMode: 'viewport',
+      removeBase64Images: false
+    }
   });
   
   const [scrapeOptions, setScrapeOptions] = useState<ScrapeOptions>({
     formats: ['markdown'],
-    includeTags: [],
-    excludeTags: [],
+    includeTags: '',
+    excludeTags: 'script, .ad, #footer',
     onlyMainContent: true,
-    waitFor: 0,
-    timeout: 30000
+    waitFor: 1000,
+    timeout: 30000,
+    screenshot: false,
+    screenshotMode: 'viewport',
+    removeBase64Images: false
   });
   
   const [mapOptions, setMapOptions] = useState<MapOptions>({
@@ -342,16 +371,159 @@ const ContestCrawler: React.FC = () => {
 
   return (
     <div className="w-full space-y-6">
-      <Tabs defaultValue="crawl" className="w-full">
+      <Tabs defaultValue="scrape" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="crawl">크롤링</TabsTrigger>
           <TabsTrigger value="scrape">스크래핑</TabsTrigger>
+          <TabsTrigger value="crawl">크롤링</TabsTrigger>
           <TabsTrigger value="map">매핑</TabsTrigger>
           <TabsTrigger value="search">검색</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="crawl" className="space-y-4">
+        <TabsContent value="scrape" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="h-5 w-5" />
+                  페이지 스크래핑
+                </CardTitle>
+                <CardDescription>
+                  단일 페이지의 내용을 추출합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">페이지 URL</label>
+                  <Input
+                    placeholder="https://example.com/page"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                  />
+                </div>
+                
+                <Button
+                  onClick={handleScrape}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? "스크래핑 중..." : "페이지 스크래핑"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Page Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Exclude Tags</Label>
+                  <Input
+                    placeholder="script, .ad, #footer"
+                    value={scrapeOptions.excludeTags}
+                    onChange={(e) => setScrapeOptions({...scrapeOptions, excludeTags: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Include Only Tags</Label>
+                  <Input
+                    placeholder="article, .content, #main"
+                    value={scrapeOptions.includeTags}
+                    onChange={(e) => setScrapeOptions({...scrapeOptions, includeTags: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Wait for (ms)</Label>
+                  <Input
+                    type="number"
+                    value={scrapeOptions.waitFor}
+                    onChange={(e) => setScrapeOptions({...scrapeOptions, waitFor: parseInt(e.target.value) || 1000})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Timeout (ms)</Label>
+                  <Input
+                    type="number"
+                    value={scrapeOptions.timeout}
+                    onChange={(e) => setScrapeOptions({...scrapeOptions, timeout: parseInt(e.target.value) || 30000})}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="main-content"
+                    checked={scrapeOptions.onlyMainContent}
+                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, onlyMainContent: !!checked})}
+                  />
+                  <Label htmlFor="main-content">Extract only main content</Label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Output Formats</Label>
+                  <div className="space-y-2">
+                    {['markdown', 'links', 'html', 'rawHtml', 'screenshot'].map((format) => (
+                      <div key={format} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`format-${format}`}
+                          checked={scrapeOptions.formats.includes(format)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setScrapeOptions({
+                                ...scrapeOptions,
+                                formats: [...scrapeOptions.formats, format]
+                              });
+                            } else {
+                              setScrapeOptions({
+                                ...scrapeOptions,
+                                formats: scrapeOptions.formats.filter(f => f !== format)
+                              });
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`format-${format}`}>{format}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Screenshot Mode</Label>
+                  <Select value={scrapeOptions.screenshotMode} onValueChange={(value) => setScrapeOptions({...scrapeOptions, screenshotMode: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewport">Viewport</SelectItem>
+                      <SelectItem value="fullPage">Full Page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {scrapedData && (
+            <Card>
+              <CardHeader>
+                <CardTitle>스크래핑 결과</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
+                  {JSON.stringify(scrapedData, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="crawl" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -395,57 +567,190 @@ const ContestCrawler: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
-                  크롤링 옵션
+                  Crawler Options
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="crawl-limit">페이지 제한</Label>
+                  <Label htmlFor="crawl-limit">Limit</Label>
                   <Input
                     id="crawl-limit"
                     type="number"
                     value={crawlOptions.limit}
-                    onChange={(e) => setCrawlOptions({...crawlOptions, limit: parseInt(e.target.value) || 50})}
+                    onChange={(e) => setCrawlOptions({...crawlOptions, limit: parseInt(e.target.value) || 10})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="max-depth">Max depth</Label>
+                  <Input
+                    id="max-depth"
+                    type="number"
+                    placeholder="Enter max depth"
+                    value={crawlOptions.maxDepth || ''}
+                    onChange={(e) => setCrawlOptions({...crawlOptions, maxDepth: e.target.value ? parseInt(e.target.value) : undefined})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Exclude Paths</Label>
+                  <Input
+                    placeholder="(blog/.+|about/.+)"
+                    value={crawlOptions.excludePaths}
+                    onChange={(e) => setCrawlOptions({...crawlOptions, excludePaths: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Include Only Paths</Label>
+                  <Input
+                    placeholder="articles/.+"
+                    value={crawlOptions.includeOnlyPaths}
+                    onChange={(e) => setCrawlOptions({...crawlOptions, includeOnlyPaths: e.target.value})}
                   />
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Checkbox
+                      id="ignore-sitemap"
+                      checked={crawlOptions.ignoreSitemap}
+                      onCheckedChange={(checked) => setCrawlOptions({...crawlOptions, ignoreSitemap: !!checked})}
+                    />
+                    <Label htmlFor="ignore-sitemap">Ignore sitemap</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
                       id="backward-crawling"
                       checked={crawlOptions.allowBackwardCrawling}
                       onCheckedChange={(checked) => setCrawlOptions({...crawlOptions, allowBackwardCrawling: !!checked})}
                     />
-                    <Label htmlFor="backward-crawling">역방향 크롤링 허용</Label>
+                    <Label htmlFor="backward-crawling">Allow backwards links</Label>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="external-links"
-                      checked={crawlOptions.allowExternalContentLinks}
-                      onCheckedChange={(checked) => setCrawlOptions({...crawlOptions, allowExternalContentLinks: !!checked})}
-                    />
-                    <Label htmlFor="external-links">외부 링크 허용</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="main-content-only"
-                      checked={crawlOptions.onlyMainContent}
-                      onCheckedChange={(checked) => setCrawlOptions({...crawlOptions, onlyMainContent: !!checked})}
-                    />
-                    <Label htmlFor="main-content-only">메인 콘텐츠만</Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Page Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Exclude Tags</Label>
+                  <Input
+                    placeholder="script, .ad, #footer"
+                    value={crawlOptions.scrapeOptions.excludeTags}
+                    onChange={(e) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, excludeTags: e.target.value}
+                    })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Include Only Tags</Label>
+                  <Input
+                    placeholder="article, .content, #main"
+                    value={crawlOptions.scrapeOptions.includeTags}
+                    onChange={(e) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, includeTags: e.target.value}
+                    })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Wait for (ms)</Label>
+                  <Input
+                    type="number"
+                    value={crawlOptions.scrapeOptions.waitFor}
+                    onChange={(e) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, waitFor: parseInt(e.target.value) || 1000}
+                    })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Timeout (ms)</Label>
+                  <Input
+                    type="number"
+                    value={crawlOptions.scrapeOptions.timeout}
+                    onChange={(e) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, timeout: parseInt(e.target.value) || 30000}
+                    })}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="crawl-main-content"
+                    checked={crawlOptions.scrapeOptions.onlyMainContent}
+                    onCheckedChange={(checked) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, onlyMainContent: !!checked}
+                    })}
+                  />
+                  <Label htmlFor="crawl-main-content">Extract only main content</Label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Output Formats</Label>
+                  <div className="space-y-2">
+                    {['markdown', 'links', 'html', 'rawHtml', 'screenshot'].map((format) => (
+                      <div key={format} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`crawl-format-${format}`}
+                          checked={crawlOptions.scrapeOptions.formats.includes(format)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setCrawlOptions({
+                                ...crawlOptions,
+                                scrapeOptions: {
+                                  ...crawlOptions.scrapeOptions,
+                                  formats: [...crawlOptions.scrapeOptions.formats, format]
+                                }
+                              });
+                            } else {
+                              setCrawlOptions({
+                                ...crawlOptions,
+                                scrapeOptions: {
+                                  ...crawlOptions.scrapeOptions,
+                                  formats: crawlOptions.scrapeOptions.formats.filter(f => f !== format)
+                                }
+                              });
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`crawl-format-${format}`}>{format}</Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="wait-time">대기 시간 (ms)</Label>
-                  <Input
-                    id="wait-time"
-                    type="number"
-                    value={crawlOptions.waitFor}
-                    onChange={(e) => setCrawlOptions({...crawlOptions, waitFor: parseInt(e.target.value) || 0})}
-                  />
+                  <Label>Screenshot Mode</Label>
+                  <Select 
+                    value={crawlOptions.scrapeOptions.screenshotMode} 
+                    onValueChange={(value) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, screenshotMode: value}
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewport">Viewport</SelectItem>
+                      <SelectItem value="fullPage">Full Page</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -502,110 +807,6 @@ const ContestCrawler: React.FC = () => {
                 ))}
               </div>
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="scrape" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Layers className="h-5 w-5" />
-                  페이지 스크래핑
-                </CardTitle>
-                <CardDescription>
-                  단일 페이지의 내용을 추출합니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">페이지 URL</label>
-                  <Input
-                    placeholder="https://example.com/page"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                  />
-                </div>
-                
-                <Button
-                  onClick={handleScrape}
-                  disabled={isLoading}
-                  className="w-full"
-                >
-                  {isLoading ? "스크래핑 중..." : "페이지 스크래핑"}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  스크래핑 옵션
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>출력 형식</Label>
-                  <div className="space-y-2">
-                    {['markdown', 'html', 'rawHtml', 'links', 'screenshot'].map((format) => (
-                      <div key={format} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`format-${format}`}
-                          checked={scrapeOptions.formats.includes(format)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setScrapeOptions({
-                                ...scrapeOptions,
-                                formats: [...scrapeOptions.formats, format]
-                              });
-                            } else {
-                              setScrapeOptions({
-                                ...scrapeOptions,
-                                formats: scrapeOptions.formats.filter(f => f !== format)
-                              });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`format-${format}`}>{format}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="scrape-main-content"
-                    checked={scrapeOptions.onlyMainContent}
-                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, onlyMainContent: !!checked})}
-                  />
-                  <Label htmlFor="scrape-main-content">메인 콘텐츠만</Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="scrape-timeout">타임아웃 (ms)</Label>
-                  <Input
-                    id="scrape-timeout"
-                    type="number"
-                    value={scrapeOptions.timeout}
-                    onChange={(e) => setScrapeOptions({...scrapeOptions, timeout: parseInt(e.target.value) || 30000})}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {scrapedData && (
-            <Card>
-              <CardHeader>
-                <CardTitle>스크래핑 결과</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
-                  {JSON.stringify(scrapedData, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
           )}
         </TabsContent>
 
