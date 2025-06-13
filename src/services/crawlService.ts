@@ -1,4 +1,3 @@
-
 import FirecrawlApp from '@mendable/firecrawl-js';
 
 interface CrawledContest {
@@ -96,7 +95,7 @@ export class CrawlService {
         return { success: false, error: 'Failed to scrape page' };
       }
 
-      return { success: true, data: result.data };
+      return { success: true, data: result };
     } catch (error) {
       console.error('Error scraping page:', error);
       return { 
@@ -131,7 +130,7 @@ export class CrawlService {
       }
 
       // 크롤링된 데이터를 공모전 형식으로 파싱
-      const contests = this.parseContestData(crawlResponse.data);
+      const contests = this.parseContestData(crawlResponse.data || []);
       
       return { 
         success: true,
@@ -165,7 +164,7 @@ export class CrawlService {
 
       return { 
         success: true, 
-        links: result.links 
+        links: result.links || []
       };
     } catch (error) {
       console.error('Error mapping website:', error);
@@ -196,7 +195,7 @@ export class CrawlService {
 
       return { 
         success: true, 
-        data: result.data 
+        data: result.data || []
       };
     } catch (error) {
       console.error('Error searching website:', error);
