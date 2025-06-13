@@ -3,14 +3,17 @@ import React from 'react';
 import { Bell, Search, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const navigate = useNavigate();
+
   return (
     <header className="bg-white border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 cursor-pointer" onClick={() => navigate('/')}>
             <div className="bg-contest-gradient p-2 rounded-xl">
               <Calendar className="h-6 w-6 text-white" />
             </div>

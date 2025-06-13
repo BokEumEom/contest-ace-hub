@@ -1,15 +1,18 @@
-
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useContests } from '@/hooks/useContests';
+import ScheduleDialog from '@/components/ScheduleDialog';
 
 const Calendar = () => {
+  const navigate = useNavigate();
   const { contests } = useContests();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [schedules, setSchedules] = useState<any[]>([]);
 
   // 현재 월의 첫날과 마지막날 계산
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -39,9 +42,22 @@ const Calendar = () => {
     return contests.filter(contest => contest.deadline === dateStr);
   };
 
+  // 해당 날짜의 일정 가져오기
+  const getSchedulesForDate = (day: number) => {
+    if (!day) return [];
+    
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    return schedules.filter(schedule => schedule.date === dateStr);
+  };
+
   // 월 변경 함수
   const changeMonth = (increment: number) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + increment, 1));
+  };
+
+  const handleScheduleAdd = (schedule: any) => {
+    setSchedules(prev => [...prev, schedule]);
   };
 
   const monthNames = [
@@ -106,6 +122,8 @@ const Calendar = () => {
                 <div className="grid grid-cols-7 gap-1">
                   {calendarDays.map((day, index) => {
                     const contestsForDay = day ? getContestsForDate(day) : [];
+                    const schedulesForDay = day ? getSchedulesForDate(day) : [];
+                    const allEvents = [...contestsForDay, ...schedulesForDay];
                     const isToday = day && 
                       new Date().getDate() === day && 
                       new Date().getMonth() === currentDate.getMonth() &&
@@ -124,7 +142,7 @@ const Calendar = () => {
                               {day}
                             </div>
                             <div className="mt-1 space-y-1">
-                              {contestsForDay.slice(0, 2).map(contest => (
+                              {contestsForDay.slice(0, 1).map(contest => (
                                 <div
                                   key={contest.id}
                                   className="text-xs p-1 bg-contest-orange/10 text-contest-orange rounded truncate"
@@ -133,9 +151,18 @@ const Calendar = () => {
                                   {contest.title}
                                 </div>
                               ))}
-                              {contestsForDay.length > 2 && (
+                              {schedulesForDay.slice(0, 1).map(schedule => (
+                                <div
+                                  key={schedule.id}
+                                  className="text-xs p-1 bg-contest-blue/10 text-contest-blue rounded truncate"
+                                  title={schedule.title}
+                                >
+                                  {schedule.title}
+                                </div>
+                              ))}
+                              {allEvents.length > 2 && (
                                 <div className="text-xs text-muted-foreground">
-                                  +{contestsForDay.length - 2}개 더
+                                  +{allEvents.length - 2}개 더
                                 </div>
                               )}
                             </div>
@@ -190,11 +217,21 @@ const Calendar = () => {
                 <CardTitle className="text-lg">빠른 작업</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  일정 추가
-                </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm">
+                <ScheduleDialog
+                  trigger={
+                    <Button variant="outline" className="w-full justify-start" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      일정 추가
+                    </Button>
+                  }
+                  onScheduleAdd={handleScheduleAdd}
+                />
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start" 
+                  size="sm"
+                  onClick={() => navigate('/new-contest')}
+                >
                   <CalendarIcon className="h-4 w-4 mr-2" />
                   공모전 등록
                 </Button>
