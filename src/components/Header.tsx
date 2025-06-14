@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { Bell, Search, Calendar, Settings, User } from 'lucide-react';
+import { Search, Calendar, Settings, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
+import NotificationDropdown from '@/components/NotificationDropdown';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -37,10 +38,7 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-contest-orange rounded-full"></span>
-            </Button>
+            <NotificationDropdown />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
