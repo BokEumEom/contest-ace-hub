@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,16 +32,22 @@ interface CrawlOptions {
   excludePaths: string;
   includeOnlyPaths: string;
   ignoreSitemap: boolean;
+  webhook?: string;
   scrapeOptions: {
     formats: string[];
     includeTags: string;
     excludeTags: string;
     onlyMainContent: boolean;
+    removeBase64Images: boolean;
     waitFor: number;
     timeout: number;
     screenshot: boolean;
-    screenshotMode: string;
-    removeBase64Images: boolean;
+    fullPageScreenshot: boolean;
+    mobile: boolean;
+    skipTlsVerification: boolean;
+    headers?: Record<string, string>;
+    parsePDF?: boolean;
+    actions?: any[];
   };
 }
 
@@ -51,11 +56,16 @@ interface ScrapeOptions {
   includeTags: string;
   excludeTags: string;
   onlyMainContent: boolean;
+  removeBase64Images: boolean;
   waitFor: number;
   timeout: number;
   screenshot: boolean;
-  screenshotMode: string;
-  removeBase64Images: boolean;
+  fullPageScreenshot: boolean;
+  mobile: boolean;
+  skipTlsVerification: boolean;
+  headers?: Record<string, string>;
+  parsePDF?: boolean;
+  actions?: any[];
 }
 
 interface MapOptions {
@@ -98,11 +108,13 @@ const ContestCrawler: React.FC = () => {
       includeTags: '',
       excludeTags: 'script, .ad, #footer',
       onlyMainContent: true,
+      removeBase64Images: false,
       waitFor: 1000,
       timeout: 30000,
       screenshot: false,
-      screenshotMode: 'viewport',
-      removeBase64Images: false
+      fullPageScreenshot: false,
+      mobile: false,
+      skipTlsVerification: false
     }
   });
   
@@ -111,11 +123,13 @@ const ContestCrawler: React.FC = () => {
     includeTags: '',
     excludeTags: 'script, .ad, #footer',
     onlyMainContent: true,
+    removeBase64Images: false,
     waitFor: 1000,
     timeout: 30000,
     screenshot: false,
-    screenshotMode: 'viewport',
-    removeBase64Images: false
+    fullPageScreenshot: false,
+    mobile: false,
+    skipTlsVerification: false
   });
   
   const [mapOptions, setMapOptions] = useState<MapOptions>({
@@ -180,10 +194,10 @@ const ContestCrawler: React.FC = () => {
         allowExternalContentLinks: crawlOptions.allowExternalContentLinks,
         scrapeOptions: {
           formats: ['markdown'],
-          includeTags: crawlOptions.includeTags,
-          excludeTags: crawlOptions.excludeTags,
-          onlyMainContent: crawlOptions.onlyMainContent,
-          waitFor: crawlOptions.waitFor
+          includeTags: crawlOptions.scrapeOptions.includeTags,
+          excludeTags: crawlOptions.scrapeOptions.excludeTags,
+          onlyMainContent: crawlOptions.scrapeOptions.onlyMainContent,
+          waitFor: crawlOptions.scrapeOptions.waitFor
         }
       };
       
@@ -464,6 +478,15 @@ const ContestCrawler: React.FC = () => {
                   <Label htmlFor="main-content">Extract only main content</Label>
                 </div>
 
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mobile"
+                    checked={scrapeOptions.mobile}
+                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, mobile: !!checked})}
+                  />
+                  <Label htmlFor="mobile">Mobile view</Label>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Output Formats</Label>
                   <div className="space-y-2">
@@ -492,17 +515,13 @@ const ContestCrawler: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Screenshot Mode</Label>
-                  <Select value={scrapeOptions.screenshotMode} onValueChange={(value) => setScrapeOptions({...scrapeOptions, screenshotMode: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewport">Viewport</SelectItem>
-                      <SelectItem value="fullPage">Full Page</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="full-page-screenshot"
+                    checked={scrapeOptions.fullPageScreenshot}
+                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, fullPageScreenshot: !!checked})}
+                  />
+                  <Label htmlFor="full-page-screenshot">Full page screenshot</Label>
                 </div>
               </CardContent>
             </Card>
@@ -700,6 +719,18 @@ const ContestCrawler: React.FC = () => {
                   <Label htmlFor="crawl-main-content">Extract only main content</Label>
                 </div>
 
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="crawl-mobile"
+                    checked={crawlOptions.scrapeOptions.mobile}
+                    onCheckedChange={(checked) => setCrawlOptions({
+                      ...crawlOptions,
+                      scrapeOptions: {...crawlOptions.scrapeOptions, mobile: !!checked}
+                    })}
+                  />
+                  <Label htmlFor="crawl-mobile">Mobile view</Label>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Output Formats</Label>
                   <div className="space-y-2">
@@ -734,23 +765,16 @@ const ContestCrawler: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Screenshot Mode</Label>
-                  <Select 
-                    value={crawlOptions.scrapeOptions.screenshotMode} 
-                    onValueChange={(value) => setCrawlOptions({
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="crawl-full-page-screenshot"
+                    checked={crawlOptions.scrapeOptions.fullPageScreenshot}
+                    onCheckedChange={(checked) => setCrawlOptions({
                       ...crawlOptions,
-                      scrapeOptions: {...crawlOptions.scrapeOptions, screenshotMode: value}
+                      scrapeOptions: {...crawlOptions.scrapeOptions, fullPageScreenshot: !!checked}
                     })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewport">Viewport</SelectItem>
-                      <SelectItem value="fullPage">Full Page</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                  <Label htmlFor="crawl-full-page-screenshot">Full page screenshot</Label>
                 </div>
               </CardContent>
             </Card>
