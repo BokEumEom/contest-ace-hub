@@ -11,6 +11,7 @@ import AIHelper from "./pages/AIHelper";
 import Explore from "./pages/Explore";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
+import Contests from "./pages/Contests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/contests" element={<Contests />} />
           <Route path="/new-contest" element={<NewContest />} />
           <Route path="/contest/:id" element={<ContestDetail />} />
           <Route path="/ai-helper" element={<AIHelper />} />
