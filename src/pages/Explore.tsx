@@ -1,15 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Search, Globe } from 'lucide-react';
 import Header from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CrawlSetup from '@/components/CrawlSetup';
 import ContestCrawler from '@/components/ContestCrawler';
-import { CrawlService } from '@/services/crawlService';
 
 const Explore = () => {
-  const [showCrawlSetup, setShowCrawlSetup] = useState(!CrawlService.getApiKey());
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header />
@@ -25,11 +21,7 @@ const Explore = () => {
         </div>
 
         <div className="w-full">
-          {showCrawlSetup ? (
-            <CrawlSetup onSetupComplete={() => setShowCrawlSetup(false)} />
-          ) : (
-            <ContestCrawler />
-          )}
+          <ContestCrawler />
         </div>
       </main>
     </div>
