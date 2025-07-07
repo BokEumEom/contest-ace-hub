@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CrawlService } from '@/services/crawlService';
-import { Globe, Search, MapPin, Layers, Clock, Building2, Award, Settings } from 'lucide-react';
+import { useContests } from '@/hooks/useContests';
+import { Globe, Search, MapPin, Layers, Clock, Building2, Award, Settings, Plus } from 'lucide-react';
 
 interface CrawledContest {
   title: string;
@@ -94,6 +95,8 @@ const ContestCrawler: React.FC = () => {
   const [mapData, setMapData] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   
+  const { addContest } = useContests();
+  
   // Options state
   const [crawlOptions, setCrawlOptions] = useState<CrawlOptions>({
     limit: 10,
@@ -151,6 +154,149 @@ const ContestCrawler: React.FC = () => {
   const { toast } = useToast();
 
   const apiKey = CrawlService.getApiKey();
+
+  // 크롤링된 공모전을 실제 공모전으로 등록하는 함수
+  const handleRegisterContest = (crawledContest: CrawledContest) => {
+    try {
+      const deadlineDate = new Date(crawledContest.deadline);
+      const today = new Date();
+      const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      const newContest = addContest({
+        title: crawledContest.title,
+        organization: crawledContest.organization,
+        deadline: crawledContest.deadline,
+        category: crawledContest.category,
+        prize: crawledContest.prize,
+        description: crawledContest.description,
+        status: 'preparing' as const,
+        daysLeft: Math.max(0, daysLeft),
+        progress: 0,
+        teamMembers: 1,
+        contestUrl: crawledContest.url,
+        contestTheme: '',
+        submissionFormat: '',
+        contestSchedule: '',
+        submissionMethod: '',
+        prizeDetails: crawledContest.prize,
+        resultAnnouncement: '',
+        precautions: ''
+      });
+
+      toast({
+        title: "성공",
+        description: `"${crawledContest.title}" 공모전이 등록되었습니다.`,
+        duration: 3000
+      });
+    } catch (error) {
+      console.error('Error registering contest:', error);
+      toast({
+        title: "오류",
+        description: "공모전 등록 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 스크래핑된 데이터에서 공모전 정보를 추출하여 등록하는 함수
+  const handleRegisterFromScrapedData = () => {
+    if (!scrapedData) return;
+
+    try {
+      // 스크래핑된 데이터에서 공모전 정보 추출
+      const markdown = scrapedData.markdown || '';
+      const title = extractTitle(markdown) || '크롤링된 공모전';
+      const organization = extractOrganization(markdown) || '미상';
+      const deadline = extractDeadline(markdown) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const category = extractCategory(markdown) || '기타';
+      const prize = extractPrize(markdown) || '상금 미공개';
+      const description = extractDescription(markdown) || markdown.substring(0, 200) + '...';
+
+      const deadlineDate = new Date(deadline);
+      const today = new Date();
+      const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      const newContest = addContest({
+        title,
+        organization,
+        deadline,
+        category,
+        prize,
+        description,
+        status: 'preparing' as const,
+        daysLeft: Math.max(0, daysLeft),
+        progress: 0,
+        teamMembers: 1,
+        contestUrl: url,
+        contestTheme: '',
+        submissionFormat: '',
+        contestSchedule: '',
+        submissionMethod: '',
+        prizeDetails: prize,
+        resultAnnouncement: '',
+        precautions: ''
+      });
+
+      toast({
+        title: "성공",
+        description: "스크래핑된 데이터로부터 공모전이 등록되었습니다.",
+        duration: 3000
+      });
+    } catch (error) {
+      console.error('Error registering contest from scraped data:', error);
+      toast({
+        title: "오류",
+        description: "공모전 등록 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 텍스트에서 정보 추출 헬퍼 함수들
+  const extractTitle = (text: string): string | null => {
+    const titleMatch = text.match(/^#+\s+(.+)|^\*\*(.+)\*\*/m);
+    if (titleMatch) return titleMatch[1] || titleMatch[2];
+    const lines = text.split('\n');
+    for (const line of lines.slice(0, 10)) {
+      if (line.includes('공모전') || line.includes('대회') || line.includes('경진대회')) {
+        return line.trim();
+      }
+    }
+    return null;
+  };
+
+  const extractOrganization = (text: string): string | null => {
+    const orgMatch = text.match(/(?:주최|주관)[:\s]*([^\n]+)/);
+    return orgMatch ? orgMatch[1].trim() : null;
+  };
+
+  const extractDeadline = (text: string): string | null => {
+    const dateMatch = text.match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+    return dateMatch ? `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}` : null;
+  };
+
+  const extractCategory = (text: string): string => {
+    if (text.includes('IT') || text.includes('소프트웨어') || text.includes('앱')) return 'IT/기술';
+    if (text.includes('디자인') || text.includes('포스터')) return '디자인';
+    if (text.includes('창업') || text.includes('비즈니스')) return '창업/비즈니스';
+    if (text.includes('마케팅') || text.includes('광고')) return '마케팅';
+    return '기타';
+  };
+
+  const extractPrize = (text: string): string | null => {
+    const prizeMatch = text.match(/(?:상금|대상|우승)[:\s]*([^\n]+)/);
+    return prizeMatch ? prizeMatch[1].trim() : null;
+  };
+
+  const extractDescription = (text: string): string | null => {
+    const lines = text.split('\n');
+    for (const line of lines) {
+      if (line.length > 30 && !line.includes('마감') && !line.includes('주최')) {
+        return line.trim();
+      }
+    }
+    return null;
+  };
 
   if (!apiKey) {
     return (
@@ -530,7 +676,16 @@ const ContestCrawler: React.FC = () => {
           {scrapedData && (
             <Card>
               <CardHeader>
-                <CardTitle>스크래핑 결과</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>스크래핑 결과</CardTitle>
+                  <Button
+                    onClick={handleRegisterFromScrapedData}
+                    className="contest-button-primary"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    공모전으로 등록
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
@@ -819,13 +974,23 @@ const ContestCrawler: React.FC = () => {
                         {contest.description}
                       </p>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(contest.url, '_blank')}
-                      >
-                        자세히 보기
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(contest.url, '_blank')}
+                        >
+                          자세히 보기
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleRegisterContest(contest)}
+                          className="contest-button-primary"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          공모전 등록
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
