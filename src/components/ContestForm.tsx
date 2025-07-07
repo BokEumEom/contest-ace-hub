@@ -25,6 +25,14 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
     prize: '',
     description: '',
     teamMembers: 1,
+    contestTheme: '',
+    submissionFormat: '',
+    contestSchedule: '',
+    submissionMethod: '',
+    prizeDetails: '',
+    resultAnnouncement: '',
+    precautions: '',
+    contestUrl: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -142,13 +150,101 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">공모전 설명</Label>
+            <Label htmlFor="contestUrl">공모전 URL</Label>
+            <Input
+              id="contestUrl"
+              value={formData.contestUrl}
+              onChange={(e) => handleChange('contestUrl', e.target.value)}
+              placeholder="예: https://contest.example.com"
+              type="url"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contestTheme">공모 주제</Label>
+            <Textarea
+              id="contestTheme"
+              value={formData.contestTheme}
+              onChange={(e) => handleChange('contestTheme', e.target.value)}
+              placeholder="공모전의 주제와 목적을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="submissionFormat">출품 규격</Label>
+            <Textarea
+              id="submissionFormat"
+              value={formData.submissionFormat}
+              onChange={(e) => handleChange('submissionFormat', e.target.value)}
+              placeholder="출품작의 형식, 크기, 파일 형태 등을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contestSchedule">공모 일정</Label>
+            <Textarea
+              id="contestSchedule"
+              value={formData.contestSchedule}
+              onChange={(e) => handleChange('contestSchedule', e.target.value)}
+              placeholder="접수 기간, 심사 일정, 발표 일정 등을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="submissionMethod">출품 방법</Label>
+            <Textarea
+              id="submissionMethod"
+              value={formData.submissionMethod}
+              onChange={(e) => handleChange('submissionMethod', e.target.value)}
+              placeholder="출품 접수 방법, 제출 경로 등을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="prizeDetails">시상 내역</Label>
+            <Textarea
+              id="prizeDetails"
+              value={formData.prizeDetails}
+              onChange={(e) => handleChange('prizeDetails', e.target.value)}
+              placeholder="각 상의 상금, 혜택, 수상 인원 등을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="resultAnnouncement">결과 발표</Label>
+            <Textarea
+              id="resultAnnouncement"
+              value={formData.resultAnnouncement}
+              onChange={(e) => handleChange('resultAnnouncement', e.target.value)}
+              placeholder="결과 발표 일정, 방법, 장소 등을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="precautions">유의사항</Label>
+            <Textarea
+              id="precautions"
+              value={formData.precautions}
+              onChange={(e) => handleChange('precautions', e.target.value)}
+              placeholder="참가 조건, 제한사항, 기타 주의사항을 입력하세요..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">기타 설명</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="공모전에 대한 상세 설명을 입력하세요..."
-              rows={4}
+              placeholder="추가적인 공모전 정보를 입력하세요..."
+              rows={3}
             />
           </div>
 

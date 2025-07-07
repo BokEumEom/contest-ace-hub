@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, Clock, Trophy, AlertTriangle, CheckCircle, Info, Trash2, MarkAsRead } from 'lucide-react';
+import { Bell, Clock, Trophy, AlertTriangle, CheckCircle, Info, Trash2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +71,7 @@ const NotificationDropdown = () => {
                   onClick={markAllAsRead}
                   className="text-xs"
                 >
-                  <MarkAsRead className="h-3 w-3 mr-1" />
+                  <Check className="h-3 w-3 mr-1" />
                   모두 읽음
                 </Button>
               )}
