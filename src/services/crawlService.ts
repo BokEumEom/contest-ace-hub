@@ -86,10 +86,28 @@ export class CrawlService {
 
     try {
       console.log('Scraping page:', url);
-      const result = await app.scrapeUrl(url, {
+      
+      // API 요구사항에 맞게 문자열을 배열로 변환
+      const processedOptions = {
         formats: ['markdown', 'html'],
-        ...options
-      });
+        ...options,
+        includeTags: options.includeTags ? 
+          (Array.isArray(options.includeTags) ? options.includeTags : options.includeTags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)) : 
+          undefined,
+        excludeTags: options.excludeTags ? 
+          (Array.isArray(options.excludeTags) ? options.excludeTags : options.excludeTags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)) : 
+          undefined
+      };
+
+      // 빈 배열 제거
+      if (processedOptions.includeTags && processedOptions.includeTags.length === 0) {
+        delete processedOptions.includeTags;
+      }
+      if (processedOptions.excludeTags && processedOptions.excludeTags.length === 0) {
+        delete processedOptions.excludeTags;
+      }
+
+      const result = await app.scrapeUrl(url, processedOptions);
 
       if (!result.success) {
         return { success: false, error: 'Failed to scrape page' };
@@ -114,12 +132,37 @@ export class CrawlService {
 
     try {
       console.log('Crawling website:', url);
+      
+      // scrapeOptions 처리
+      const processedScrapeOptions = options.scrapeOptions ? {
+        formats: ['markdown'],
+        ...options.scrapeOptions,
+        includeTags: options.scrapeOptions.includeTags ? 
+          (Array.isArray(options.scrapeOptions.includeTags) ? options.scrapeOptions.includeTags : options.scrapeOptions.includeTags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)) : 
+          undefined,
+        excludeTags: options.scrapeOptions.excludeTags ? 
+          (Array.isArray(options.scrapeOptions.excludeTags) ? options.scrapeOptions.excludeTags : options.scrapeOptions.excludeTags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag)) : 
+          undefined
+      } : { formats: ['markdown'] };
+
+      // 빈 배열 제거
+      if (processedScrapeOptions.includeTags && processedScrapeOptions.includeTags.length === 0) {
+        delete processedScrapeOptions.includeTags;
+      }
+      if (processedScrapeOptions.excludeTags && processedScrapeOptions.excludeTags.length === 0) {
+        delete processedScrapeOptions.excludeTags;
+      }
+
+      // deprecated 옵션 제거 (v1 API에서 지원하지 않음)
+      const cleanOptions = { ...options };
+      delete cleanOptions.allowBackwardCrawling;
+      delete cleanOptions.allowExternalContentLinks;
+      delete cleanOptions.scrapeOptions;
+
       const crawlResponse = await app.crawlUrl(url, {
         limit: 50,
-        scrapeOptions: {
-          formats: ['markdown'],
-        },
-        ...options
+        scrapeOptions: processedScrapeOptions,
+        ...cleanOptions
       });
 
       if (!crawlResponse.success) {
