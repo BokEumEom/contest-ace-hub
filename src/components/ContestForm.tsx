@@ -71,16 +71,32 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">공모전 제목 *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="예: 2024 스마트시티 아이디어 공모전"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* 기본 정보 섹션 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">기본 정보</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="title">공모전 제목 *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleChange('title', e.target.value)}
+                placeholder="예: 2024 스마트시티 아이디어 공모전"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contestUrl">공모전 URL</Label>
+              <Input
+                id="contestUrl"
+                value={formData.contestUrl}
+                onChange={(e) => handleChange('contestUrl', e.target.value)}
+                placeholder="예: https://contest.example.com"
+                type="url"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -149,104 +165,114 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contestUrl">공모전 URL</Label>
-            <Input
-              id="contestUrl"
-              value={formData.contestUrl}
-              onChange={(e) => handleChange('contestUrl', e.target.value)}
-              placeholder="예: https://contest.example.com"
-              type="url"
-            />
+          {/* 공모전 상세 정보 섹션 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">공모전 상세 정보</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="contestTheme">공모 주제</Label>
+              <Textarea
+                id="contestTheme"
+                value={formData.contestTheme}
+                onChange={(e) => handleChange('contestTheme', e.target.value)}
+                placeholder="공모전의 주제와 목적을 상세히 입력하세요..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="submissionFormat">출품 규격</Label>
+              <Textarea
+                id="submissionFormat"
+                value={formData.submissionFormat}
+                onChange={(e) => handleChange('submissionFormat', e.target.value)}
+                placeholder="출품작의 형식, 크기, 파일 형태, 페이지 수 등의 규격을 입력하세요..."
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contestTheme">공모 주제</Label>
-            <Textarea
-              id="contestTheme"
-              value={formData.contestTheme}
-              onChange={(e) => handleChange('contestTheme', e.target.value)}
-              placeholder="공모전의 주제와 목적을 입력하세요..."
-              rows={3}
-            />
+          {/* 일정 및 절차 섹션 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">일정 및 절차</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="contestSchedule">공모 일정</Label>
+              <Textarea
+                id="contestSchedule"
+                value={formData.contestSchedule}
+                onChange={(e) => handleChange('contestSchedule', e.target.value)}
+                placeholder="접수 기간, 심사 일정, 발표 일정 등 전체 일정을 입력하세요..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="submissionMethod">출품 방법</Label>
+              <Textarea
+                id="submissionMethod"
+                value={formData.submissionMethod}
+                onChange={(e) => handleChange('submissionMethod', e.target.value)}
+                placeholder="출품 접수 방법, 제출 경로, 필요 서류 등을 입력하세요..."
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="submissionFormat">출품 규격</Label>
-            <Textarea
-              id="submissionFormat"
-              value={formData.submissionFormat}
-              onChange={(e) => handleChange('submissionFormat', e.target.value)}
-              placeholder="출품작의 형식, 크기, 파일 형태 등을 입력하세요..."
-              rows={3}
-            />
+          {/* 시상 및 결과 섹션 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">시상 및 결과</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="prizeDetails">시상 내역</Label>
+              <Textarea
+                id="prizeDetails"
+                value={formData.prizeDetails}
+                onChange={(e) => handleChange('prizeDetails', e.target.value)}
+                placeholder="각 상의 상금, 혜택, 수상 인원 등 시상 내역을 상세히 입력하세요..."
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="resultAnnouncement">결과 발표</Label>
+              <Textarea
+                id="resultAnnouncement"
+                value={formData.resultAnnouncement}
+                onChange={(e) => handleChange('resultAnnouncement', e.target.value)}
+                placeholder="결과 발표 일정, 방법, 장소, 시상식 정보 등을 입력하세요..."
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contestSchedule">공모 일정</Label>
-            <Textarea
-              id="contestSchedule"
-              value={formData.contestSchedule}
-              onChange={(e) => handleChange('contestSchedule', e.target.value)}
-              placeholder="접수 기간, 심사 일정, 발표 일정 등을 입력하세요..."
-              rows={3}
-            />
+          {/* 주의사항 및 기타 섹션 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b pb-2">주의사항 및 기타</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="precautions">유의사항</Label>
+              <Textarea
+                id="precautions"
+                value={formData.precautions}
+                onChange={(e) => handleChange('precautions', e.target.value)}
+                placeholder="참가 조건, 제한사항, 저작권, 기타 주의사항을 입력하세요..."
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">추가 설명</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                placeholder="위에서 다루지 않은 추가적인 공모전 정보를 입력하세요..."
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="submissionMethod">출품 방법</Label>
-            <Textarea
-              id="submissionMethod"
-              value={formData.submissionMethod}
-              onChange={(e) => handleChange('submissionMethod', e.target.value)}
-              placeholder="출품 접수 방법, 제출 경로 등을 입력하세요..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="prizeDetails">시상 내역</Label>
-            <Textarea
-              id="prizeDetails"
-              value={formData.prizeDetails}
-              onChange={(e) => handleChange('prizeDetails', e.target.value)}
-              placeholder="각 상의 상금, 혜택, 수상 인원 등을 입력하세요..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="resultAnnouncement">결과 발표</Label>
-            <Textarea
-              id="resultAnnouncement"
-              value={formData.resultAnnouncement}
-              onChange={(e) => handleChange('resultAnnouncement', e.target.value)}
-              placeholder="결과 발표 일정, 방법, 장소 등을 입력하세요..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="precautions">유의사항</Label>
-            <Textarea
-              id="precautions"
-              value={formData.precautions}
-              onChange={(e) => handleChange('precautions', e.target.value)}
-              placeholder="참가 조건, 제한사항, 기타 주의사항을 입력하세요..."
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">기타 설명</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="추가적인 공모전 정보를 입력하세요..."
-              rows={3}
-            />
-          </div>
 
           <div className="flex gap-3 pt-4">
             <Button type="submit" className="flex-1 contest-button-primary">

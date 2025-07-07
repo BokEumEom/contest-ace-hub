@@ -12,6 +12,14 @@ export interface Contest {
   teamMembers: number;
   description?: string;
   requirements?: string[];
+  contestTheme?: string;
+  submissionFormat?: string;
+  contestSchedule?: string;
+  submissionMethod?: string;
+  prizeDetails?: string;
+  resultAnnouncement?: string;
+  precautions?: string;
+  contestUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
