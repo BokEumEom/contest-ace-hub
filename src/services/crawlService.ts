@@ -1,4 +1,5 @@
 import FirecrawlApp from '@mendable/firecrawl-js';
+import { GeminiService } from './geminiService';
 
 interface CrawledContest {
   title: string;
@@ -173,7 +174,7 @@ export class CrawlService {
       }
 
       // 크롤링된 데이터를 공모전 형식으로 파싱
-      const contests = this.parseContestData(crawlResponse.data || []);
+      const contests = await this.parseContestData(crawlResponse.data || []);
       
       return { 
         success: true,
@@ -249,16 +250,59 @@ export class CrawlService {
     }
   }
 
-  private static parseContestData(data: any[]): CrawledContest[] {
+  // AI를 활용한 공모전 정보 추출 (기존 정규표현식 방식 개선)
+  static async extractContestInfoWithAI(markdown: string, sourceUrl: string): Promise<CrawledContest[]> {
     const contests: CrawledContest[] = [];
     
-    data.forEach((page) => {
+    try {
+      // Gemini API 키 확인
+      const geminiApiKey = GeminiService.getApiKey();
+      if (!geminiApiKey) {
+        // AI 키가 없으면 기존 방식 사용
+        return this.extractContestInfo(markdown, sourceUrl);
+      }
+
+      const gemini = new GeminiService(geminiApiKey);
+      const contestInfo = await gemini.extractContestInfoFromUrl(sourceUrl, markdown);
+      
+      // D-day 계산
+      const deadlineDate = new Date(contestInfo.deadline);
+      const today = new Date();
+      const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      const contest: CrawledContest = {
+        title: contestInfo.title,
+        organization: contestInfo.organization,
+        deadline: contestInfo.deadline,
+        category: contestInfo.category,
+        prize: contestInfo.prize,
+        description: contestInfo.description,
+        url: contestInfo.contestUrl,
+        daysLeft: Math.max(0, daysLeft)
+      };
+
+      if (this.isValidContest(contest)) {
+        contests.push(contest);
+      }
+    } catch (error) {
+      console.error('AI 기반 정보 추출 실패, 기존 방식으로 fallback:', error);
+      // AI 추출 실패 시 기존 정규표현식 방식 사용
+      return this.extractContestInfo(markdown, sourceUrl);
+    }
+
+    return contests;
+  }
+
+  private static async parseContestData(data: any[]): Promise<CrawledContest[]> {
+    const contests: CrawledContest[] = [];
+    
+    for (const page of data) {
       if (page.markdown) {
-        // 간단한 정규표현식으로 공모전 정보 추출
-        const contestMatches = this.extractContestInfo(page.markdown, page.metadata?.sourceURL || '');
+        // AI 기반 정보 추출 시도 (fallback으로 기존 방식 사용)
+        const contestMatches = await this.extractContestInfoWithAI(page.markdown, page.metadata?.sourceURL || '');
         contests.push(...contestMatches);
       }
-    });
+    }
 
     return contests;
   }

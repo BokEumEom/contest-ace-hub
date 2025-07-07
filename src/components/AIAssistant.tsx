@@ -1,20 +1,37 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Sparkles, FileText, Lightbulb, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { GeminiService } from '@/services/geminiService';
 import { useToast } from '@/hooks/use-toast';
 
-const AIAssistant: React.FC = () => {
+interface AIAssistantProps {
+  contestTitle?: string;
+  contestDescription?: string;
+  contestTheme?: string;
+  submissionFormat?: string;
+  submissionMethod?: string;
+  prizeDetails?: string;
+  precautions?: string;
+}
+
+const AIAssistant: React.FC<AIAssistantProps> = ({
+  contestTitle: initialContestTitle = '',
+  contestDescription: initialContestDescription = '',
+  contestTheme = '',
+  submissionFormat = '',
+  submissionMethod = '',
+  prizeDetails = '',
+  precautions = ''
+}) => {
   const [apiKey, setApiKey] = useState('');
   const [isKeyValid, setIsKeyValid] = useState<boolean | null>(null);
   const [testingKey, setTestingKey] = useState(false);
-  const [contestTitle, setContestTitle] = useState('');
-  const [contestDescription, setContestDescription] = useState('');
+  const [contestTitle, setContestTitle] = useState(initialContestTitle);
+  const [contestDescription, setContestDescription] = useState(initialContestDescription);
   const [documentContent, setDocumentContent] = useState('');
   const [documentType, setDocumentType] = useState('기획서');
   const [ideas, setIdeas] = useState<string[]>([]);
@@ -24,12 +41,47 @@ const AIAssistant: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (initialContestTitle) {
+      setContestTitle(initialContestTitle);
+    }
+    if (initialContestDescription) {
+      setContestDescription(initialContestDescription);
+    }
+  }, [initialContestTitle, initialContestDescription]);
+
+  useEffect(() => {
     const savedKey = GeminiService.getApiKey();
     if (savedKey) {
       setApiKey(savedKey);
       setIsKeyValid(true);
     }
   }, []);
+
+  const generateRichDescription = () => {
+    let description = contestDescription || initialContestDescription;
+    
+    if (contestTheme) {
+      description += `\n\n공모 주제: ${contestTheme}`;
+    }
+    
+    if (submissionFormat) {
+      description += `\n\n출품 규격: ${submissionFormat}`;
+    }
+    
+    if (submissionMethod) {
+      description += `\n\n출품 방법: ${submissionMethod}`;
+    }
+    
+    if (prizeDetails) {
+      description += `\n\n시상 내역: ${prizeDetails}`;
+    }
+    
+    if (precautions) {
+      description += `\n\n주의사항: ${precautions}`;
+    }
+    
+    return description;
+  };
 
   const testApiKey = async () => {
     if (!apiKey.trim()) {
@@ -81,7 +133,7 @@ const AIAssistant: React.FC = () => {
       return;
     }
     
-    if (!contestTitle || !contestDescription) {
+    if (!contestTitle || (!contestDescription && !initialContestDescription)) {
       toast({
         title: "오류",
         description: "공모전 제목과 설명을 입력해주세요.",
@@ -93,19 +145,22 @@ const AIAssistant: React.FC = () => {
     setLoadingIdeas(true);
     try {
       const gemini = new GeminiService(apiKey);
-      const generatedIdeas = await gemini.generateIdeas(contestTitle, contestDescription);
+      const richDescription = generateRichDescription();
+      console.log('Generating ideas with:', { contestTitle, richDescription });
+      const generatedIdeas = await gemini.generateIdeas(contestTitle, richDescription);
+      console.log('Generated ideas:', generatedIdeas);
       setIdeas(generatedIdeas);
       toast({
         title: "성공",
         description: "아이디어가 생성되었습니다!"
       });
     } catch (error) {
+      console.error('Error generating ideas:', error);
       toast({
         title: "오류",
         description: "아이디어 생성에 실패했습니다.",
         variant: "destructive"
       });
-      console.error(error);
     } finally {
       setLoadingIdeas(false);
     }
@@ -212,6 +267,11 @@ const AIAssistant: React.FC = () => {
             <Lightbulb className="h-5 w-5 text-contest-blue" />
             아이디어 브레인스토밍
           </CardTitle>
+          {(initialContestTitle || initialContestDescription) && (
+            <CardDescription className="text-sm text-green-600">
+              ✓ 공모전 정보가 자동으로 입력되었습니다
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -221,7 +281,11 @@ const AIAssistant: React.FC = () => {
               value={contestTitle}
               onChange={(e) => setContestTitle(e.target.value)}
               placeholder="공모전 제목을 입력하세요"
+              className={initialContestTitle ? "border-green-200 bg-green-50" : ""}
             />
+            {initialContestTitle && (
+              <p className="text-xs text-green-600">자동 입력됨: {initialContestTitle}</p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -232,8 +296,33 @@ const AIAssistant: React.FC = () => {
               onChange={(e) => setContestDescription(e.target.value)}
               placeholder="공모전의 주제와 요구사항을 입력하세요"
               rows={3}
+              className={initialContestDescription ? "border-green-200 bg-green-50" : ""}
             />
+            {initialContestDescription && (
+              <p className="text-xs text-green-600">
+                자동 입력됨: {initialContestDescription.length > 50 
+                  ? initialContestDescription.substring(0, 50) + '...' 
+                  : initialContestDescription}
+              </p>
+            )}
           </div>
+
+          {/* 추가 공모전 정보 표시 */}
+          {(contestTheme || submissionFormat || submissionMethod || prizeDetails || precautions) && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm font-medium text-blue-800 mb-2">📋 추가 공모전 정보</p>
+              <div className="space-y-1 text-xs text-blue-700">
+                {contestTheme && <p>• 공모 주제: {contestTheme}</p>}
+                {submissionFormat && <p>• 출품 규격: {submissionFormat}</p>}
+                {submissionMethod && <p>• 출품 방법: {submissionMethod}</p>}
+                {prizeDetails && <p>• 시상 내역: {prizeDetails}</p>}
+                {precautions && <p>• 주의사항: {precautions}</p>}
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                이 정보들이 아이디어 생성에 활용됩니다.
+              </p>
+            </div>
+          )}
 
           <Button 
             onClick={generateIdeas} 
@@ -248,16 +337,58 @@ const AIAssistant: React.FC = () => {
             아이디어 생성하기
           </Button>
 
+          {/* 상태 메시지 */}
+          {!isKeyValid && (
+            <p className="text-xs text-red-600 text-center">
+              아이디어 생성을 위해 먼저 유효한 API 키를 설정해주세요.
+            </p>
+          )}
+          
+          {isKeyValid && !contestTitle && (
+            <p className="text-xs text-orange-600 text-center">
+              공모전 제목을 입력해주세요.
+            </p>
+          )}
+          
+          {isKeyValid && contestTitle && (!contestDescription && !initialContestDescription) && (
+            <p className="text-xs text-orange-600 text-center">
+              공모전 설명을 입력해주세요.
+            </p>
+          )}
+          
+          {isKeyValid && contestTitle && (contestDescription || initialContestDescription) && ideas.length === 0 && !loadingIdeas && (
+            <p className="text-xs text-blue-600 text-center">
+              위 정보를 바탕으로 아이디어를 생성할 준비가 되었습니다.
+            </p>
+          )}
+
           {ideas.length > 0 && (
-            <div className="mt-4 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
-              <h4 className="font-medium text-foreground mb-3">생성된 아이디어:</h4>
-              <ul className="space-y-2">
+            <div className="mt-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+              <h4 className="font-medium text-foreground mb-3">생성된 아이디어 ({ideas.length}개):</h4>
+              <div className="space-y-2">
                 {ideas.map((idea, index) => (
-                  <li key={index} className="text-sm text-muted-foreground bg-white p-3 rounded border">
-                    {idea}
-                  </li>
+                  <div key={index} className="text-sm bg-white p-3 rounded border">
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        {index + 1}
+                      </span>
+                      <span className="flex-1">{idea}</span>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
+            </div>
+          )}
+
+          {/* 디버깅 정보 (개발 모드에서만 표시) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+              <p className="text-xs text-gray-600 mb-2">디버깅 정보:</p>
+              <p className="text-xs text-gray-600">아이디어 개수: {ideas.length}</p>
+              <p className="text-xs text-gray-600">API 키 유효: {isKeyValid ? '예' : '아니오'}</p>
+              <p className="text-xs text-gray-600">로딩 중: {loadingIdeas ? '예' : '아니오'}</p>
+              <p className="text-xs text-gray-600">제목: {contestTitle || '없음'}</p>
+              <p className="text-xs text-gray-600">설명: {(contestDescription || initialContestDescription) ? '있음' : '없음'}</p>
             </div>
           )}
         </CardContent>

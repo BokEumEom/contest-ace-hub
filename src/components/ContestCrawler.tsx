@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { CrawlService } from '@/services/crawlService';
 import { useContests } from '@/hooks/useContests';
-import { Globe, Search, MapPin, Layers, Clock, Building2, Award, Settings, Plus } from 'lucide-react';
+import { Globe, Search, MapPin, Layers, Clock, Building2, Award, Settings, Plus, Sparkles } from 'lucide-react';
+import { GeminiService } from '@/services/geminiService';
 
 interface CrawledContest {
   title: string;
@@ -198,57 +199,69 @@ const ContestCrawler: React.FC = () => {
     }
   };
 
-  // 스크래핑된 데이터에서 공모전 정보를 추출하여 등록하는 함수
-  const handleRegisterFromScrapedData = () => {
+  // AI를 활용한 스크래핑된 데이터에서 공모전 정보를 추출하여 등록하는 함수
+  const handleRegisterFromScrapedDataWithAI = async () => {
     if (!scrapedData) return;
 
     try {
-      // 스크래핑된 데이터에서 공모전 정보 추출
-      const markdown = scrapedData.markdown || '';
-      const title = extractTitle(markdown) || '크롤링된 공모전';
-      const organization = extractOrganization(markdown) || '미상';
-      const deadline = extractDeadline(markdown) || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const category = extractCategory(markdown) || '기타';
-      const prize = extractPrize(markdown) || '상금 미공개';
-      const description = extractDescription(markdown) || markdown.substring(0, 200) + '...';
+      setIsLoading(true);
+      
+      // Gemini API 키 확인
+      const geminiApiKey = GeminiService.getApiKey();
+      if (!geminiApiKey) {
+        toast({
+          title: "AI 기능 사용 불가",
+          description: "AI 기능을 사용하려면 설정에서 Gemini API 키를 설정해주세요.",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      const deadlineDate = new Date(deadline);
+      const gemini = new GeminiService(geminiApiKey);
+      const markdown = scrapedData.markdown || '';
+      
+      // AI를 활용한 정보 추출
+      const contestInfo = await gemini.extractContestInfoFromUrl(url, markdown);
+      
+      const deadlineDate = new Date(contestInfo.deadline);
       const today = new Date();
       const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
       const newContest = addContest({
-        title,
-        organization,
-        deadline,
-        category,
-        prize,
-        description,
+        title: contestInfo.title,
+        organization: contestInfo.organization,
+        deadline: contestInfo.deadline,
+        category: contestInfo.category,
+        prize: contestInfo.prize,
+        description: contestInfo.description,
         status: 'preparing' as const,
         daysLeft: Math.max(0, daysLeft),
         progress: 0,
         teamMembers: 1,
-        contestUrl: url,
-        contestTheme: '',
-        submissionFormat: '',
-        contestSchedule: '',
-        submissionMethod: '',
-        prizeDetails: prize,
-        resultAnnouncement: '',
-        precautions: ''
+        contestUrl: contestInfo.contestUrl,
+        contestTheme: contestInfo.contestTheme,
+        submissionFormat: contestInfo.submissionFormat,
+        contestSchedule: contestInfo.contestSchedule,
+        submissionMethod: contestInfo.submissionMethod,
+        prizeDetails: contestInfo.prizeDetails,
+        resultAnnouncement: contestInfo.resultAnnouncement,
+        precautions: contestInfo.precautions
       });
 
       toast({
-        title: "성공",
-        description: "스크래핑된 데이터로부터 공모전이 등록되었습니다.",
+        title: "AI 등록 성공",
+        description: `"${contestInfo.title}" 공모전이 AI 분석을 통해 등록되었습니다.`,
         duration: 3000
       });
     } catch (error) {
-      console.error('Error registering contest from scraped data:', error);
+      console.error('Error registering contest with AI:', error);
       toast({
         title: "오류",
-        description: "공모전 등록 중 오류가 발생했습니다.",
+        description: "AI 기반 공모전 등록 중 오류가 발생했습니다.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -571,129 +584,51 @@ const ContestCrawler: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Page Options
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Exclude Tags</Label>
-                  <Input
-                    placeholder="script, .ad, #footer"
-                    value={scrapeOptions.excludeTags}
-                    onChange={(e) => setScrapeOptions({...scrapeOptions, excludeTags: e.target.value})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Include Only Tags</Label>
-                  <Input
-                    placeholder="article, .content, #main"
-                    value={scrapeOptions.includeTags}
-                    onChange={(e) => setScrapeOptions({...scrapeOptions, includeTags: e.target.value})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Wait for (ms)</Label>
-                  <Input
-                    type="number"
-                    value={scrapeOptions.waitFor}
-                    onChange={(e) => setScrapeOptions({...scrapeOptions, waitFor: parseInt(e.target.value) || 1000})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Timeout (ms)</Label>
-                  <Input
-                    type="number"
-                    value={scrapeOptions.timeout}
-                    onChange={(e) => setScrapeOptions({...scrapeOptions, timeout: parseInt(e.target.value) || 30000})}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="main-content"
-                    checked={scrapeOptions.onlyMainContent}
-                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, onlyMainContent: !!checked})}
-                  />
-                  <Label htmlFor="main-content">Extract only main content</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="mobile"
-                    checked={scrapeOptions.mobile}
-                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, mobile: !!checked})}
-                  />
-                  <Label htmlFor="mobile">Mobile view</Label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Output Formats</Label>
-                  <div className="space-y-2">
-                    {['markdown', 'links', 'html', 'rawHtml', 'screenshot'].map((format) => (
-                      <div key={format} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`format-${format}`}
-                          checked={scrapeOptions.formats.includes(format)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setScrapeOptions({
-                                ...scrapeOptions,
-                                formats: [...scrapeOptions.formats, format]
-                              });
-                            } else {
-                              setScrapeOptions({
-                                ...scrapeOptions,
-                                formats: scrapeOptions.formats.filter(f => f !== format)
-                              });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`format-${format}`}>{format}</Label>
-                      </div>
-                    ))}
+            {scrapedData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-contest-orange" />
+                      AI 분석 결과
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleRegisterFromScrapedDataWithAI}
+                        disabled={isLoading}
+                        className="contest-button-primary"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        AI로 등록
+                      </Button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="full-page-screenshot"
-                    checked={scrapeOptions.fullPageScreenshot}
-                    onCheckedChange={(checked) => setScrapeOptions({...scrapeOptions, fullPageScreenshot: !!checked})}
-                  />
-                  <Label htmlFor="full-page-screenshot">Full page screenshot</Label>
-                </div>
-              </CardContent>
-            </Card>
+                  <CardDescription>
+                    AI가 분석한 공모전 정보를 자동으로 등록합니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-orange-800 mb-2">🤖 AI 분석 기능</h4>
+                      <ul className="text-sm text-orange-700 space-y-1">
+                        <li>• 정확한 공모전 정보 자동 추출</li>
+                        <li>• 상세한 제출 형식 및 일정 파악</li>
+                        <li>• 주의사항 및 결과 발표일 자동 인식</li>
+                        <li>• 카테고리 자동 분류</li>
+                      </ul>
+                    </div>
+                    <div className="bg-gray-100 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-800 mb-2">📄 원본 데이터</h4>
+                      <pre className="text-xs overflow-auto max-h-48">
+                        {JSON.stringify(scrapedData, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
-
-          {scrapedData && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>스크래핑 결과</CardTitle>
-                  <Button
-                    onClick={handleRegisterFromScrapedData}
-                    className="contest-button-primary"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    공모전으로 등록
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
-                  {JSON.stringify(scrapedData, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="crawl" className="space-y-4">
@@ -937,59 +872,91 @@ const ContestCrawler: React.FC = () => {
 
           {contests.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">발견된 공모전 ({contests.length}개)</h3>
-              <div className="grid gap-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  발견된 공모전 ({contests.length}개)
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Sparkles className="h-4 w-4 text-contest-orange" />
+                    AI 분석 적용됨
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {contests.map((contest, index) => (
                   <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg">{contest.title}</CardTitle>
-                        <Badge variant="secondary">{contest.category}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span>{contest.organization}</span>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <h4 className="font-semibold text-sm line-clamp-2">
+                            {contest.title}
+                          </h4>
+                          <div className="flex items-center gap-1 text-xs text-contest-orange">
+                            <Sparkles className="h-3 w-3" />
+                            AI
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {contest.deadline}
-                            {contest.daysLeft !== undefined && (
-                              <span className="ml-1 text-orange-600">
-                                (D-{contest.daysLeft})
-                              </span>
-                            )}
-                          </span>
+                        
+                        <div className="space-y-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">{contest.organization}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              마감: {contest.deadline}
+                              {contest.daysLeft !== undefined && (
+                                <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${
+                                  contest.daysLeft <= 7 ? 'bg-red-100 text-red-700' :
+                                  contest.daysLeft <= 30 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>
+                                  D-{contest.daysLeft}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Award className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">{contest.category}</span>
+                          </div>
+                          
+                          {contest.prize && (
+                            <div className="flex items-center gap-2">
+                              <Award className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">{contest.prize}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Award className="h-4 w-4 text-muted-foreground" />
-                          <span>{contest.prize}</span>
+                        
+                        {contest.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {contest.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(contest.url, '_blank')}
+                          >
+                            자세히 보기
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleRegisterContest(contest)}
+                            className="contest-button-primary"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            등록
+                          </Button>
                         </div>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground">
-                        {contest.description}
-                      </p>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(contest.url, '_blank')}
-                        >
-                          자세히 보기
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleRegisterContest(contest)}
-                          className="contest-button-primary"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          공모전 등록
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
