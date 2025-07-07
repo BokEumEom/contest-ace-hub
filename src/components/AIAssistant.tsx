@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Sparkles, FileText, Lightbulb, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Sparkles, FileText, Lightbulb, Loader2, Settings } from 'lucide-react';
 import { GeminiService } from '@/services/geminiService';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 interface AIAssistantProps {
   contestTitle?: string;
@@ -27,9 +28,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   prizeDetails = '',
   precautions = ''
 }) => {
-  const [apiKey, setApiKey] = useState('');
-  const [isKeyValid, setIsKeyValid] = useState<boolean | null>(null);
-  const [testingKey, setTestingKey] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const [contestTitle, setContestTitle] = useState(initialContestTitle);
   const [contestDescription, setContestDescription] = useState(initialContestDescription);
   const [documentContent, setDocumentContent] = useState('');
@@ -51,10 +50,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
   useEffect(() => {
     const savedKey = GeminiService.getApiKey();
-    if (savedKey) {
-      setApiKey(savedKey);
-      setIsKeyValid(true);
-    }
+    setApiKey(savedKey);
   }, []);
 
   const generateRichDescription = () => {
@@ -83,51 +79,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     return description;
   };
 
-  const testApiKey = async () => {
-    if (!apiKey.trim()) {
-      toast({
-        title: "오류",
-        description: "API 키를 입력해주세요.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setTestingKey(true);
-    try {
-      const isValid = await GeminiService.testApiKey(apiKey);
-      setIsKeyValid(isValid);
-      
-      if (isValid) {
-        GeminiService.saveApiKey(apiKey);
-        toast({
-          title: "성공",
-          description: "API 키가 유효하며 저장되었습니다."
-        });
-      } else {
-        toast({
-          title: "오류",
-          description: "유효하지 않은 API 키입니다.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      setIsKeyValid(false);
-      toast({
-        title: "오류",
-        description: "API 키 테스트 중 오류가 발생했습니다.",
-        variant: "destructive"
-      });
-    } finally {
-      setTestingKey(false);
-    }
-  };
-
   const generateIdeas = async () => {
-    if (!isKeyValid) {
+    if (!apiKey) {
       toast({
-        title: "오류",
-        description: "먼저 유효한 API 키를 설정해주세요.",
+        title: "API 키 필요",
+        description: "AI 기능을 사용하려면 설정에서 Gemini API 키를 설정해주세요.",
         variant: "destructive"
       });
       return;
@@ -146,8 +102,15 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     try {
       const gemini = new GeminiService(apiKey);
       const richDescription = generateRichDescription();
-      console.log('Generating ideas with:', { contestTitle, richDescription });
-      const generatedIdeas = await gemini.generateIdeas(contestTitle, richDescription);
+      console.log('Generating ideas with:', { contestTitle, richDescription, contestTheme, submissionFormat, prizeDetails, precautions });
+      const generatedIdeas = await gemini.generateIdeas(
+        contestTitle, 
+        richDescription,
+        contestTheme,
+        submissionFormat,
+        prizeDetails,
+        precautions
+      );
       console.log('Generated ideas:', generatedIdeas);
       setIdeas(generatedIdeas);
       toast({
@@ -167,10 +130,10 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   };
 
   const reviewDocument = async () => {
-    if (!isKeyValid) {
+    if (!apiKey) {
       toast({
-        title: "오류",
-        description: "먼저 유효한 API 키를 설정해주세요.",
+        title: "API 키 필요",
+        description: "AI 기능을 사용하려면 설정에서 Gemini API 키를 설정해주세요.",
         variant: "destructive"
       });
       return;
@@ -206,59 +169,34 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
     }
   };
 
+  // API 키가 없을 때 표시할 안내 컴포넌트
+  const ApiKeyNotice = () => (
+    <Card className="border-orange-200 bg-orange-50">
+      <CardContent className="pt-6">
+        <div className="flex items-start gap-3">
+          <Settings className="h-5 w-5 text-orange-600 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-orange-800 mb-2">AI 기능 사용을 위한 설정 필요</h4>
+            <p className="text-sm text-orange-700 mb-3">
+              AI 어시스턴트 기능을 사용하려면 Gemini API 키를 설정해야 합니다.
+            </p>
+            <Link 
+              to="/settings" 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              설정 페이지로 이동
+            </Link>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
-      {/* API 키 입력 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-contest-orange" />
-            AI 어시스턴트 설정
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">Gemini API 키</Label>
-            <div className="flex gap-2">
-              <Input
-                id="apiKey"
-                type="password"
-                value={apiKey}
-                onChange={(e) => {
-                  setApiKey(e.target.value);
-                  setIsKeyValid(null);
-                }}
-                placeholder="Gemini API 키를 입력하세요"
-                className="flex-1"
-              />
-              <Button 
-                onClick={testApiKey} 
-                disabled={testingKey}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                {testingKey ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isKeyValid === true ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : isKeyValid === false ? (
-                  <XCircle className="h-4 w-4 text-red-500" />
-                ) : null}
-                {testingKey ? "테스트 중..." : "테스트"}
-              </Button>
-            </div>
-            {isKeyValid === true && (
-              <p className="text-xs text-green-600">✓ API 키가 유효합니다</p>
-            )}
-            {isKeyValid === false && (
-              <p className="text-xs text-red-600">✗ API 키가 유효하지 않습니다</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              API 키는 <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="text-contest-orange hover:underline">Google AI Studio</a>에서 발급받을 수 있습니다.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* API 키가 없을 때 안내 메시지 */}
+      {!apiKey && <ApiKeyNotice />}
 
       {/* 아이디어 브레인스토밍 */}
       <Card>
@@ -326,7 +264,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
           <Button 
             onClick={generateIdeas} 
-            disabled={loadingIdeas || !isKeyValid}
+            disabled={loadingIdeas || !apiKey}
             className="w-full contest-button-primary"
           >
             {loadingIdeas ? (
@@ -338,25 +276,25 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
           </Button>
 
           {/* 상태 메시지 */}
-          {!isKeyValid && (
-            <p className="text-xs text-red-600 text-center">
-              아이디어 생성을 위해 먼저 유효한 API 키를 설정해주세요.
+          {!apiKey && (
+            <p className="text-xs text-orange-600 text-center">
+              아이디어 생성을 위해 먼저 설정에서 API 키를 설정해주세요.
             </p>
           )}
           
-          {isKeyValid && !contestTitle && (
+          {apiKey && !contestTitle && (
             <p className="text-xs text-orange-600 text-center">
               공모전 제목을 입력해주세요.
             </p>
           )}
           
-          {isKeyValid && contestTitle && (!contestDescription && !initialContestDescription) && (
+          {apiKey && contestTitle && (!contestDescription && !initialContestDescription) && (
             <p className="text-xs text-orange-600 text-center">
               공모전 설명을 입력해주세요.
             </p>
           )}
           
-          {isKeyValid && contestTitle && (contestDescription || initialContestDescription) && ideas.length === 0 && !loadingIdeas && (
+          {apiKey && contestTitle && (contestDescription || initialContestDescription) && ideas.length === 0 && !loadingIdeas && (
             <p className="text-xs text-blue-600 text-center">
               위 정보를 바탕으로 아이디어를 생성할 준비가 되었습니다.
             </p>
@@ -385,7 +323,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
             <div className="mt-4 p-3 bg-gray-100 rounded-lg">
               <p className="text-xs text-gray-600 mb-2">디버깅 정보:</p>
               <p className="text-xs text-gray-600">아이디어 개수: {ideas.length}</p>
-              <p className="text-xs text-gray-600">API 키 유효: {isKeyValid ? '예' : '아니오'}</p>
+              <p className="text-xs text-gray-600">API 키 설정: {apiKey ? '예' : '아니오'}</p>
               <p className="text-xs text-gray-600">로딩 중: {loadingIdeas ? '예' : '아니오'}</p>
               <p className="text-xs text-gray-600">제목: {contestTitle || '없음'}</p>
               <p className="text-xs text-gray-600">설명: {(contestDescription || initialContestDescription) ? '있음' : '없음'}</p>
@@ -426,7 +364,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
 
           <Button 
             onClick={reviewDocument} 
-            disabled={loadingReview || !isKeyValid}
+            disabled={loadingReview || !apiKey}
             className="w-full contest-button-primary"
           >
             {loadingReview ? (

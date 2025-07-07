@@ -1,6 +1,19 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Target, FileText, Upload, Award, AlertTriangle, Calendar, Users, Info, Lightbulb } from 'lucide-react';
+import { 
+  Trophy, 
+  Target, 
+  FileText, 
+  Upload, 
+  Award, 
+  AlertTriangle, 
+  Calendar, 
+  Users, 
+  Info, 
+  Lightbulb,
+  Clock,
+  Globe
+} from 'lucide-react';
 import ProgressManager from '@/components/ProgressManager';
 import FileManager from '@/components/FileManager';
 import AIAssistant from '@/components/AIAssistant';
@@ -20,7 +33,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
   if (activeTab === 'overview') {
     return (
       <div className="space-y-6">
-        {/* 설명 */}
+        {/* 공모전 소개 */}
         {contest.description && (
           <Card>
             <CardHeader>
@@ -50,22 +63,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
           </Card>
         )}
 
-        {/* 진행 상황 관리 */}
-        <ProgressManager 
-          contestId={contest.id}
-          currentProgress={contest.progress}
-          onProgressUpdate={onProgressUpdate}
-        />
-
-        {/* 파일 관리 */}
-        <FileManager contestId={contest.id} />
-      </div>
-    );
-  }
-
-  if (activeTab === 'details') {
-    return (
-      <div className="space-y-6">
+        {/* 출품 규격 */}
         {contest.submissionFormat && (
           <Card>
             <CardHeader>
@@ -80,6 +78,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
           </Card>
         )}
 
+        {/* 출품 방법 */}
         {contest.submissionMethod && (
           <Card>
             <CardHeader>
@@ -93,13 +92,8 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             </CardContent>
           </Card>
         )}
-      </div>
-    );
-  }
 
-  if (activeTab === 'schedule') {
-    return (
-      <div className="space-y-6">
+        {/* 공모 일정 */}
         {contest.contestSchedule && (
           <Card>
             <CardHeader>
@@ -114,11 +108,12 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
           </Card>
         )}
 
+        {/* 발표 일정 */}
         {contest.resultAnnouncement && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-contest-coral" />
+                <Clock className="h-5 w-5 text-contest-coral" />
                 발표 일정
               </CardTitle>
             </CardHeader>
@@ -127,13 +122,8 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             </CardContent>
           </Card>
         )}
-      </div>
-    );
-  }
 
-  if (activeTab === 'awards') {
-    return (
-      <div className="space-y-6">
+        {/* 시상 내역 */}
         {contest.prizeDetails && (
           <Card>
             <CardHeader>
@@ -148,6 +138,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
           </Card>
         )}
 
+        {/* 상금/혜택 요약 */}
         {contest.prize && (
           <Card>
             <CardHeader>
@@ -161,13 +152,8 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             </CardContent>
           </Card>
         )}
-      </div>
-    );
-  }
 
-  if (activeTab === 'precautions') {
-    return (
-      <div className="space-y-6">
+        {/* 유의사항 */}
         {contest.precautions && (
           <Card>
             <CardHeader>
@@ -197,6 +183,16 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             </CardContent>
           </Card>
         )}
+
+        {/* 진행 상황 관리 */}
+        <ProgressManager 
+          contestId={contest.id}
+          currentProgress={contest.progress}
+          onProgressUpdate={onProgressUpdate}
+        />
+
+        {/* 파일 관리 */}
+        <FileManager contestId={contest.id} />
       </div>
     );
   }
@@ -204,6 +200,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
   if (activeTab === 'ai-assistant') {
     return (
       <div className="space-y-6">
+        {/* AI 어시스턴트 */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

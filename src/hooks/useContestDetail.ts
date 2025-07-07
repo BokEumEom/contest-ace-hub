@@ -32,11 +32,11 @@ export interface EditForm {
 }
 
 export const useContestDetail = (contestId: string | undefined) => {
-  const { getContestById, updateContest } = useContests();
+  const { getContestById, updateContest, deleteContest } = useContests();
   const contest = contestId ? getContestById(contestId) : null;
 
   // 탭 상태
-  const [activeTab, setActiveTab] = useState<'overview' | 'details' | 'schedule' | 'awards' | 'precautions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'ai-assistant'>('overview');
   
   // 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -170,6 +170,15 @@ export const useContestDetail = (contestId: string | undefined) => {
     }
   };
 
+  const handleDeleteContest = () => {
+    if (contest && confirm(`"${contest.title}" 공모전을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+      deleteContest(contest.id);
+      alert(`"${contest.title}" 공모전이 삭제되었습니다.`);
+      return true; // 삭제 성공 시 true 반환
+    }
+    return false; // 삭제 취소 시 false 반환
+  };
+
   const openEditModal = () => {
     if (contest) {
       setEditForm({
@@ -246,6 +255,7 @@ export const useContestDetail = (contestId: string | undefined) => {
     handleRemoveTeamMember,
     handleAddSchedule,
     handleRemoveSchedule,
+    handleDeleteContest,
     openEditModal,
     getStatusColor,
     getStatusText,

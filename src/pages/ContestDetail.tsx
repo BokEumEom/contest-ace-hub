@@ -2,10 +2,6 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Info,
-  BookOpen,
-  CalendarDays,
-  Award,
-  AlertTriangle,
   Lightbulb
 } from 'lucide-react';
 import Header from '@/components/Header';
@@ -46,6 +42,7 @@ const ContestDetail = () => {
     handleRemoveTeamMember,
     handleAddSchedule,
     handleRemoveSchedule,
+    handleDeleteContest,
     openEditModal,
     getStatusColor,
     getStatusText,
@@ -70,10 +67,6 @@ const ContestDetail = () => {
 
   const tabs = [
     { id: 'overview', label: '개요', icon: Info },
-    { id: 'details', label: '상세정보', icon: BookOpen },
-    { id: 'schedule', label: '일정', icon: CalendarDays },
-    { id: 'awards', label: '시상', icon: Award },
-    { id: 'precautions', label: '주의사항', icon: AlertTriangle },
     { id: 'ai-assistant', label: 'AI 어시스턴트', icon: Lightbulb }
   ];
 
@@ -145,6 +138,7 @@ const ContestDetail = () => {
             handleRemoveTeamMember={handleRemoveTeamMember}
             handleAddSchedule={handleAddSchedule}
             handleRemoveSchedule={handleRemoveSchedule}
+            handleDeleteContest={handleDeleteContest}
             openEditModal={openEditModal}
             getStatusColor={getStatusColor}
             getStatusText={getStatusText}

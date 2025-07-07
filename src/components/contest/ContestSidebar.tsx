@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, ExternalLink } from 'lucide-react';
+import { Calendar, Users, ExternalLink, Trash2 } from 'lucide-react';
 import { TeamMember, Schedule } from '@/hooks/useContestDetail';
 import { Contest } from '@/types/contest';
 import { EditContestModal } from './EditContestModal';
@@ -36,6 +36,7 @@ interface ContestSidebarProps {
   handleRemoveTeamMember: (id: string) => void;
   handleAddSchedule: () => void;
   handleRemoveSchedule: (id: string) => void;
+  handleDeleteContest: () => boolean;
   openEditModal: () => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
@@ -66,6 +67,7 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
   handleRemoveTeamMember,
   handleAddSchedule,
   handleRemoveSchedule,
+  handleDeleteContest,
   openEditModal,
   getStatusColor,
   getStatusText,
@@ -172,6 +174,21 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
               공식 사이트
             </Button>
           )}
+
+          <Button 
+            variant="outline" 
+            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
+            size="sm"
+            onClick={() => {
+              if (handleDeleteContest()) {
+                // 삭제 성공 시 홈으로 이동
+                window.location.href = '/';
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            공모전 삭제
+          </Button>
         </CardContent>
       </Card>
 
