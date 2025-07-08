@@ -189,11 +189,22 @@ export const useContestDetail = (contestId: string | undefined) => {
     }
   };
 
-  const handleDeleteContest = () => {
-    if (contest && confirm(`"${contest.title}" 공모전을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
-      deleteContest(contest.id);
-      alert(`"${contest.title}" 공모전이 삭제되었습니다.`);
-      return true; // 삭제 성공 시 true 반환
+  const handleDeleteContest = async () => {
+    if (contest?.id && confirm(`"${contest.title}" 공모전을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+      try {
+        const success = await deleteContest(contest.id);
+        if (success) {
+          alert(`"${contest.title}" 공모전이 삭제되었습니다.`);
+          return true; // 삭제 성공 시 true 반환
+        } else {
+          alert('공모전 삭제 중 오류가 발생했습니다.');
+          return false;
+        }
+      } catch (error) {
+        console.error('Error deleting contest:', error);
+        alert('공모전 삭제 중 오류가 발생했습니다.');
+        return false;
+      }
     }
     return false; // 삭제 취소 시 false 반환
   };
@@ -207,14 +218,14 @@ export const useContestDetail = (contestId: string | undefined) => {
         category: contest.category,
         prize: contest.prize,
         description: contest.description || '',
-        contestTheme: contest.contestTheme || '',
-        submissionFormat: contest.submissionFormat || '',
-        contestSchedule: contest.contestSchedule || '',
-        submissionMethod: contest.submissionMethod || '',
-        prizeDetails: contest.prizeDetails || '',
-        resultAnnouncement: contest.resultAnnouncement || '',
+        contestTheme: contest.contest_theme || '',
+        submissionFormat: contest.submission_format || '',
+        contestSchedule: contest.contest_schedule || '',
+        submissionMethod: contest.submission_method || '',
+        prizeDetails: contest.prize_details || '',
+        resultAnnouncement: contest.result_announcement || '',
         precautions: contest.precautions || '',
-        contestUrl: contest.contestUrl || ''
+        contestUrl: contest.contest_url || ''
       });
       setEditModalOpen(true);
     }

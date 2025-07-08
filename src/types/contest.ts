@@ -7,21 +7,21 @@ export interface Contest {
   category: string;
   prize: string;
   status: 'preparing' | 'in-progress' | 'submitted' | 'completed';
-  daysLeft: number;
+  days_left: number;
   progress: number;
-  teamMembers: number;
+  team_members_count: number;
   description?: string;
   requirements?: string[];
-  contestTheme?: string;
-  submissionFormat?: string;
-  contestSchedule?: string;
-  submissionMethod?: string;
-  prizeDetails?: string;
-  resultAnnouncement?: string;
+  contest_theme?: string;
+  submission_format?: string;
+  contest_schedule?: string;
+  submission_method?: string;
+  prize_details?: string;
+  result_announcement?: string;
   precautions?: string;
-  contestUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  contest_url?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ContestIdea {

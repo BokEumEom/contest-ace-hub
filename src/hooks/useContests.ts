@@ -5,14 +5,18 @@ import { ContestService, Contest } from '@/services/contestService';
 export const useContests = () => {
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   // Supabase에서 공모전 데이터 로드
   useEffect(() => {
     const loadContests = async () => {
+      if (initialized) return; // 이미 로드된 경우 중복 로드 방지
+      
       setLoading(true);
       try {
         const data = await ContestService.getContests();
         setContests(data);
+        setInitialized(true);
       } catch (error) {
         console.error('Error loading contests:', error);
       } finally {
@@ -21,7 +25,7 @@ export const useContests = () => {
     };
 
     loadContests();
-  }, []);
+  }, [initialized]);
 
   const addContest = async (contest: Omit<Contest, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -69,8 +73,9 @@ export const useContests = () => {
     }
   };
 
-  const getContestById = (id: number) => {
-    return contests.find(contest => contest.id === id);
+  const getContestById = (id: number | string) => {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    return contests.find(contest => contest.id === numericId);
   };
 
   return {

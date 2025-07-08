@@ -49,7 +49,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
         )}
 
         {/* 공모 주제 */}
-        {contest.contestTheme && (
+        {contest.contest_theme && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -58,13 +58,13 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.contestTheme}</p>
+              <p className="text-sm whitespace-pre-wrap">{contest.contest_theme}</p>
             </CardContent>
           </Card>
         )}
 
         {/* 출품 규격 */}
-        {contest.submissionFormat && (
+        {contest.submission_format && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -73,13 +73,13 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.submissionFormat}</p>
+              <p className="text-sm whitespace-pre-wrap">{contest.submission_format}</p>
             </CardContent>
           </Card>
         )}
 
         {/* 출품 방법 */}
-        {contest.submissionMethod && (
+        {contest.submission_method && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -88,13 +88,13 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.submissionMethod}</p>
+              <p className="text-sm whitespace-pre-wrap">{contest.submission_method}</p>
             </CardContent>
           </Card>
         )}
 
         {/* 공모 일정 */}
-        {contest.contestSchedule && (
+        {contest.contest_schedule && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -103,13 +103,13 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.contestSchedule}</p>
+              <p className="text-sm whitespace-pre-wrap">{contest.contest_schedule}</p>
             </CardContent>
           </Card>
         )}
 
         {/* 발표 일정 */}
-        {contest.resultAnnouncement && (
+        {contest.result_announcement && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.resultAnnouncement}</p>
+              <p className="text-sm whitespace-pre-wrap">{contest.result_announcement}</p>
             </CardContent>
           </Card>
         )}

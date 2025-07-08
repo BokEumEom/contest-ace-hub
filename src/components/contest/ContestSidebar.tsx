@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, ExternalLink, Trash2 } from 'lucide-react';
-import { TeamMember, Schedule } from '@/hooks/useContestDetail';
+import { TeamMember, Schedule } from '@/services/contestDetailService';
 import { Contest } from '@/types/contest';
 import { EditContestModal } from './EditContestModal';
 import { TeamManagementModal } from './TeamManagementModal';
@@ -36,7 +36,7 @@ interface ContestSidebarProps {
   handleRemoveTeamMember: (id: string) => void;
   handleAddSchedule: () => void;
   handleRemoveSchedule: (id: string) => void;
-  handleDeleteContest: () => boolean;
+  handleDeleteContest: () => Promise<boolean>;
   openEditModal: () => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
@@ -179,8 +179,9 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
             variant="outline" 
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
             size="sm"
-            onClick={() => {
-              if (handleDeleteContest()) {
+            onClick={async () => {
+              const success = await handleDeleteContest();
+              if (success) {
                 // 삭제 성공 시 홈으로 이동
                 window.location.href = '/';
               }

@@ -10,13 +10,13 @@ import { useContests } from '@/hooks/useContests';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { contests } = useContests();
+  const { contests, loading } = useContests();
 
-  // 통계 계산
-  const inProgressContests = contests.filter(c => c.status === 'in-progress' || c.status === 'preparing');
-  const submittedContests = contests.filter(c => c.status === 'submitted' || c.status === 'completed');
-  const teamProjects = contests.filter(c => (c.team_members_count || 0) > 1);
-  const urgentContests = contests.filter(c => (c.days_left || 0) <= 7 && (c.days_left || 0) > 0);
+  // 통계 계산 (로딩 중이 아닐 때만)
+  const inProgressContests = loading ? [] : contests.filter(c => c.status === 'in-progress' || c.status === 'preparing');
+  const submittedContests = loading ? [] : contests.filter(c => c.status === 'submitted' || c.status === 'completed');
+  const teamProjects = loading ? [] : contests.filter(c => (c.team_members_count || 0) > 1);
+  const urgentContests = loading ? [] : contests.filter(c => (c.days_left || 0) <= 7 && (c.days_left || 0) > 0);
 
   const stats = [
     { 
@@ -65,11 +65,20 @@ const Index = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
-              <StatsCard {...stat} />
-            </div>
-          ))}
+          {loading ? (
+            // 로딩 중일 때 스켈레톤 UI
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="h-32 bg-gray-200 rounded-lg"></div>
+              </div>
+            ))
+          ) : (
+            stats.map((stat, index) => (
+              <div key={index} className="animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                <StatsCard {...stat} />
+              </div>
+            ))
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -94,7 +103,12 @@ const Index = () => {
             )}
           </div>
           
-          {contests.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-contest-orange mx-auto mb-4"></div>
+              <p className="text-muted-foreground">공모전 정보를 불러오는 중...</p>
+            </div>
+          ) : contests.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h4 className="text-lg font-medium text-foreground mb-2">
@@ -125,7 +139,7 @@ const Index = () => {
         </div>
 
         {/* Recent Activity - 실제 활동이 있을 때만 표시 */}
-        {contests.length > 0 && (
+        {!loading && contests.length > 0 && (
           <div className="contest-card p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">최근 활동</h3>
             <div className="space-y-4">

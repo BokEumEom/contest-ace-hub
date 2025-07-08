@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 
 const Contests = () => {
   const navigate = useNavigate();
-  const { contests } = useContests();
+  const { contests, loading } = useContests();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -34,7 +34,12 @@ const Contests = () => {
           </Button>
         </div>
 
-        {contests.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-contest-orange mx-auto mb-4"></div>
+            <p className="text-muted-foreground">공모전 정보를 불러오는 중...</p>
+          </div>
+        ) : contests.length === 0 ? (
           <div className="text-center py-16">
             <Trophy className="h-20 w-20 text-muted-foreground mx-auto mb-6" />
             <h3 className="text-xl font-semibold text-foreground mb-2">

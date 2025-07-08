@@ -127,7 +127,14 @@ const ContestCard: React.FC<ContestCardProps> = ({
           <Button variant="ghost" size="sm">
             <Bell className="h-4 w-4" />
           </Button>
-          <Button size="sm" className="contest-button-primary">
+          <Button 
+            size="sm" 
+            className="contest-button-primary"
+            onClick={(e) => {
+              e.stopPropagation(); // 카드 클릭 이벤트 방지
+              onClick?.(); // 카드의 onClick 이벤트 실행
+            }}
+          >
             <Check className="h-4 w-4 mr-1" />
             관리
           </Button>

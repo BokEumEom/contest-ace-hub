@@ -54,7 +54,20 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
     const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     const newContest = await addContest({
-      ...formData,
+      title: formData.title,
+      organization: formData.organization,
+      deadline: formData.deadline,
+      category: formData.category,
+      prize: formData.prize,
+      description: formData.description,
+      contest_theme: formData.contestTheme,
+      submission_format: formData.submissionFormat,
+      contest_schedule: formData.contestSchedule,
+      submission_method: formData.submissionMethod,
+      prize_details: formData.prizeDetails,
+      result_announcement: formData.resultAnnouncement,
+      precautions: formData.precautions,
+      contest_url: formData.contestUrl,
       status: 'preparing' as const,
       days_left: daysLeft,
       progress: 0,
