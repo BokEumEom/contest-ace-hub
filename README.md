@@ -93,7 +93,9 @@ src/
 
 ## 🔧 환경 설정
 
-### Supabase 설정 (권장)
+### 환경 변수 설정
+
+#### Supabase 설정 (권장)
 
 더 안전한 데이터 저장을 위해 Supabase를 사용하는 것을 권장합니다:
 
@@ -104,6 +106,26 @@ src/
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 3. 데이터베이스 테이블 생성 (자세한 내용은 `SUPABASE_SETUP.md` 참조)
+
+#### API 키 설정
+
+AI 기능과 웹 크롤링 기능을 사용하려면 다음 API 키를 설정하세요:
+
+1. **Gemini API 키** (AI 기능용)
+   - [Google AI Studio](https://aistudio.google.com/)에서 API 키 생성
+   - `.env` 파일에 추가:
+   ```env
+   VITE_GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+2. **Firecrawl API 키** (웹 크롤링 기능용)
+   - [Firecrawl](https://firecrawl.dev/)에서 API 키 생성
+   - `.env` 파일에 추가:
+   ```env
+   VITE_FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+   ```
+
+**참고**: API 키가 설정되지 않아도 기본 기능은 정상적으로 작동합니다. AI 기능과 웹 크롤링 기능만 제한됩니다.
 
 ### 로컬 스토리지 (기본)
 

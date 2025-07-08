@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -154,16 +154,25 @@ const ContestCrawler: React.FC = () => {
 
   const { toast } = useToast();
 
-  const apiKey = CrawlService.getApiKey();
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
+  // API 키 로드
+  useEffect(() => {
+    const loadApiKey = async () => {
+      const key = await CrawlService.getApiKey();
+      setApiKey(key);
+    };
+    loadApiKey();
+  }, []);
 
   // 크롤링된 공모전을 실제 공모전으로 등록하는 함수
-  const handleRegisterContest = (crawledContest: CrawledContest) => {
+  const handleRegisterContest = async (crawledContest: CrawledContest) => {
     try {
       const deadlineDate = new Date(crawledContest.deadline);
       const today = new Date();
       const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      const newContest = addContest({
+      const newContest = await addContest({
         title: crawledContest.title,
         organization: crawledContest.organization,
         deadline: crawledContest.deadline,
@@ -171,16 +180,16 @@ const ContestCrawler: React.FC = () => {
         prize: crawledContest.prize,
         description: crawledContest.description,
         status: 'preparing' as const,
-        daysLeft: Math.max(0, daysLeft),
+        days_left: Math.max(0, daysLeft),
         progress: 0,
-        teamMembers: 1,
-        contestUrl: crawledContest.url,
-        contestTheme: '',
-        submissionFormat: '',
-        contestSchedule: '',
-        submissionMethod: '',
-        prizeDetails: crawledContest.prize,
-        resultAnnouncement: '',
+        team_members_count: 1,
+        contest_url: crawledContest.url,
+        contest_theme: '',
+        submission_format: '',
+        contest_schedule: '',
+        submission_method: '',
+        prize_details: crawledContest.prize,
+        result_announcement: '',
         precautions: ''
       });
 
@@ -206,8 +215,8 @@ const ContestCrawler: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Gemini API 키 확인
-      const geminiApiKey = GeminiService.getApiKey();
+      // Gemini API 키 확인 (비동기)
+      const geminiApiKey = await GeminiService.getApiKey();
       if (!geminiApiKey) {
         toast({
           title: "AI 기능 사용 불가",
@@ -227,7 +236,7 @@ const ContestCrawler: React.FC = () => {
       const today = new Date();
       const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      const newContest = addContest({
+      const newContest = await addContest({
         title: contestInfo.title,
         organization: contestInfo.organization,
         deadline: contestInfo.deadline,
@@ -235,16 +244,16 @@ const ContestCrawler: React.FC = () => {
         prize: contestInfo.prize,
         description: contestInfo.description,
         status: 'preparing' as const,
-        daysLeft: Math.max(0, daysLeft),
+        days_left: Math.max(0, daysLeft),
         progress: 0,
-        teamMembers: 1,
-        contestUrl: contestInfo.contestUrl,
-        contestTheme: contestInfo.contestTheme,
-        submissionFormat: contestInfo.submissionFormat,
-        contestSchedule: contestInfo.contestSchedule,
-        submissionMethod: contestInfo.submissionMethod,
-        prizeDetails: contestInfo.prizeDetails,
-        resultAnnouncement: contestInfo.resultAnnouncement,
+        team_members_count: 1,
+        contest_url: contestInfo.contestUrl,
+        contest_theme: contestInfo.contestTheme,
+        submission_format: contestInfo.submissionFormat,
+        contest_schedule: contestInfo.contestSchedule,
+        submission_method: contestInfo.submissionMethod,
+        prize_details: contestInfo.prizeDetails,
+        result_announcement: contestInfo.resultAnnouncement,
         precautions: contestInfo.precautions
       });
 

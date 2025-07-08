@@ -41,7 +41,7 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showUrlSection, setShowUrlSection] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title || !formData.organization || !formData.deadline) {
@@ -53,15 +53,20 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
     const today = new Date();
     const daysLeft = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    const newContest = addContest({
+    const newContest = await addContest({
       ...formData,
       status: 'preparing' as const,
-      daysLeft,
+      days_left: daysLeft,
       progress: 0,
+      team_members_count: formData.teamMembers,
     });
 
-    toast.success('새 공모전이 등록되었습니다!');
-    onSuccess?.(newContest);
+    if (newContest) {
+      toast.success('새 공모전이 등록되었습니다!');
+      onSuccess?.(newContest as any);
+    } else {
+      toast.error('공모전 등록에 실패했습니다.');
+    }
   };
 
   const handleChange = (field: string, value: string | number) => {
@@ -75,22 +80,24 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
       return;
     }
 
-    // API 키 확인
-    const geminiApiKey = GeminiService.getApiKey();
-    const firecrawlApiKey = CrawlService.getApiKey();
-    
-    if (!geminiApiKey) {
-      toast.error('AI 기능을 사용하려면 설정에서 Gemini API 키를 설정해주세요.');
-      return;
-    }
-    
-    if (!firecrawlApiKey) {
-      toast.error('웹 크롤링을 위해 설정에서 Firecrawl API 키를 설정해주세요.');
-      return;
-    }
-
     setIsLoading(true);
     try {
+      // API 키 확인 (비동기)
+      const [geminiApiKey, firecrawlApiKey] = await Promise.all([
+        GeminiService.getApiKey(),
+        CrawlService.getApiKey()
+      ]);
+      
+      if (!geminiApiKey) {
+        toast.error('AI 기능을 사용하려면 설정에서 Gemini API 키를 설정해주세요.');
+        return;
+      }
+      
+      if (!firecrawlApiKey) {
+        toast.error('웹 크롤링을 위해 설정에서 Firecrawl API 키를 설정해주세요.');
+        return;
+      }
+
       // 1. URL에서 페이지 내용 크롤링
       const scrapedData = await CrawlService.scrapePage(urlInput);
       if (!scrapedData.success || !scrapedData.data) {

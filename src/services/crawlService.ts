@@ -48,13 +48,28 @@ export class CrawlService {
   }
 
   static async getApiKey(): Promise<string | null> {
+    // 환경변수에서 먼저 확인
+    const envApiKey = import.meta.env.VITE_FIRECRAWL_API_KEY;
+    if (envApiKey) {
+      return envApiKey;
+    }
+    
+    // 환경변수에 없으면 데이터베이스에서 확인
     return await apiKeyService.getApiKey('firecrawl');
   }
 
-  static async testApiKey(apiKey: string): Promise<boolean> {
+  static async testApiKey(apiKey?: string): Promise<boolean> {
     try {
       console.log('Testing Firecrawl API key');
-      const testApp = new FirecrawlApp({ apiKey });
+      
+      // API 키가 제공되지 않으면 환경변수에서 가져오기
+      const testApiKey = apiKey || import.meta.env.VITE_FIRECRAWL_API_KEY;
+      if (!testApiKey) {
+        console.error('No Firecrawl API key found in environment variables');
+        return false;
+      }
+      
+      const testApp = new FirecrawlApp({ apiKey: testApiKey });
       
       // 간단한 스크래핑 테스트로 API 키 유효성 검증
       const testResult = await testApp.scrapeUrl('https://example.com', {
@@ -70,12 +85,25 @@ export class CrawlService {
 
   static async getFirecrawlApp(): Promise<FirecrawlApp | null> {
     const apiKey = await this.getApiKey();
-    if (!apiKey) return null;
+    if (!apiKey) {
+      console.error('No Firecrawl API key found in environment variables');
+      return null;
+    }
     
     if (!this.firecrawlApp) {
       this.firecrawlApp = new FirecrawlApp({ apiKey });
     }
     return this.firecrawlApp;
+  }
+
+  // 환경변수에서 API 키를 가져와서 FirecrawlApp 인스턴스를 생성하는 정적 메서드
+  static async createFromEnvironment(): Promise<FirecrawlApp | null> {
+    const apiKey = await this.getApiKey();
+    if (!apiKey) {
+      console.error('No Firecrawl API key found in environment variables');
+      return null;
+    }
+    return new FirecrawlApp({ apiKey });
   }
 
   // /scrape - 단일 페이지 스크래핑
@@ -255,14 +283,13 @@ export class CrawlService {
     const contests: CrawledContest[] = [];
     
     try {
-      // Gemini API 키 확인
-      const geminiApiKey = await GeminiService.getApiKey();
-      if (!geminiApiKey) {
+      // GeminiService 인스턴스 생성 (환경변수에서 API 키 가져오기)
+      const gemini = await GeminiService.createFromEnvironment();
+      if (!gemini) {
         // AI 키가 없으면 기존 방식 사용
         return this.extractContestInfo(markdown, sourceUrl);
       }
 
-      const gemini = new GeminiService(geminiApiKey);
       const contestInfo = await gemini.extractContestInfoFromUrl(sourceUrl, markdown);
       
       // D-day 계산

@@ -24,13 +24,28 @@ export class GeminiService {
   }
 
   static async getApiKey(): Promise<string | null> {
+    // 환경변수에서 먼저 확인
+    const envApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (envApiKey) {
+      return envApiKey;
+    }
+    
+    // 환경변수에 없으면 데이터베이스에서 확인
     return await apiKeyService.getApiKey('gemini');
   }
 
-  static async testApiKey(apiKey: string): Promise<boolean> {
+  static async testApiKey(apiKey?: string): Promise<boolean> {
     try {
       console.log('Testing Gemini API key');
-      const response = await fetch(`${GEMINI_API_BASE_URL}?key=${apiKey}`, {
+      
+      // API 키가 제공되지 않으면 환경변수에서 가져오기
+      const testApiKey = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
+      if (!testApiKey) {
+        console.error('No Gemini API key found in environment variables');
+        return false;
+      }
+
+      const response = await fetch(`${GEMINI_API_BASE_URL}?key=${testApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,6 +68,16 @@ export class GeminiService {
       console.error('Error testing Gemini API key:', error);
       return false;
     }
+  }
+
+  // 환경변수에서 API 키를 가져와서 GeminiService 인스턴스를 생성하는 정적 메서드
+  static async createFromEnvironment(): Promise<GeminiService | null> {
+    const apiKey = await this.getApiKey();
+    if (!apiKey) {
+      console.error('No Gemini API key found in environment variables');
+      return null;
+    }
+    return new GeminiService(apiKey);
   }
 
   async generateIdeas(

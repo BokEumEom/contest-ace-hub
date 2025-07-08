@@ -1,19 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { CrawlService } from '@/services/crawlService';
 import { GeminiService } from '@/services/geminiService';
-import { Settings as SettingsIcon, Key, Globe, Brain } from 'lucide-react';
+import { Settings as SettingsIcon, Key, Globe, Brain, Info, ExternalLink } from 'lucide-react';
 import Header from '@/components/Header';
 
 const Settings = () => {
-  const [firecrawlApiKey, setFirecrawlApiKey] = useState('');
-  const [geminiApiKey, setGeminiApiKey] = useState('');
   const [isTestingFirecrawl, setIsTestingFirecrawl] = useState(false);
   const [isTestingGemini, setIsTestingGemini] = useState(false);
   const [existingFirecrawlKey, setExistingFirecrawlKey] = useState<string | null>(null);
@@ -41,33 +37,21 @@ const Settings = () => {
     loadApiKeys();
   }, []);
 
-  const handleSaveFirecrawlKey = async () => {
-    if (!firecrawlApiKey.trim()) {
-      toast({
-        title: "오류",
-        description: "Firecrawl API 키를 입력해주세요.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleTestFirecrawlKey = async () => {
     setIsTestingFirecrawl(true);
     
     try {
-      const isValid = await CrawlService.testApiKey(firecrawlApiKey);
+      const isValid = await CrawlService.testApiKey();
       
       if (isValid) {
-        await CrawlService.saveApiKey(firecrawlApiKey);
-        setExistingFirecrawlKey(firecrawlApiKey);
         toast({
           title: "성공",
-          description: "Firecrawl API 키가 저장되었습니다."
+          description: "Firecrawl API 키가 유효합니다."
         });
-        setFirecrawlApiKey('');
       } else {
         toast({
           title: "오류",
-          description: "유효하지 않은 Firecrawl API 키입니다.",
+          description: "Firecrawl API 키가 설정되지 않았거나 유효하지 않습니다.",
           variant: "destructive"
         });
       }
@@ -82,33 +66,21 @@ const Settings = () => {
     }
   };
 
-  const handleSaveGeminiKey = async () => {
-    if (!geminiApiKey.trim()) {
-      toast({
-        title: "오류",
-        description: "Gemini API 키를 입력해주세요.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleTestGeminiKey = async () => {
     setIsTestingGemini(true);
     
     try {
-      const isValid = await GeminiService.testApiKey(geminiApiKey);
+      const isValid = await GeminiService.testApiKey();
       
       if (isValid) {
-        await GeminiService.saveApiKey(geminiApiKey);
-        setExistingGeminiKey(geminiApiKey);
         toast({
           title: "성공",
-          description: "Gemini API 키가 저장되었습니다."
+          description: "Gemini API 키가 유효합니다."
         });
-        setGeminiApiKey('');
       } else {
         toast({
           title: "오류",
-          description: "유효하지 않은 Gemini API 키입니다.",
+          description: "Gemini API 키가 설정되지 않았거나 유효하지 않습니다.",
           variant: "destructive"
         });
       }
@@ -137,6 +109,32 @@ const Settings = () => {
         </div>
 
         <div className="space-y-6">
+          {/* 환경변수 설정 안내 */}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-800">
+                <Info className="h-5 w-5" />
+                환경변수 설정 안내
+              </CardTitle>
+              <CardDescription className="text-blue-700">
+                API 키는 환경변수를 통해 설정됩니다. 프로젝트 루트의 <code className="bg-blue-100 px-1 rounded">.env</code> 파일에 다음 변수들을 추가하세요:
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="bg-white p-3 rounded border">
+                  <code className="text-sm">
+                    VITE_GEMINI_API_KEY=your_gemini_api_key_here<br/>
+                    VITE_FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+                  </code>
+                </div>
+                <p className="text-sm text-blue-600">
+                  환경변수 설정 후 애플리케이션을 재시작하면 API 키가 자동으로 로드됩니다.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Firecrawl API 설정 */}
           <Card>
             <CardHeader>
@@ -150,9 +148,10 @@ const Settings = () => {
                   href="https://www.firecrawl.dev" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline ml-1"
+                  className="text-blue-500 hover:underline ml-1 inline-flex items-center gap-1"
                 >
                   무료 API 키 발급받기
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               </CardDescription>
             </CardHeader>
@@ -174,23 +173,12 @@ const Settings = () => {
                 </div>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="firecrawl-api-key">API 키</Label>
-                <Input
-                  id="firecrawl-api-key"
-                  type="password"
-                  placeholder="fc-..."
-                  value={firecrawlApiKey}
-                  onChange={(e) => setFirecrawlApiKey(e.target.value)}
-                />
-              </div>
-              
               <Button
-                onClick={handleSaveFirecrawlKey}
-                disabled={isTestingFirecrawl || !firecrawlApiKey.trim()}
+                onClick={handleTestFirecrawlKey}
+                disabled={isTestingFirecrawl}
                 className="w-full"
               >
-                {isTestingFirecrawl ? "검증 중..." : "API 키 저장"}
+                {isTestingFirecrawl ? "검증 중..." : "API 키 테스트"}
               </Button>
             </CardContent>
           </Card>
@@ -210,9 +198,10 @@ const Settings = () => {
                   href="https://aistudio.google.com/app/apikey" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline ml-1"
+                  className="text-blue-500 hover:underline ml-1 inline-flex items-center gap-1"
                 >
                   무료 API 키 발급받기
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               </CardDescription>
             </CardHeader>
@@ -234,23 +223,12 @@ const Settings = () => {
                 </div>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="gemini-api-key">API 키</Label>
-                <Input
-                  id="gemini-api-key"
-                  type="password"
-                  placeholder="AIza..."
-                  value={geminiApiKey}
-                  onChange={(e) => setGeminiApiKey(e.target.value)}
-                />
-              </div>
-              
               <Button
-                onClick={handleSaveGeminiKey}
-                disabled={isTestingGemini || !geminiApiKey.trim()}
+                onClick={handleTestGeminiKey}
+                disabled={isTestingGemini}
                 className="w-full"
               >
-                {isTestingGemini ? "검증 중..." : "API 키 저장"}
+                {isTestingGemini ? "검증 중..." : "API 키 테스트"}
               </Button>
             </CardContent>
           </Card>
