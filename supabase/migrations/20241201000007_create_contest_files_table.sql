@@ -1,6 +1,9 @@
 -- Create contest_files table for storing contest-related files
 -- Migration: 20241201000007_create_contest_files_table.sql
 
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Create the contest_files table
 CREATE TABLE IF NOT EXISTS contest_files (
   id BIGSERIAL PRIMARY KEY,

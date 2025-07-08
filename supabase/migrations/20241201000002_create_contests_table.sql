@@ -1,6 +1,9 @@
 -- Create contests table for storing contest data
 -- Migration: 20241201000002_create_contests_table.sql
 
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Create the contests table
 CREATE TABLE IF NOT EXISTS contests (
   id BIGSERIAL PRIMARY KEY,

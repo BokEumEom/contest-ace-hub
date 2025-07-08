@@ -1,6 +1,9 @@
 -- Create contest_ideas table for storing AI-generated contest ideas
 -- Migration: 20241201000006_create_contest_ideas_table.sql
 
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Create the contest_ideas table
 CREATE TABLE IF NOT EXISTS contest_ideas (
   id BIGSERIAL PRIMARY KEY,

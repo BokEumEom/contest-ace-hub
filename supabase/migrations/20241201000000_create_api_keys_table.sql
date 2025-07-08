@@ -1,6 +1,9 @@
 -- Create api_keys table for storing user API keys
 -- Migration: 20241201000000_create_api_keys_table.sql
 
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Create the api_keys table
 CREATE TABLE IF NOT EXISTS api_keys (
   id BIGSERIAL PRIMARY KEY,

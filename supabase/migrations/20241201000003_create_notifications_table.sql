@@ -1,6 +1,9 @@
 -- Create notifications table for storing notification data
 -- Migration: 20241201000003_create_notifications_table.sql
 
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Create the notifications table
 CREATE TABLE IF NOT EXISTS notifications (
   id BIGSERIAL PRIMARY KEY,

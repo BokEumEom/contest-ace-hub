@@ -2,6 +2,22 @@
 
 This directory contains database migration files for the Supabase project.
 
+## Required Extensions
+
+### pgvector Extension
+All migration files include the `pgvector` extension for vector search capabilities:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+This extension is required for:
+- Vector similarity search in contest embeddings
+- AI-powered contest recommendations
+- Semantic search functionality
+
+**Note:** The pgvector extension must be enabled in your Supabase project. If you encounter errors, ensure the extension is enabled in your Supabase dashboard under Database > Extensions.
+
 ## Migration Files
 
 ### 20241201000000_create_api_keys_table.sql
@@ -55,6 +71,66 @@ Creates the `contest_details` table for storing team members and schedules.
 - Links to contests via foreign key
 - User-specific details with RLS
 - GIN index for efficient JSON queries
+
+### 20241201000005_create_contest_embeddings_table.sql
+Creates the `contest_embeddings` table for vector similarity search.
+
+**Features:**
+- Stores contest embeddings for AI-powered search
+- Vector similarity search using pgvector
+- Automatic embedding generation via triggers
+- Category-based filtering
+- Performance optimized with indexes
+
+**Table Structure:**
+```sql
+contest_embeddings (
+  id BIGSERIAL PRIMARY KEY,
+  contest_id BIGINT REFERENCES contests(id),
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  organization TEXT,
+  contest_theme TEXT,
+  submission_format TEXT,
+  embedding VECTOR(1536),
+  created_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE
+)
+```
+
+**Functions:**
+- `match_contests()`: Vector similarity search
+- `match_contests_by_category()`: Category-filtered search
+- `create_contest_embedding()`: Automatic embedding generation
+
+### 20241201000006_create_contest_ideas_table.sql
+Creates the `contest_ideas` table for storing AI-generated contest ideas.
+
+**Features:**
+- Stores AI-generated and user-created contest ideas
+- Links to contests via foreign key
+- User-specific ideas with RLS
+- Automatic timestamp management
+
+### 20241201000007_create_contest_files_table.sql
+Creates the `contest_files` table for storing contest-related files.
+
+**Features:**
+- Stores file metadata (name, URL, type, size)
+- Links to contests via foreign key
+- User-specific files with RLS
+- Automatic timestamp management
+
+### 20241201000008_fix_contest_embeddings_table.sql
+Fixes the `contest_embeddings` table structure and functions.
+
+**Changes:**
+- Drops and recreates the table with correct structure
+- Fixes vector search functions
+- Ensures proper UNIQUE constraints
+- Updates placeholder embedding generation
+- Optimizes database functions for better performance
 
 ### 20241201000005_drop_all_tables.sql
 Complete rollback migration to drop all tables and related objects.

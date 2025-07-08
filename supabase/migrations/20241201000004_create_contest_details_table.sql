@@ -1,6 +1,9 @@
 -- Create contest_details table for storing team members and schedules
 -- Migration: 20241201000004_create_contest_details_table.sql
 
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Create the contest_details table
 CREATE TABLE IF NOT EXISTS contest_details (
   id BIGSERIAL PRIMARY KEY,

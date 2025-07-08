@@ -2,6 +2,13 @@
 -- Execute this file in Supabase SQL Editor to set up all tables and functions
 
 -- =====================================================
+-- 0. ENABLE REQUIRED EXTENSIONS
+-- =====================================================
+
+-- Enable pgvector extension for vector search
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- =====================================================
 -- 1. CREATE HELPER FUNCTION FOR UPDATED_AT TRIGGER
 -- =====================================================
 
