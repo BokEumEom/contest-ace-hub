@@ -14,7 +14,7 @@ interface VectorSearchProps {
 
 const VectorSearch: React.FC<VectorSearchProps> = ({ onContestSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [category, setCategory] = useState<string>('');
+  const [category, setCategory] = useState<string>('all');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +44,7 @@ const VectorSearch: React.FC<VectorSearchProps> = ({ onContestSelect }) => {
       const results = await VectorSearchService.searchSimilarContests(
         searchQuery,
         10,
-        category || undefined
+        category === 'all' ? undefined : category
       );
 
       setSearchResults(results);
@@ -122,10 +122,12 @@ const VectorSearch: React.FC<VectorSearchProps> = ({ onContestSelect }) => {
               <label className="text-sm font-medium">카테고리</label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="전체 카테고리" />
+                  <SelectValue placeholder="전체 카테고리">
+                    {category === 'all' ? '전체 카테고리' : category}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">전체 카테고리</SelectItem>
+                  <SelectItem value="all">전체 카테고리</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
