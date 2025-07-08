@@ -15,8 +15,8 @@ const Index = () => {
   // 통계 계산
   const inProgressContests = contests.filter(c => c.status === 'in-progress' || c.status === 'preparing');
   const submittedContests = contests.filter(c => c.status === 'submitted' || c.status === 'completed');
-  const teamProjects = contests.filter(c => c.teamMembers > 1);
-  const urgentContests = contests.filter(c => c.daysLeft <= 7 && c.daysLeft > 0);
+  const teamProjects = contests.filter(c => (c.team_members_count || 0) > 1);
+  const urgentContests = contests.filter(c => (c.days_left || 0) <= 7 && (c.days_left || 0) > 0);
 
   const stats = [
     { 
@@ -137,7 +137,7 @@ const Index = () => {
                     <p className="text-xs text-muted-foreground">{contest.title}</p>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(contest.createdAt).toLocaleDateString()}
+                    {new Date(contest.created_at || Date.now()).toLocaleDateString()}
                   </span>
                 </div>
               ))}

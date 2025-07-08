@@ -5,14 +5,16 @@ import { Badge } from '@/components/ui/badge';
 
 interface ContestCardProps {
   title: string;
-  organization: string;
-  deadline: string;
-  category: string;
-  prize: string;
-  status: 'preparing' | 'in-progress' | 'submitted' | 'completed';
-  daysLeft: number;
-  progress: number;
-  teamMembers: number;
+  organization?: string;
+  deadline?: string;
+  category?: string;
+  prize?: string;
+  status?: 'preparing' | 'in-progress' | 'submitted' | 'completed';
+  daysLeft?: number;
+  days_left?: number; // Database field name
+  progress?: number;
+  teamMembers?: number;
+  team_members_count?: number; // Database field name
   onClick?: () => void;
 }
 
@@ -22,10 +24,12 @@ const ContestCard: React.FC<ContestCardProps> = ({
   deadline,
   category,
   prize,
-  status,
+  status = 'preparing',
   daysLeft,
-  progress,
+  days_left,
+  progress = 0,
   teamMembers,
+  team_members_count,
   onClick
 }) => {
   const getStatusBadge = () => {
@@ -35,12 +39,13 @@ const ContestCard: React.FC<ContestCardProps> = ({
       submitted: { label: '제출완료', className: 'bg-green-100 text-green-700' },
       completed: { label: '완료', className: 'bg-gray-100 text-gray-700' }
     };
-    return statusConfig[status];
+    return statusConfig[status] || statusConfig.preparing;
   };
 
   const getDeadlineClassName = () => {
-    if (daysLeft <= 3) return 'contest-deadline-urgent';
-    if (daysLeft <= 7) return 'contest-deadline-soon';
+    const days = daysLeft || days_left || 0;
+    if (days <= 3) return 'contest-deadline-urgent';
+    if (days <= 7) return 'contest-deadline-soon';
     return 'contest-deadline-normal';
   };
 
@@ -64,16 +69,16 @@ const ContestCard: React.FC<ContestCardProps> = ({
       <div className="space-y-3 mb-4">
         <div className="flex items-center text-sm text-muted-foreground">
           <Calendar className="h-4 w-4 mr-2" />
-          <span>마감: {deadline}</span>
+          <span>마감: {deadline || '미정'}</span>
         </div>
         
         <div className="flex items-center justify-between">
-          <span className="text-sm px-2 py-1 bg-secondary rounded-md">{category}</span>
-          <span className="text-sm font-medium text-contest-orange">{prize}</span>
+          <span className="text-sm px-2 py-1 bg-secondary rounded-md">{category || '미분류'}</span>
+          <span className="text-sm font-medium text-contest-orange">{prize || '미정'}</span>
         </div>
 
         <div className={`contest-status-badge ${getDeadlineClassName()}`}>
-          {daysLeft > 0 ? `D-${daysLeft}` : '마감'}
+          {(daysLeft || days_left || 0) > 0 ? `D-${daysLeft || days_left || 0}` : '마감'}
         </div>
       </div>
 
@@ -95,21 +100,27 @@ const ContestCard: React.FC<ContestCardProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center text-sm text-muted-foreground">
           <div className="flex -space-x-2 mr-2">
-            {[...Array(Math.min(teamMembers, 3))].map((_, i) => (
-              <div 
-                key={i}
-                className="h-6 w-6 bg-contest-gradient rounded-full border-2 border-white flex items-center justify-center"
-              >
-                <span className="text-xs text-white">팀</span>
-              </div>
-            ))}
-            {teamMembers > 3 && (
-              <div className="h-6 w-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center">
-                <span className="text-xs">+{teamMembers - 3}</span>
-              </div>
-            )}
+            {(() => {
+              const memberCount = teamMembers || team_members_count || 0;
+              const displayCount = Math.min(memberCount, 3);
+              return [
+                ...Array(displayCount).map((_, i) => (
+                  <div 
+                    key={i}
+                    className="h-6 w-6 bg-contest-gradient rounded-full border-2 border-white flex items-center justify-center"
+                  >
+                    <span className="text-xs text-white">팀</span>
+                  </div>
+                )),
+                memberCount > 3 && (
+                  <div key="more" className="h-6 w-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center">
+                    <span className="text-xs">+{memberCount - 3}</span>
+                  </div>
+                )
+              ].filter(Boolean);
+            })()}
           </div>
-          <span>{teamMembers}명</span>
+          <span>{teamMembers || team_members_count || 0}명</span>
         </div>
         
         <div className="flex space-x-2">
