@@ -24,20 +24,22 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, 
 
   return (
     <div 
-      className={`contest-card p-6 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`contest-card p-6 h-32 flex flex-col justify-between ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
-          {trend && (
-            <p className={`text-xs mt-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {trend.isPositive ? '↗' : '↘'} {trend.value}
-            </p>
-          )}
+          <div className="h-5 mt-1">
+            {trend && (
+              <p className={`text-xs ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {trend.isPositive ? '↗' : '↘'} {trend.value}
+              </p>
+            )}
+          </div>
         </div>
-        <div className={`p-3 rounded-lg border ${colorClasses[color]}`}>
+        <div className={`p-3 rounded-lg border ${colorClasses[color]} ml-4`}>
           <Icon className="h-6 w-6" />
         </div>
       </div>

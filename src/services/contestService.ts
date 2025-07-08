@@ -163,4 +163,37 @@ export class ContestService {
       return false;
     }
   }
+
+  static async getContestById(id: string | number): Promise<Contest | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
+      if (!userId) {
+        // Fallback to localStorage if no authenticated user
+        const savedContests = localStorage.getItem('contests');
+        const contests = savedContests ? JSON.parse(savedContests) : [];
+        const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+        return contests.find((c: Contest) => c.id === numericId) || null;
+      }
+
+      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      const { data, error } = await supabase
+        .from('contests')
+        .select('*')
+        .eq('id', numericId)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching contest by id:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getContestById:', error);
+      return null;
+    }
+  }
 } 

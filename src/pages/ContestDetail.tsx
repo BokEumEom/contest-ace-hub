@@ -17,6 +17,7 @@ const ContestDetail = () => {
   
   const {
     contest,
+    loading,
     activeTab,
     setActiveTab,
     editModalOpen,
@@ -49,6 +50,20 @@ const ContestDetail = () => {
     getDaysLeftColor
   } = useContestDetail(id);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-contest-orange mx-auto mb-4"></div>
+            <p className="text-muted-foreground">공모전 정보를 불러오는 중...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!contest) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -56,6 +71,7 @@ const ContestDetail = () => {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-foreground">공모전을 찾을 수 없습니다</h2>
+            <p className="text-muted-foreground mb-4">요청하신 공모전이 존재하지 않거나 접근 권한이 없습니다.</p>
             <Button onClick={() => navigate('/')} className="mt-4">
               홈으로 돌아가기
             </Button>

@@ -124,7 +124,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
         )}
 
         {/* 시상 내역 */}
-        {contest.prizeDetails && (
+        {contest.prize_details && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.prizeDetails}</p>
+              <p className="text-sm whitespace-pre-wrap">{contest.prize_details}</p>
             </CardContent>
           </Card>
         )}
@@ -217,10 +217,10 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             <AIAssistant 
               contestTitle={contest.title}
               contestDescription={contest.description || ''}
-              contestTheme={contest.contestTheme || ''}
-              submissionFormat={contest.submissionFormat || ''}
-              submissionMethod={contest.submissionMethod || ''}
-              prizeDetails={contest.prizeDetails || ''}
+              contestTheme={contest.contest_theme || ''}
+              submissionFormat={contest.submission_format || ''}
+              submissionMethod={contest.submission_method || ''}
+              prizeDetails={contest.prize_details || ''}
               precautions={contest.precautions || ''}
             />
           </CardContent>

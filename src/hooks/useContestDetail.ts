@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useContests } from './useContests';
 import { ContestDetailService, TeamMember, Schedule } from '@/services/contestDetailService';
+import { ContestService } from '@/services/contestService';
 
 export interface EditForm {
   title: string;
@@ -21,7 +22,8 @@ export interface EditForm {
 
 export const useContestDetail = (contestId: string | undefined) => {
   const { getContestById, updateContest, deleteContest } = useContests();
-  const contest = contestId ? getContestById(contestId) : null;
+  const [contest, setContest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // 탭 상태
   const [activeTab, setActiveTab] = useState<'overview' | 'ai-assistant'>('overview');
@@ -57,6 +59,39 @@ export const useContestDetail = (contestId: string | undefined) => {
   // 일정 관리 상태
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newSchedule, setNewSchedule] = useState({ title: '', date: '', description: '' });
+
+  // Contest 로딩 로직 개선
+  useEffect(() => {
+    if (!contestId) {
+      setContest(null);
+      setLoading(false);
+      return;
+    }
+
+    const loadContest = async () => {
+      setLoading(true);
+      try {
+        // 1. 먼저 메모리에서 찾기 (목록에서 진입한 경우)
+        const found = getContestById(contestId);
+        if (found) {
+          setContest(found);
+          setLoading(false);
+          return;
+        }
+
+        // 2. 없으면 서버에서 직접 fetch (직접 URL 진입한 경우)
+        const data = await ContestService.getContestById(contestId);
+        setContest(data);
+      } catch (error) {
+        console.error('Error loading contest:', error);
+        setContest(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContest();
+  }, [contestId, getContestById]);
 
   // 팀원 데이터 Supabase에서 불러오기
   useEffect(() => {
@@ -260,6 +295,7 @@ export const useContestDetail = (contestId: string | undefined) => {
 
   return {
     contest,
+    loading,
     activeTab,
     setActiveTab,
     editModalOpen,
