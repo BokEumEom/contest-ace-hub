@@ -1,3 +1,5 @@
+import { apiKeyService } from '@/lib/supabase';
+
 const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
 interface GeminiResponse {
@@ -11,20 +13,18 @@ interface GeminiResponse {
 }
 
 export class GeminiService {
-  private static API_KEY_STORAGE_KEY = 'gemini_api_key';
   private apiKey: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
   }
 
-  static saveApiKey(apiKey: string): void {
-    localStorage.setItem(this.API_KEY_STORAGE_KEY, apiKey);
-    console.log('Gemini API key saved successfully');
+  static async saveApiKey(apiKey: string): Promise<void> {
+    await apiKeyService.saveApiKey('gemini', apiKey);
   }
 
-  static getApiKey(): string | null {
-    return localStorage.getItem(this.API_KEY_STORAGE_KEY);
+  static async getApiKey(): Promise<string | null> {
+    return await apiKeyService.getApiKey('gemini');
   }
 
   static async testApiKey(apiKey: string): Promise<boolean> {

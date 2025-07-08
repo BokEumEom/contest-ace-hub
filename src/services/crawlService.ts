@@ -1,5 +1,6 @@
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { GeminiService } from './geminiService';
+import { apiKeyService } from '@/lib/supabase';
 
 interface CrawledContest {
   title: string;
@@ -38,17 +39,16 @@ interface SearchResult {
 }
 
 export class CrawlService {
-  private static API_KEY_STORAGE_KEY = 'firecrawl_api_key';
   private static firecrawlApp: FirecrawlApp | null = null;
 
-  static saveApiKey(apiKey: string): void {
-    localStorage.setItem(this.API_KEY_STORAGE_KEY, apiKey);
+  static async saveApiKey(apiKey: string): Promise<void> {
+    await apiKeyService.saveApiKey('firecrawl', apiKey);
     this.firecrawlApp = new FirecrawlApp({ apiKey });
     console.log('Firecrawl API key saved successfully');
   }
 
-  static getApiKey(): string | null {
-    return localStorage.getItem(this.API_KEY_STORAGE_KEY);
+  static async getApiKey(): Promise<string | null> {
+    return await apiKeyService.getApiKey('firecrawl');
   }
 
   static async testApiKey(apiKey: string): Promise<boolean> {
@@ -68,8 +68,8 @@ export class CrawlService {
     }
   }
 
-  static getFirecrawlApp(): FirecrawlApp | null {
-    const apiKey = this.getApiKey();
+  static async getFirecrawlApp(): Promise<FirecrawlApp | null> {
+    const apiKey = await this.getApiKey();
     if (!apiKey) return null;
     
     if (!this.firecrawlApp) {
@@ -80,7 +80,7 @@ export class CrawlService {
 
   // /scrape - 단일 페이지 스크래핑
   static async scrapePage(url: string, options: any = {}): Promise<ScrapeResult> {
-    const app = this.getFirecrawlApp();
+    const app = await this.getFirecrawlApp();
     if (!app) {
       return { success: false, error: 'API key not found' };
     }
@@ -126,7 +126,7 @@ export class CrawlService {
 
   // /crawl - 여러 페이지 크롤링
   static async crawlContestSite(url: string, options: any = {}): Promise<CrawlResult> {
-    const app = this.getFirecrawlApp();
+    const app = await this.getFirecrawlApp();
     if (!app) {
       return { success: false, error: 'API key not found' };
     }
@@ -191,7 +191,7 @@ export class CrawlService {
 
   // /map - 웹사이트 구조 매핑
   static async mapWebsite(url: string, options: any = {}): Promise<MapResult> {
-    const app = this.getFirecrawlApp();
+    const app = await this.getFirecrawlApp();
     if (!app) {
       return { success: false, error: 'API key not found' };
     }
@@ -221,7 +221,7 @@ export class CrawlService {
 
   // /search - 웹사이트 내 검색
   static async searchWebsite(query: string, options: any = {}): Promise<SearchResult> {
-    const app = this.getFirecrawlApp();
+    const app = await this.getFirecrawlApp();
     if (!app) {
       return { success: false, error: 'API key not found' };
     }
@@ -256,7 +256,7 @@ export class CrawlService {
     
     try {
       // Gemini API 키 확인
-      const geminiApiKey = GeminiService.getApiKey();
+      const geminiApiKey = await GeminiService.getApiKey();
       if (!geminiApiKey) {
         // AI 키가 없으면 기존 방식 사용
         return this.extractContestInfo(markdown, sourceUrl);

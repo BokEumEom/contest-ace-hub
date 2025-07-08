@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,30 @@ const Settings = () => {
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [isTestingFirecrawl, setIsTestingFirecrawl] = useState(false);
   const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [existingFirecrawlKey, setExistingFirecrawlKey] = useState<string | null>(null);
+  const [existingGeminiKey, setExistingGeminiKey] = useState<string | null>(null);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(true);
   const { toast } = useToast();
 
-  const existingFirecrawlKey = CrawlService.getApiKey();
-  const existingGeminiKey = GeminiService.getApiKey();
+  // Load existing API keys on component mount
+  useEffect(() => {
+    const loadApiKeys = async () => {
+      try {
+        const [firecrawlKey, geminiKey] = await Promise.all([
+          CrawlService.getApiKey(),
+          GeminiService.getApiKey()
+        ]);
+        setExistingFirecrawlKey(firecrawlKey);
+        setExistingGeminiKey(geminiKey);
+      } catch (error) {
+        console.error('Error loading API keys:', error);
+      } finally {
+        setIsLoadingKeys(false);
+      }
+    };
+
+    loadApiKeys();
+  }, []);
 
   const handleSaveFirecrawlKey = async () => {
     if (!firecrawlApiKey.trim()) {
@@ -37,7 +57,8 @@ const Settings = () => {
       const isValid = await CrawlService.testApiKey(firecrawlApiKey);
       
       if (isValid) {
-        CrawlService.saveApiKey(firecrawlApiKey);
+        await CrawlService.saveApiKey(firecrawlApiKey);
+        setExistingFirecrawlKey(firecrawlApiKey);
         toast({
           title: "성공",
           description: "Firecrawl API 키가 저장되었습니다."
@@ -77,7 +98,8 @@ const Settings = () => {
       const isValid = await GeminiService.testApiKey(geminiApiKey);
       
       if (isValid) {
-        GeminiService.saveApiKey(geminiApiKey);
+        await GeminiService.saveApiKey(geminiApiKey);
+        setExistingGeminiKey(geminiApiKey);
         toast({
           title: "성공",
           description: "Gemini API 키가 저장되었습니다."
@@ -135,7 +157,12 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {existingFirecrawlKey ? (
+              {isLoadingKeys ? (
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-gray-700">API 키 상태 확인 중...</span>
+                </div>
+              ) : existingFirecrawlKey ? (
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                   <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-green-700">API 키가 설정되어 있습니다</span>
@@ -190,7 +217,12 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {existingGeminiKey ? (
+              {isLoadingKeys ? (
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="h-2 w-2 bg-gray-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-gray-700">API 키 상태 확인 중...</span>
+                </div>
+              ) : existingGeminiKey ? (
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                   <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-green-700">API 키가 설정되어 있습니다</span>

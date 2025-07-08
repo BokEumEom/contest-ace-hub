@@ -1,64 +1,96 @@
 
 import { useState, useEffect } from 'react';
-import { Notification } from '@/types/notification';
-
-const STORAGE_KEY = 'contest-notifications';
+import { NotificationService, Notification } from '@/services/notificationService';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setNotifications(parsed.map((n: any) => ({
-        ...n,
-        timestamp: new Date(n.timestamp)
-      })));
-    }
+    const loadNotifications = async () => {
+      setLoading(true);
+      try {
+        const data = await NotificationService.getNotifications();
+        setNotifications(data);
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNotifications();
   }, []);
 
-  const saveNotifications = (newNotifications: Notification[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newNotifications));
-    setNotifications(newNotifications);
+  const addNotification = async (notification: Omit<Notification, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const newNotification = await NotificationService.addNotification(notification);
+      if (newNotification) {
+        setNotifications(prev => [newNotification, ...prev]);
+        return newNotification;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error adding notification:', error);
+      return null;
+    }
   };
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      read: false
-    };
-    const updated = [newNotification, ...notifications];
-    saveNotifications(updated);
+  const markAsRead = async (id: number) => {
+    try {
+      const success = await NotificationService.markAsRead(id);
+      if (success) {
+        setNotifications(prev => 
+          prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+        );
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
   };
 
-  const markAsRead = (id: string) => {
-    const updated = notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    );
-    saveNotifications(updated);
+  const markAllAsRead = async () => {
+    try {
+      const promises = notifications
+        .filter(n => !n.is_read)
+        .map(n => markAsRead(n.id!));
+      await Promise.all(promises);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    saveNotifications(updated);
+  const deleteNotification = async (id: number) => {
+    try {
+      const success = await NotificationService.deleteNotification(id);
+      if (success) {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    const updated = notifications.filter(n => n.id !== id);
-    saveNotifications(updated);
+  const clearAll = async () => {
+    try {
+      const promises = notifications.map(n => deleteNotification(n.id!));
+      await Promise.all(promises);
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+    }
   };
 
-  const clearAll = () => {
-    saveNotifications([]);
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return {
     notifications,
+    loading,
     unreadCount,
     addNotification,
     markAsRead,

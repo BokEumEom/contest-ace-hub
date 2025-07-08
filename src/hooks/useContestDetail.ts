@@ -1,18 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useContests } from './useContests';
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-}
-
-export interface Schedule {
-  id: string;
-  title: string;
-  date: string;
-  description: string;
-}
+import { ContestDetailService, TeamMember, Schedule } from '@/services/contestDetailService';
 
 export interface EditForm {
   title: string;
@@ -70,39 +58,37 @@ export const useContestDetail = (contestId: string | undefined) => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newSchedule, setNewSchedule] = useState({ title: '', date: '', description: '' });
 
-  // 팀원 데이터 로컬 스토리지에서 불러오기
+  // 팀원 데이터 Supabase에서 불러오기
   useEffect(() => {
-    if (contest?.id) {
-      const saved = localStorage.getItem(`teamMembers_${contest.id}`);
-      if (saved) {
-        setTeamMembers(JSON.parse(saved));
+    const loadTeamMembers = async () => {
+      if (contest?.id) {
+        try {
+          const data = await ContestDetailService.getTeamMembers(contest.id);
+          setTeamMembers(data);
+        } catch (error) {
+          console.error('Error loading team members:', error);
+        }
       }
-    }
+    };
+
+    loadTeamMembers();
   }, [contest?.id]);
 
-  // 일정 데이터 로컬 스토리지에서 불러오기
+  // 일정 데이터 Supabase에서 불러오기
   useEffect(() => {
-    if (contest?.id) {
-      const saved = localStorage.getItem(`schedules_${contest.id}`);
-      if (saved) {
-        setSchedules(JSON.parse(saved));
+    const loadSchedules = async () => {
+      if (contest?.id) {
+        try {
+          const data = await ContestDetailService.getSchedules(contest.id);
+          setSchedules(data);
+        } catch (error) {
+          console.error('Error loading schedules:', error);
+        }
       }
-    }
+    };
+
+    loadSchedules();
   }, [contest?.id]);
-
-  // 팀원 데이터 로컬 스토리지 저장
-  useEffect(() => {
-    if (contest?.id && teamMembers.length > 0) {
-      localStorage.setItem(`teamMembers_${contest.id}`, JSON.stringify(teamMembers));
-    }
-  }, [teamMembers, contest?.id]);
-
-  // 일정 데이터 로컬 스토리지 저장
-  useEffect(() => {
-    if (contest?.id && schedules.length > 0) {
-      localStorage.setItem(`schedules_${contest.id}`, JSON.stringify(schedules));
-    }
-  }, [schedules, contest?.id]);
 
   // 핸들러 함수들
   const handleProgressUpdate = (progress: number) => {
@@ -127,46 +113,79 @@ export const useContestDetail = (contestId: string | undefined) => {
     }
   };
 
-  const handleAddTeamMember = () => {
-    if (newMember.name && newMember.role) {
+  const handleAddTeamMember = async () => {
+    if (newMember.name && newMember.role && contest?.id) {
       const member = {
         id: crypto.randomUUID(),
         name: newMember.name,
         role: newMember.role
       };
-      setTeamMembers([...teamMembers, member]);
+      const updatedTeamMembers = [...teamMembers, member];
+      setTeamMembers(updatedTeamMembers);
       setNewMember({ name: '', role: '' });
-      alert(`${newMember.name} 팀원이 추가되었습니다.`);
+      
+      try {
+        await ContestDetailService.saveTeamMembers(contest.id, updatedTeamMembers);
+        alert(`${newMember.name} 팀원이 추가되었습니다.`);
+      } catch (error) {
+        console.error('Error saving team member:', error);
+        alert('팀원 추가 중 오류가 발생했습니다.');
+      }
     }
   };
 
-  const handleRemoveTeamMember = (id: string) => {
+  const handleRemoveTeamMember = async (id: string) => {
     const member = teamMembers.find(m => m.id === id);
-    if (member && confirm(`${member.name} 팀원을 삭제하시겠습니까?`)) {
-      setTeamMembers(teamMembers.filter(member => member.id !== id));
-      alert(`${member.name} 팀원이 삭제되었습니다.`);
+    if (member && contest?.id && confirm(`${member.name} 팀원을 삭제하시겠습니까?`)) {
+      const updatedTeamMembers = teamMembers.filter(m => m.id !== id);
+      setTeamMembers(updatedTeamMembers);
+      
+      try {
+        await ContestDetailService.saveTeamMembers(contest.id, updatedTeamMembers);
+        alert(`${member.name} 팀원이 삭제되었습니다.`);
+      } catch (error) {
+        console.error('Error removing team member:', error);
+        alert('팀원 삭제 중 오류가 발생했습니다.');
+      }
     }
   };
 
-  const handleAddSchedule = () => {
-    if (newSchedule.title && newSchedule.date) {
+  const handleAddSchedule = async () => {
+    if (newSchedule.title && newSchedule.date && contest?.id) {
       const schedule = {
         id: crypto.randomUUID(),
         title: newSchedule.title,
         date: newSchedule.date,
-        description: newSchedule.description
+        description: newSchedule.description,
+        completed: false
       };
-      setSchedules([...schedules, schedule]);
+      const updatedSchedules = [...schedules, schedule];
+      setSchedules(updatedSchedules);
       setNewSchedule({ title: '', date: '', description: '' });
-      alert(`"${newSchedule.title}" 일정이 추가되었습니다.`);
+      
+      try {
+        await ContestDetailService.saveSchedules(contest.id, updatedSchedules);
+        alert(`"${newSchedule.title}" 일정이 추가되었습니다.`);
+      } catch (error) {
+        console.error('Error saving schedule:', error);
+        alert('일정 추가 중 오류가 발생했습니다.');
+      }
     }
   };
 
-  const handleRemoveSchedule = (id: string) => {
+  const handleRemoveSchedule = async (id: string) => {
     const schedule = schedules.find(s => s.id === id);
-    if (schedule && confirm(`"${schedule.title}" 일정을 삭제하시겠습니까?`)) {
-      setSchedules(schedules.filter(schedule => schedule.id !== id));
-      alert(`"${schedule.title}" 일정이 삭제되었습니다.`);
+    if (schedule && contest?.id && confirm(`"${schedule.title}" 일정을 삭제하시겠습니까?`)) {
+      const updatedSchedules = schedules.filter(s => s.id !== id);
+      setSchedules(updatedSchedules);
+      
+      try {
+        await ContestDetailService.saveSchedules(contest.id, updatedSchedules);
+        alert(`"${schedule.title}" 일정이 삭제되었습니다.`);
+      } catch (error) {
+        console.error('Error removing schedule:', error);
+        alert('일정 삭제 중 오류가 발생했습니다.');
+      }
     }
   };
 

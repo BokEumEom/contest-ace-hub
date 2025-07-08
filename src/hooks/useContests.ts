@@ -1,52 +1,75 @@
 
 import { useState, useEffect } from 'react';
-import { Contest } from '@/types/contest';
+import { ContestService, Contest } from '@/services/contestService';
 
 export const useContests = () => {
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 로컬 스토리지에서 공모전 데이터 로드
+  // Supabase에서 공모전 데이터 로드
   useEffect(() => {
-    const savedContests = localStorage.getItem('contests');
-    if (savedContests) {
-      setContests(JSON.parse(savedContests));
-    }
+    const loadContests = async () => {
+      setLoading(true);
+      try {
+        const data = await ContestService.getContests();
+        setContests(data);
+      } catch (error) {
+        console.error('Error loading contests:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContests();
   }, []);
 
-  // 로컬 스토리지에 데이터 저장
-  const saveContests = (newContests: Contest[]) => {
-    localStorage.setItem('contests', JSON.stringify(newContests));
-    setContests(newContests);
+  const addContest = async (contest: Omit<Contest, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const newContest = await ContestService.addContest(contest);
+      if (newContest) {
+        setContests(prev => [newContest, ...prev]);
+        return newContest;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error adding contest:', error);
+      return null;
+    }
   };
 
-  const addContest = (contest: Omit<Contest, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newContest: Contest = {
-      ...contest,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const updatedContests = [...contests, newContest];
-    saveContests(updatedContests);
-    return newContest;
+  const updateContest = async (id: number, updates: Partial<Contest>) => {
+    try {
+      const updatedContest = await ContestService.updateContest(id, updates);
+      if (updatedContest) {
+        setContests(prev => 
+          prev.map(contest => 
+            contest.id === id ? updatedContest : contest
+          )
+        );
+        return updatedContest;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error updating contest:', error);
+      return null;
+    }
   };
 
-  const updateContest = (id: string, updates: Partial<Contest>) => {
-    const updatedContests = contests.map(contest => 
-      contest.id === id 
-        ? { ...contest, ...updates, updatedAt: new Date().toISOString() }
-        : contest
-    );
-    saveContests(updatedContests);
+  const deleteContest = async (id: number) => {
+    try {
+      const success = await ContestService.deleteContest(id);
+      if (success) {
+        setContests(prev => prev.filter(contest => contest.id !== id));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting contest:', error);
+      return false;
+    }
   };
 
-  const deleteContest = (id: string) => {
-    const updatedContests = contests.filter(contest => contest.id !== id);
-    saveContests(updatedContests);
-  };
-
-  const getContestById = (id: string) => {
+  const getContestById = (id: number) => {
     return contests.find(contest => contest.id === id);
   };
 

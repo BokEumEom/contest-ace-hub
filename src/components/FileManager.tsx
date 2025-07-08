@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Upload, File, Download, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,22 +18,7 @@ interface FileManagerProps {
 }
 
 const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
-  const [files, setFiles] = useState<FileItem[]>([
-    {
-      id: '1',
-      name: '기획서_초안.docx',
-      type: 'document',
-      size: 2048576,
-      uploadedAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: '디자인_시안.png',
-      type: 'image',
-      size: 1024000,
-      uploadedAt: '2024-01-16'
-    }
-  ]);
+  const [files, setFiles] = useState<FileItem[]>([]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
