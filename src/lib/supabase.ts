@@ -26,16 +26,6 @@ if (supabaseUrl && supabaseAnonKey) {
 
 export { supabase };
 
-// Database types for API keys
-export interface ApiKey {
-  id?: number;
-  user_id?: string;
-  key_type: 'gemini' | 'firecrawl';
-  api_key: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 // Helper functions for API key management
 export const apiKeyService = {
   async saveApiKey(keyType: 'gemini' | 'firecrawl', apiKey: string): Promise<void> {
@@ -43,18 +33,10 @@ export const apiKeyService = {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      // If no user is authenticated, fall back to localStorage
-      if (!userId) {
-        console.warn('No authenticated user found, falling back to localStorage');
-        localStorage.setItem(`${keyType}_api_key`, apiKey);
-        return;
-      }
-
       // Check if key already exists
       const { data: existingKey } = await supabase
         .from('api_keys')
         .select('id')
-        .eq('user_id', userId)
         .eq('key_type', keyType)
         .single();
 
@@ -74,7 +56,7 @@ export const apiKeyService = {
         const { error } = await supabase
           .from('api_keys')
           .insert({
-            user_id: userId,
+            user_id: userId || 'anonymous',
             key_type: keyType,
             api_key: apiKey
           });
@@ -91,19 +73,9 @@ export const apiKeyService = {
 
   async getApiKey(keyType: 'gemini' | 'firecrawl'): Promise<string | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      // If no user is authenticated, fall back to localStorage
-      if (!userId) {
-        console.warn('No authenticated user found, falling back to localStorage');
-        return localStorage.getItem(`${keyType}_api_key`);
-      }
-
       const { data, error } = await supabase
         .from('api_keys')
         .select('api_key')
-        .eq('user_id', userId)
         .eq('key_type', keyType)
         .single();
 
@@ -120,20 +92,9 @@ export const apiKeyService = {
 
   async deleteApiKey(keyType: 'gemini' | 'firecrawl'): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      // If no user is authenticated, fall back to localStorage
-      if (!userId) {
-        console.warn('No authenticated user found, falling back to localStorage');
-        localStorage.removeItem(`${keyType}_api_key`);
-        return;
-      }
-
       const { error } = await supabase
         .from('api_keys')
         .delete()
-        .eq('user_id', userId)
         .eq('key_type', keyType);
 
       if (error) throw error;

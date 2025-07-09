@@ -7,7 +7,7 @@ export const useContests = () => {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Supabase에서 공모전 데이터 로드
+  // 공모전 데이터 로드
   useEffect(() => {
     const loadContests = async () => {
       if (initialized) return; // 이미 로드된 경우 중복 로드 방지

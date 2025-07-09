@@ -18,12 +18,6 @@ const Profile = () => {
   const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name || '');
   const [bio, setBio] = useState(user?.user_metadata?.bio || '');
 
-  // Redirect if not authenticated
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
-
   const handleSave = async () => {
     try {
       // Here you would typically update the user profile in Supabase
@@ -69,171 +63,171 @@ const Profile = () => {
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
-            className="flex items-center space-x-2"
+            className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>뒤로 가기</span>
+            뒤로 가기
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <Avatar className="h-24 w-24">
-                    <AvatarFallback className="bg-contest-gradient text-white text-2xl">
-                      {user.email?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <CardTitle className="text-xl">{displayName || '사용자'}</CardTitle>
-                <CardDescription>{user.email}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>가입일: {new Date(user.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Shield className="h-4 w-4" />
-                    <span>계정 상태: {user.email_confirmed_at ? '인증됨' : '미인증'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Profile Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">프로필</h1>
+          <p className="text-muted-foreground">
+            계정 정보를 관리하고 개인 설정을 변경하세요.
+          </p>
+        </div>
 
-          {/* Profile Details */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+        {user ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Profile Info */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    기본 정보
+                  </CardTitle>
+                  <CardDescription>
+                    프로필 정보를 업데이트하세요.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Avatar Section */}
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback className="bg-contest-gradient text-white text-lg">
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {user?.user_metadata?.display_name || user?.email || '사용자'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Edit Form */}
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="displayName">표시 이름</Label>
+                        <Input
+                          id="displayName"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="표시할 이름을 입력하세요"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="bio">소개</Label>
+                        <Input
+                          id="bio"
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          placeholder="자신을 소개해주세요"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleSave}>저장</Button>
+                        <Button variant="outline" onClick={() => setIsEditing(false)}>
+                          취소
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>표시 이름</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {user?.user_metadata?.display_name || '설정되지 않음'}
+                        </p>
+                      </div>
+                      <div>
+                        <Label>소개</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {user?.user_metadata?.bio || '설정되지 않음'}
+                        </p>
+                      </div>
+                      <Button onClick={() => setIsEditing(true)}>
+                        정보 수정
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Account Info */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    계정 정보
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <CardTitle>프로필 정보</CardTitle>
-                    <CardDescription>
-                      개인 정보를 관리하고 업데이트하세요
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant={isEditing ? "outline" : "default"}
-                    onClick={() => setIsEditing(!isEditing)}
-                  >
-                    {isEditing ? "취소" : "편집"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <div className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      value={user.email}
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">표시 이름</Label>
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="displayName"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="표시할 이름을 입력하세요"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bio">자기소개</Label>
-                  <textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="자기소개를 입력하세요"
-                    className="w-full min-h-[100px] p-3 border border-input rounded-md bg-background text-sm disabled:bg-muted disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {isEditing && (
-                  <div className="flex space-x-2">
-                    <Button onClick={handleSave} className="flex-1">
-                      저장
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1"
-                    >
-                      취소
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Account Actions */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>계정 관리</CardTitle>
-                <CardDescription>
-                  계정 관련 작업을 수행하세요
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">비밀번호 변경</h4>
+                    <Label>이메일</Label>
                     <p className="text-sm text-muted-foreground">
-                      계정 보안을 위해 비밀번호를 변경하세요
+                      {user?.email}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    변경
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">계정 삭제</h4>
+                    <Label>가입일</Label>
                     <p className="text-sm text-muted-foreground">
-                      계정과 모든 데이터를 영구적으로 삭제합니다
+                      {user?.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : '알 수 없음'}
                     </p>
                   </div>
-                  <Button variant="destructive" size="sm">
-                    삭제
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-medium">로그아웃</h4>
+                    <Label>마지막 로그인</Label>
                     <p className="text-sm text-muted-foreground">
-                      현재 세션에서 로그아웃합니다
+                      {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString('ko-KR') : '알 수 없음'}
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    보안
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <Button 
                     variant="outline" 
-                    size="sm"
                     onClick={handleSignOut}
+                    className="w-full"
                   >
                     로그아웃
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-12">
+            <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-foreground mb-2">
+              로그인이 필요합니다
+            </h4>
+            <p className="text-muted-foreground mb-6">
+              프로필을 보려면 먼저 로그인해주세요.
+            </p>
+            <Button
+              onClick={() => navigate('/auth')}
+              className="contest-button-primary px-6 py-3 rounded-lg font-medium"
+            >
+              로그인하기
+            </Button>
+          </div>
+        )}
       </main>
     </div>
   );

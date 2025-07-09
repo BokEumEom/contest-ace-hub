@@ -76,7 +76,7 @@ const Index = () => {
             안녕하세요! 👋
           </h2>
           <p className="text-muted-foreground">
-            오늘도 멋진 공모전 도전을 응원합니다. 현재 진행 상황을 확인해보세요.
+            공모전 정보를 확인하고 새로운 도전을 시작해보세요.
           </p>
         </div>
 
@@ -124,11 +124,11 @@ const Index = () => {
           </div>
         )}
 
-        {/* Active Contests */}
+        {/* All Contests */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-foreground">
-              {contests.length > 0 ? '내 공모전' : '등록된 공모전이 없습니다'}
+              {contests.length > 0 ? '모든 공모전' : '등록된 공모전이 없습니다'}
             </h3>
             {contests.length > 0 && (
               <button 

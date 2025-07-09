@@ -36,30 +36,19 @@ CREATE INDEX IF NOT EXISTS idx_contests_user_id ON contests(user_id);
 CREATE INDEX IF NOT EXISTS idx_contests_deadline ON contests(deadline);
 CREATE INDEX IF NOT EXISTS idx_contests_category ON contests(category);
 
--- Enable Row Level Security (RLS)
-ALTER TABLE contests ENABLE ROW LEVEL SECURITY;
-
--- Create policies for contests
-CREATE POLICY "Users can manage their own contests" ON contests
-  FOR ALL USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can read their own contests" ON contests
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own contests" ON contests
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own contests" ON contests
-  FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own contests" ON contests
-  FOR DELETE USING (auth.uid() = user_id);
-
 -- Create trigger to automatically update updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 CREATE TRIGGER update_contests_updated_at 
-  BEFORE UPDATE ON contests 
-  FOR EACH ROW 
-  EXECUTE FUNCTION update_updated_at_column();
+    BEFORE UPDATE ON contests 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comments for documentation
 COMMENT ON TABLE contests IS 'Stores user contest data';

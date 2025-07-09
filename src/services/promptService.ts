@@ -17,20 +17,10 @@ export class PromptService {
   // 프롬프트 목록 조회
   static async getPrompts(contestId: number): Promise<Prompt[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 가져오기
-        const stored = localStorage.getItem(`prompts_${contestId}`);
-        return stored ? JSON.parse(stored) : [];
-      }
-
       const { data, error } = await supabase
         .from('contest_prompts')
         .select('*')
         .eq('contest_id', contestId)
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -48,20 +38,10 @@ export class PromptService {
   // 파일별 프롬프트 조회
   static async getPromptByFileId(fileId: number): Promise<Prompt | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 가져오기
-        const stored = localStorage.getItem(`prompts_file_${fileId}`);
-        return stored ? JSON.parse(stored) : null;
-      }
-
       const { data, error } = await supabase
         .from('contest_prompts')
         .select('*')
         .eq('file_id', fileId)
-        .eq('user_id', userId)
         .single();
 
       if (error || !data) {
@@ -87,19 +67,8 @@ export class PromptService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에 저장
-        const stored = localStorage.getItem(`prompts_${prompt.contest_id}`);
-        const prompts = stored ? JSON.parse(stored) : [];
-        const newPrompt = { ...prompt, id: Date.now(), created_at: new Date().toISOString() };
-        prompts.unshift(newPrompt);
-        localStorage.setItem(`prompts_${prompt.contest_id}`, JSON.stringify(prompts));
-        
-        // 파일별 프롬프트도 저장
-        if (prompt.file_id) {
-          localStorage.setItem(`prompts_file_${prompt.file_id}`, JSON.stringify(newPrompt));
-        }
-        
-        return newPrompt;
+        // 인증된 사용자가 없으면 null 반환
+        return null;
       }
 
       const { data, error } = await supabase
@@ -130,17 +99,7 @@ export class PromptService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 업데이트
-        const stored = localStorage.getItem(`prompts_${updates.contest_id}`);
-        if (stored) {
-          const prompts = JSON.parse(stored);
-          const index = prompts.findIndex((p: Prompt) => p.id === promptId);
-          if (index !== -1) {
-            prompts[index] = { ...prompts[index], ...updates };
-            localStorage.setItem(`prompts_${updates.contest_id}`, JSON.stringify(prompts));
-            return prompts[index];
-          }
-        }
+        // 인증된 사용자가 없으면 null 반환
         return null;
       }
 
@@ -171,14 +130,8 @@ export class PromptService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 삭제
-        const stored = localStorage.getItem(`prompts_${contestId}`);
-        if (stored) {
-          const prompts = JSON.parse(stored);
-          const updatedPrompts = prompts.filter((p: Prompt) => p.id !== promptId);
-          localStorage.setItem(`prompts_${contestId}`, JSON.stringify(updatedPrompts));
-        }
-        return true;
+        // 인증된 사용자가 없으면 false 반환
+        return false;
       }
 
       const { error } = await supabase

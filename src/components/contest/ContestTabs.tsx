@@ -33,6 +33,15 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
   onProgressUpdate,
   setActiveTab
 }) => {
+  // 실시간으로 남은 일수 계산하는 함수
+  const calculateDaysLeft = (deadline: string) => {
+    if (!deadline) return 0;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
   if (activeTab === 'overview') {
     return (
       <div className="space-y-6">
@@ -187,72 +196,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
           </Card>
         )}
 
-        {/* 진행 상황 관리 - 개요 탭에서는 간단한 요약만 표시 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-contest-orange" />
-              진행 상황 요약
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>진행률</span>
-                  <span>{contest.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-contest-orange h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${contest.progress}%` }}
-                  ></div>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setActiveTab('progress')}
-              >
-                상세 보기
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* 작품 관리 요약 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5 text-contest-blue" />
-              작품 관리 요약
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-2">
-                  작품 파일과 설명을 관리하고 공모전 출품을 준비하세요.
-                </p>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">주요 기능:</span>
-                  <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground">
-                    <li>작품 파일 업로드 및 관리</li>
-                    <li>작품 설명 작성 및 편집</li>
-                    <li>프롬프트 관리</li>
-                  </ul>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setActiveTab('files')}
-              >
-                작품 관리
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -275,7 +219,9 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
                 <div className="text-sm text-muted-foreground">현재 진행률</div>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-contest-blue">{contest.days_left || 0}</div>
+                <div className="text-2xl font-bold text-contest-blue">
+                  {calculateDaysLeft(contest.deadline)}
+                </div>
                 <div className="text-sm text-muted-foreground">남은 일수</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">

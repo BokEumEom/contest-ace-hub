@@ -18,20 +18,10 @@ export class FileService {
   // 파일 목록 조회
   static async getFiles(contestId: string): Promise<FileItem[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 가져오기
-        const stored = localStorage.getItem(`files_${contestId}`);
-        return stored ? JSON.parse(stored) : [];
-      }
-
       const { data, error } = await supabase
         .from('contest_files')
         .select('*')
         .eq('contest_id', contestId)
-        .eq('user_id', userId)
         .order('uploaded_at', { ascending: false });
 
       if (error) {
@@ -87,19 +77,8 @@ export class FileService {
       };
 
       if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에 저장
-        const stored = localStorage.getItem(`files_${contestId}`);
-        const files = stored ? JSON.parse(stored) : [];
-        const newFile = { 
-          ...fileItem, 
-          id: Date.now(), 
-          uploaded_at: new Date().toISOString(),
-          // localStorage에서는 URL을 blob URL로 생성
-          url: URL.createObjectURL(file)
-        };
-        files.unshift(newFile);
-        localStorage.setItem(`files_${contestId}`, JSON.stringify(files));
-        return newFile;
+        // 인증된 사용자가 없으면 null 반환
+        return null;
       }
 
       // DB에 파일 정보 저장
@@ -135,14 +114,8 @@ export class FileService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 삭제
-        const stored = localStorage.getItem(`files_${contestId}`);
-        if (stored) {
-          const files = JSON.parse(stored);
-          const updatedFiles = files.filter((file: FileItem) => file.id !== fileId);
-          localStorage.setItem(`files_${contestId}`, JSON.stringify(updatedFiles));
-        }
-        return true;
+        // 인증된 사용자가 없으면 false 반환
+        return false;
       }
 
       // DB에서 파일 정보 조회

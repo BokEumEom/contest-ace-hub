@@ -31,19 +31,9 @@ export interface Contest {
 export class ContestService {
   static async getContests(): Promise<Contest[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const savedContests = localStorage.getItem('contests');
-        return savedContests ? JSON.parse(savedContests) : [];
-      }
-
       const { data, error } = await supabase
         .from('contests')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,13 +54,8 @@ export class ContestService {
       const userId = user?.id;
 
       if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const savedContests = localStorage.getItem('contests');
-        const contests = savedContests ? JSON.parse(savedContests) : [];
-        const newContest = { ...contest, id: Date.now() };
-        contests.unshift(newContest);
-        localStorage.setItem('contests', JSON.stringify(contests));
-        return newContest;
+        // 인증된 사용자가 없으면 null 반환
+        return null;
       }
 
       const { data, error } = await supabase
@@ -100,15 +85,7 @@ export class ContestService {
       const userId = user?.id;
 
       if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const savedContests = localStorage.getItem('contests');
-        const contests = savedContests ? JSON.parse(savedContests) : [];
-        const index = contests.findIndex((c: Contest) => c.id === id);
-        if (index !== -1) {
-          contests[index] = { ...contests[index], ...updates };
-          localStorage.setItem('contests', JSON.stringify(contests));
-          return contests[index];
-        }
+        // 인증된 사용자가 없으면 null 반환
         return null;
       }
 
@@ -138,12 +115,8 @@ export class ContestService {
       const userId = user?.id;
 
       if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const savedContests = localStorage.getItem('contests');
-        const contests = savedContests ? JSON.parse(savedContests) : [];
-        const filteredContests = contests.filter((c: Contest) => c.id !== id);
-        localStorage.setItem('contests', JSON.stringify(filteredContests));
-        return true;
+        // 인증된 사용자가 없으면 false 반환
+        return false;
       }
 
       const { error } = await supabase
@@ -166,23 +139,12 @@ export class ContestService {
 
   static async getContestById(id: string | number): Promise<Contest | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const savedContests = localStorage.getItem('contests');
-        const contests = savedContests ? JSON.parse(savedContests) : [];
-        const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-        return contests.find((c: Contest) => c.id === numericId) || null;
-      }
-
       const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+
       const { data, error } = await supabase
         .from('contests')
         .select('*')
         .eq('id', numericId)
-        .eq('user_id', userId)
         .single();
 
       if (error) {

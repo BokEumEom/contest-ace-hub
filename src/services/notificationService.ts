@@ -14,19 +14,9 @@ export interface Notification {
 export class NotificationService {
   static async getNotifications(): Promise<Notification[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const stored = localStorage.getItem('notifications');
-        return stored ? JSON.parse(stored) : [];
-      }
-
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -46,21 +36,11 @@ export class NotificationService {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const stored = localStorage.getItem('notifications');
-        const notifications = stored ? JSON.parse(stored) : [];
-        const newNotification = { ...notification, id: Date.now() };
-        notifications.unshift(newNotification);
-        localStorage.setItem('notifications', JSON.stringify(notifications));
-        return newNotification;
-      }
-
       const { data, error } = await supabase
         .from('notifications')
         .insert({
           ...notification,
-          user_id: userId
+          user_id: userId || 'anonymous'
         })
         .select()
         .single();
@@ -79,26 +59,10 @@ export class NotificationService {
 
   static async markAsRead(id: number): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const stored = localStorage.getItem('notifications');
-        const notifications = stored ? JSON.parse(stored) : [];
-        const index = notifications.findIndex((n: Notification) => n.id === id);
-        if (index !== -1) {
-          notifications[index].is_read = true;
-          localStorage.setItem('notifications', JSON.stringify(notifications));
-        }
-        return true;
-      }
-
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('id', id)
-        .eq('user_id', userId);
+        .eq('id', id);
 
       if (error) {
         console.error('Error marking notification as read:', error);
@@ -114,23 +78,10 @@ export class NotificationService {
 
   static async deleteNotification(id: number): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const stored = localStorage.getItem('notifications');
-        const notifications = stored ? JSON.parse(stored) : [];
-        const filteredNotifications = notifications.filter((n: Notification) => n.id !== id);
-        localStorage.setItem('notifications', JSON.stringify(filteredNotifications));
-        return true;
-      }
-
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('id', id)
-        .eq('user_id', userId);
+        .eq('id', id);
 
       if (error) {
         console.error('Error deleting notification:', error);
@@ -146,20 +97,9 @@ export class NotificationService {
 
   static async getUnreadCount(): Promise<number> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const stored = localStorage.getItem('notifications');
-        const notifications = stored ? JSON.parse(stored) : [];
-        return notifications.filter((n: Notification) => !n.is_read).length;
-      }
-
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
         .eq('is_read', false);
 
       if (error) {

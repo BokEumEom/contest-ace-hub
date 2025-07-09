@@ -29,28 +29,16 @@ export interface ContestDetail {
 export class ContestDetailService {
   static async getTeamMembers(contestId: number): Promise<TeamMember[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const saved = localStorage.getItem(`teamMembers_${contestId}`);
-        return saved ? JSON.parse(saved) : [];
-      }
-
       const { data, error } = await supabase
         .from('contest_details')
         .select('data')
-        .eq('user_id', userId)
         .eq('contest_id', contestId)
         .eq('detail_type', 'team_members')
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching team members:', error);
-        // 인증 오류나 권한 오류인 경우 localStorage로 fallback
-        const saved = localStorage.getItem(`teamMembers_${contestId}`);
-        return saved ? JSON.parse(saved) : [];
+        return [];
       }
 
       // If no data found, return empty array
@@ -95,28 +83,16 @@ export class ContestDetailService {
 
   static async getSchedules(contestId: number): Promise<Schedule[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      if (!userId) {
-        // Fallback to localStorage if no authenticated user
-        const saved = localStorage.getItem(`schedules_${contestId}`);
-        return saved ? JSON.parse(saved) : [];
-      }
-
       const { data, error } = await supabase
         .from('contest_details')
         .select('data')
-        .eq('user_id', userId)
         .eq('contest_id', contestId)
         .eq('detail_type', 'schedules')
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching schedules:', error);
-        // 인증 오류나 권한 오류인 경우 localStorage로 fallback
-        const saved = localStorage.getItem(`schedules_${contestId}`);
-        return saved ? JSON.parse(saved) : [];
+        return [];
       }
 
       // If no data found, return empty array
