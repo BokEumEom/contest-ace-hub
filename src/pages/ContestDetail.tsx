@@ -2,7 +2,9 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Info,
-  Lightbulb
+  Lightbulb,
+  Target,
+  Upload
 } from 'lucide-react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -83,6 +85,8 @@ const ContestDetail = () => {
 
   const tabs = [
     { id: 'overview', label: '개요', icon: Info },
+    { id: 'progress', label: '진행 상황', icon: Target },
+    { id: 'files', label: '작품 관리', icon: Upload },
     { id: 'ai-assistant', label: 'AI 어시스턴트', icon: Lightbulb }
   ];
 
@@ -126,6 +130,7 @@ const ContestDetail = () => {
               activeTab={activeTab}
               contest={contest}
               onProgressUpdate={handleProgressUpdate}
+              setActiveTab={setActiveTab}
             />
           </div>
 

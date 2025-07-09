@@ -46,11 +46,14 @@ export class ContestDetailService {
         .eq('detail_type', 'team_members')
         .single();
 
-      if (error || !data) {
-        return [];
+      if (error) {
+        console.error('Error fetching team members:', error);
+        // 인증 오류나 권한 오류인 경우 localStorage로 fallback
+        const saved = localStorage.getItem(`teamMembers_${contestId}`);
+        return saved ? JSON.parse(saved) : [];
       }
 
-      return data.data as TeamMember[];
+      return data?.data as TeamMember[] || [];
     } catch (error) {
       console.error('Error in getTeamMembers:', error);
       return [];
@@ -108,11 +111,14 @@ export class ContestDetailService {
         .eq('detail_type', 'schedules')
         .single();
 
-      if (error || !data) {
-        return [];
+      if (error) {
+        console.error('Error fetching schedules:', error);
+        // 인증 오류나 권한 오류인 경우 localStorage로 fallback
+        const saved = localStorage.getItem(`schedules_${contestId}`);
+        return saved ? JSON.parse(saved) : [];
       }
 
-      return data.data as Schedule[];
+      return data?.data as Schedule[] || [];
     } catch (error) {
       console.error('Error in getSchedules:', error);
       return [];

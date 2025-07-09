@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Users, Trophy, FileText, Globe, Sparkles, Loader2 } from 'lucide-react';
+import { Calendar, Users, Trophy, FileText, Globe, Sparkles, Loader2, Copy } from 'lucide-react';
 import { Contest } from '@/types/contest';
 import { useContests } from '@/hooks/useContests';
 import { toast } from 'sonner';
@@ -38,8 +38,10 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
 
   // AI 기반 등록 상태
   const [urlInput, setUrlInput] = useState('');
+  const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showUrlSection, setShowUrlSection] = useState(true);
+  const [activeMethod, setActiveMethod] = useState<'url' | 'text'>('url');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,9 +154,59 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
     }
   };
 
+  // AI를 활용한 텍스트에서 공모전 정보 추출
+  const handleExtractFromText = async () => {
+    if (!textInput.trim()) {
+      toast.error('텍스트를 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // API 키 확인 (비동기)
+      const geminiApiKey = await GeminiService.getApiKey();
+      
+      if (!geminiApiKey) {
+        toast.error('AI 기능을 사용하려면 설정에서 Gemini API 키를 설정해주세요.');
+        return;
+      }
+
+      // AI를 활용한 정보 추출
+      const gemini = new GeminiService(geminiApiKey);
+      const contestInfo = await gemini.extractContestInfoFromText(textInput);
+
+      // 폼 데이터 업데이트
+      setFormData({
+        title: contestInfo.title,
+        organization: contestInfo.organization,
+        deadline: contestInfo.deadline,
+        category: contestInfo.category,
+        prize: contestInfo.prize,
+        description: contestInfo.description,
+        teamMembers: 1,
+        contestTheme: contestInfo.contestTheme,
+        submissionFormat: contestInfo.submissionFormat,
+        contestSchedule: contestInfo.contestSchedule,
+        submissionMethod: contestInfo.submissionMethod,
+        prizeDetails: contestInfo.prizeDetails,
+        resultAnnouncement: contestInfo.resultAnnouncement,
+        precautions: contestInfo.precautions,
+        contestUrl: contestInfo.contestUrl,
+      });
+
+      toast.success('AI가 공모전 정보를 추출했습니다!');
+      setShowUrlSection(false); // AI 섹션 숨기기
+    } catch (error) {
+      console.error('AI 정보 추출 실패:', error);
+      toast.error('AI 정보 추출에 실패했습니다. 수동으로 입력해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* AI 기반 URL 입력 섹션 */}
+      {/* AI 기반 등록 섹션 */}
       {showUrlSection && (
         <Card className="w-full max-w-2xl mx-auto border-blue-200 bg-blue-50">
           <CardHeader>
@@ -165,38 +217,103 @@ const ContestForm: React.FC<ContestFormProps> = ({ onSuccess, onCancel }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="urlInput">공모전 URL</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="urlInput"
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://contest.example.com"
-                    type="url"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleExtractFromUrl}
-                    disabled={isLoading || !urlInput.trim()}
-                    className="contest-button-primary"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 mr-2" />
-                    )}
-                    {isLoading ? '추출 중...' : 'AI로 추출'}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  공모전 URL을 입력하면 AI가 자동으로 정보를 추출합니다.
-                  <br />
-                  <span className="text-blue-600">
-                    설정에서 Gemini API 키와 Firecrawl API 키를 설정해야 합니다.
-                  </span>
-                </p>
+              {/* 방법 선택 탭 */}
+              <div className="flex border rounded-lg p-1 bg-white">
+                <button
+                  onClick={() => setActiveMethod('url')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeMethod === 'url'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Globe className="h-4 w-4 inline mr-2" />
+                  URL 입력
+                </button>
+                <button
+                  onClick={() => setActiveMethod('text')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeMethod === 'text'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Copy className="h-4 w-4 inline mr-2" />
+                  텍스트 붙여넣기
+                </button>
               </div>
+
+              {/* URL 입력 방법 */}
+              {activeMethod === 'url' && (
+                <div className="space-y-2">
+                  <Label htmlFor="urlInput">공모전 URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="urlInput"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="https://contest.example.com"
+                      type="url"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleExtractFromUrl}
+                      disabled={isLoading || !urlInput.trim()}
+                      className="contest-button-primary"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-2" />
+                      )}
+                      {isLoading ? '추출 중...' : 'AI로 추출'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    공모전 URL을 입력하면 AI가 자동으로 정보를 추출합니다.
+                    <br />
+                    <span className="text-blue-600">
+                      설정에서 Gemini API 키와 Firecrawl API 키를 설정해야 합니다.
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* 텍스트 붙여넣기 방법 */}
+              {activeMethod === 'text' && (
+                <div className="space-y-2">
+                  <Label htmlFor="textInput">공모전 정보 텍스트</Label>
+                  <div className="space-y-2">
+                    <Textarea
+                      id="textInput"
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      placeholder="공모전 정보를 텍스트로 붙여넣으세요. 예시:&#10;&#10;2024 스마트시티 아이디어 공모전&#10;주최: 과학기술정보통신부&#10;마감일: 2024-12-31&#10;상금: 대상 500만원, 우승 300만원&#10;공모 주제: 미래 도시를 위한 혁신적인 아이디어&#10;제출 형식: PDF 10페이지 이하, 이미지 파일 포함&#10;제출 방법: 온라인 제출 시스템을 통한 제출&#10;결과 발표: 2025년 1월 15일&#10;주의사항: 개인 또는 팀(최대 3명) 참가 가능"
+                      rows={8}
+                      className="resize-none"
+                    />
+                    <Button
+                      onClick={handleExtractFromText}
+                      disabled={isLoading || !textInput.trim()}
+                      className="contest-button-primary w-full"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-2" />
+                      )}
+                      {isLoading ? '추출 중...' : 'AI로 추출'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    공모전 정보를 텍스트로 붙여넣으면 AI가 자동으로 정보를 추출합니다.
+                    <br />
+                    <span className="text-blue-600">
+                      설정에서 Gemini API 키를 설정해야 합니다.
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

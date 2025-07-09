@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Trophy, 
   Target, 
@@ -20,15 +21,17 @@ import AIAssistant from '@/components/AIAssistant';
 import { Contest } from '@/types/contest';
 
 interface ContestTabsProps {
-  activeTab: string;
+  activeTab: 'overview' | 'progress' | 'files' | 'ai-assistant';
   contest: Contest;
   onProgressUpdate: (progress: number) => void;
+  setActiveTab: (tab: 'overview' | 'progress' | 'files' | 'ai-assistant') => void;
 }
 
 export const ContestTabs: React.FC<ContestTabsProps> = ({
   activeTab,
   contest,
-  onProgressUpdate
+  onProgressUpdate,
+  setActiveTab
 }) => {
   if (activeTab === 'overview') {
     return (
@@ -184,15 +187,175 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
           </Card>
         )}
 
-        {/* 진행 상황 관리 */}
-        <ProgressManager 
-          contestId={contest.id}
-          currentProgress={contest.progress}
-          onProgressUpdate={onProgressUpdate}
-        />
+        {/* 진행 상황 관리 - 개요 탭에서는 간단한 요약만 표시 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-contest-orange" />
+              진행 상황 요약
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>진행률</span>
+                  <span>{contest.progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-contest-orange h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${contest.progress}%` }}
+                  ></div>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setActiveTab('progress')}
+              >
+                상세 보기
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* 파일 관리 */}
-        <FileManager contestId={contest.id} />
+        {/* 작품 관리 요약 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-contest-blue" />
+              작품 관리 요약
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-2">
+                  작품 파일과 설명을 관리하고 공모전 출품을 준비하세요.
+                </p>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">주요 기능:</span>
+                  <ul className="list-disc list-inside mt-1 text-xs text-muted-foreground">
+                    <li>작품 파일 업로드 및 관리</li>
+                    <li>작품 설명 작성 및 편집</li>
+                    <li>프롬프트 관리</li>
+                  </ul>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setActiveTab('files')}
+              >
+                작품 관리
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (activeTab === 'progress') {
+    return (
+      <div className="space-y-6">
+        {/* 진행 상황 개요 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-contest-orange" />
+              진행 상황 개요
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-contest-orange">{contest.progress}%</div>
+                <div className="text-sm text-muted-foreground">현재 진행률</div>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-contest-blue">{contest.days_left || 0}</div>
+                <div className="text-sm text-muted-foreground">남은 일수</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-contest-coral">{contest.team_members_count || 0}</div>
+                <div className="text-sm text-muted-foreground">팀원 수</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 진행 상황 관리 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-contest-orange" />
+              진행률 설정
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProgressManager 
+              contestId={contest.id}
+              currentProgress={contest.progress}
+              onProgressUpdate={onProgressUpdate}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+
+
+  if (activeTab === 'files') {
+    return (
+      <div className="space-y-6">
+        {/* 작품 관리 안내 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-contest-blue" />
+              작품 관리 안내
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <h4 className="font-medium text-contest-blue mb-2">지원되는 파일 형식</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h5 className="font-medium mb-1">문서</h5>
+                  <p className="text-muted-foreground">PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX</p>
+                </div>
+                <div>
+                  <h5 className="font-medium mb-1">이미지</h5>
+                  <p className="text-muted-foreground">PNG, JPG, JPEG, GIF, WEBP</p>
+                </div>
+                <div>
+                  <h5 className="font-medium mb-1">미디어</h5>
+                  <p className="text-muted-foreground">MP4, WEBM, OGG, MP3, WAV</p>
+                </div>
+                <div>
+                  <h5 className="font-medium mb-1">기타</h5>
+                  <p className="text-muted-foreground">TXT, CSV</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 작품 관리 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-contest-blue" />
+              작품 관리
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FileManager contestId={contest.id} />
+          </CardContent>
+        </Card>
       </div>
     );
   }
