@@ -90,18 +90,18 @@ const ContestCard: React.FC<ContestCardProps> = ({
 
   return (
     <div 
-      className={`contest-card p-6 animate-fade-in ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+      className={`contest-card p-6 animate-fade-in h-[400px] flex flex-col ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
       onClick={onClick}
     >
       {/* Header with status and D-day */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="font-semibold text-lg text-foreground mb-1 line-clamp-2">
+      <div className="flex items-start justify-between mb-4 flex-shrink-0">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-lg text-foreground mb-1 truncate leading-tight">
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground">{organization}</p>
+          <p className="text-sm text-muted-foreground truncate">{organization}</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
           <Badge className={getStatusBadge().className}>
             {getStatusBadge().label}
           </Badge>
@@ -114,19 +114,19 @@ const ContestCard: React.FC<ContestCardProps> = ({
 
       {/* 공모전 주제 표시 */}
       {contest_theme && (
-        <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-purple-600" />
-            <div>
+        <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg flex-shrink-0">
+          <div className="flex items-start gap-2">
+            <Lightbulb className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-purple-600 font-medium">공모주제</p>
-              <p className="text-sm font-semibold text-purple-700 line-clamp-2">{contest_theme}</p>
+              <p className="text-sm font-semibold text-purple-700 line-clamp-2 leading-tight">{contest_theme}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Progress Section - 프로젝트 관리의 핵심 */}
-      <div className="mb-4">
+      <div className="mb-4 flex-shrink-0">
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-muted-foreground">진행률</span>
           <span className="font-medium">{progress}%</span>
@@ -141,23 +141,23 @@ const ContestCard: React.FC<ContestCardProps> = ({
         {/* 다음 할 일 표시 */}
         {nextAction && (
           <div className="flex items-center gap-2 text-sm">
-            <nextAction.icon className={`h-4 w-4 ${nextAction.color}`} />
-            <span className={nextAction.color}>{nextAction.text}</span>
+            <nextAction.icon className={`h-4 w-4 ${nextAction.color} flex-shrink-0`} />
+            <span className={`${nextAction.color} truncate`}>{nextAction.text}</span>
           </div>
         )}
       </div>
 
       {/* Project Status Section */}
-      <div className="space-y-3 mb-4">
+      <div className="space-y-3 mb-4 flex-shrink-0">
         {/* 마감일 */}
         <div className="flex items-center text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4 mr-2" />
-          <span>마감: {deadline || '미정'}</span>
+          <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="truncate">마감: {deadline || '미정'}</span>
         </div>
         
         {/* 팀원 수 (간단하게만 표시) */}
         <div className="flex items-center text-sm text-muted-foreground">
-          <Users className="h-4 w-4 mr-2" />
+          <Users className="h-4 w-4 mr-2 flex-shrink-0" />
           <span>{teamMembers || team_members_count || 0}명</span>
         </div>
 
@@ -173,10 +173,10 @@ const ContestCard: React.FC<ContestCardProps> = ({
 
       {/* Urgency Warning */}
       {displayDaysLeft <= 7 && displayDaysLeft > 0 && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex-shrink-0">
           <div className="flex items-center gap-2 text-red-700">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="text-sm font-medium">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm font-medium truncate">
               {displayDaysLeft <= 3 ? '마감 임박!' : '마감이 가까워졌습니다'}
             </span>
           </div>
@@ -184,7 +184,7 @@ const ContestCard: React.FC<ContestCardProps> = ({
       )}
 
       {/* Footer - 팀원 아바타만 표시 */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end mt-auto flex-shrink-0">
         <div className="flex items-center text-sm text-muted-foreground">
           <div className="flex -space-x-2 mr-2">
             {(() => {
@@ -194,13 +194,13 @@ const ContestCard: React.FC<ContestCardProps> = ({
                 ...Array(displayCount).map((_, i) => (
                   <div 
                     key={i}
-                    className="h-6 w-6 bg-contest-gradient rounded-full border-2 border-white flex items-center justify-center"
+                    className="h-6 w-6 bg-contest-gradient rounded-full border-2 border-white flex items-center justify-center flex-shrink-0"
                   >
                     <span className="text-xs text-white">팀</span>
                   </div>
                 )),
                 memberCount > 3 && (
-                  <div key="more" className="h-6 w-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center">
+                  <div key="more" className="h-6 w-6 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0">
                     <span className="text-xs">+{memberCount - 3}</span>
                   </div>
                 )
