@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   ArrowLeft, 
   Globe,
@@ -11,7 +17,9 @@ import {
   Award,
   Users,
   Target,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Contest } from '@/types/contest';
 
@@ -29,122 +37,186 @@ export const ContestHeader: React.FC<ContestHeaderProps> = ({
   getDaysLeftColor
 }) => {
   const navigate = useNavigate();
+  const [isPrizeExpanded, setIsPrizeExpanded] = useState(false);
+
+  // 상금/혜택 텍스트가 긴지 확인 (50자 이상)
+  const isPrizeLong = contest.prize && contest.prize.length > 50;
 
   return (
-    <div className="mb-8">
-      {/* 뒤로가기 버튼 */}
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate('/')}
-        className="mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        돌아가기
-      </Button>
-      
-      {/* 메인 헤더 */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {contest.title}
-            </h1>
-            <div className="flex items-center gap-4 text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Globe className="h-4 w-4" />
-                <span>{contest.organization}</span>
+    <TooltipProvider>
+      <div className="mb-8">
+        {/* 뒤로가기 버튼 */}
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/')}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          돌아가기
+        </Button>
+        
+        {/* 메인 헤더 */}
+        <div className="mb-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                {contest.title}
+              </h1>
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Globe className="h-4 w-4" />
+                  <span>{contest.organization}</span>
+                </div>
+                {contest.contest_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(contest.contest_url, '_blank')}
+                    className="h-auto p-1"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              {contest.contestUrl && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.open(contest.contestUrl, '_blank')}
-                  className="h-auto p-1"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge className={`px-3 py-1 ${getStatusColor(contest.status)}`}>
+                {getStatusText(contest.status)}
+              </Badge>
+              <Badge className={`px-3 py-1 ${getDaysLeftColor(contest.days_left)}`}>
+                D-{contest.days_left > 0 ? contest.days_left : '마감'}
+              </Badge>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge className={`px-3 py-1 ${getStatusColor(contest.status)}`}>
-              {getStatusText(contest.status)}
-            </Badge>
-            <Badge className={`px-3 py-1 ${getDaysLeftColor(contest.daysLeft)}`}>
-              D-{contest.daysLeft > 0 ? contest.daysLeft : '마감'}
-            </Badge>
-          </div>
+
+          {/* 핵심 정보 카드 */}
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* 마감일 */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-50 rounded-lg flex-shrink-0">
+                    <Clock className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-muted-foreground">마감일</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="font-semibold truncate cursor-help">
+                          {contest.deadline}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{contest.deadline}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {/* 상금/혜택 */}
+                {contest.prize && (
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-yellow-50 rounded-lg flex-shrink-0">
+                      <Award className="h-5 w-5 text-yellow-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-muted-foreground">상금/혜택</p>
+                      {isPrizeLong ? (
+                        <div>
+                          <div className="flex items-start gap-2">
+                            <p 
+                              className="font-semibold"
+                              style={{
+                                display: !isPrizeExpanded ? '-webkit-box' : 'block',
+                                WebkitLineClamp: !isPrizeExpanded ? '2' : 'unset',
+                                WebkitBoxOrient: !isPrizeExpanded ? 'vertical' : 'unset',
+                                overflow: !isPrizeExpanded ? 'hidden' : 'visible',
+                                textOverflow: !isPrizeExpanded ? 'ellipsis' : 'unset'
+                              }}
+                            >
+                              {contest.prize}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setIsPrizeExpanded(!isPrizeExpanded)}
+                              className="h-auto p-1 flex-shrink-0"
+                            >
+                              {isPrizeExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="font-semibold truncate cursor-help">
+                              {contest.prize}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="whitespace-pre-wrap">{contest.prize}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 팀원 */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                    <Users className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-muted-foreground">팀원</p>
+                    <p className="font-semibold">{contest.team_members_count}명</p>
+                  </div>
+                </div>
+
+                {/* 카테고리 */}
+                {contest.category && (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
+                      <Target className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-muted-foreground">카테고리</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="font-semibold truncate cursor-help">
+                            {contest.category}
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{contest.category}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 진행률 */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">진행률</span>
+                  <span className="text-sm font-semibold">{contest.progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-contest-gradient h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${contest.progress}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* 핵심 정보 카드 */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* 마감일 */}
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-50 rounded-lg">
-                  <Clock className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">마감일</p>
-                  <p className="font-semibold">{contest.deadline}</p>
-                </div>
-              </div>
-
-              {/* 상금/혜택 */}
-              {contest.prize && (
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-50 rounded-lg">
-                    <Award className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">상금/혜택</p>
-                    <p className="font-semibold">{contest.prize}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* 팀원 */}
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">팀원</p>
-                  <p className="font-semibold">{contest.teamMembers}명</p>
-                </div>
-              </div>
-
-              {/* 카테고리 */}
-              {contest.category && (
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <Target className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">카테고리</p>
-                    <p className="font-semibold">{contest.category}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 진행률 */}
-            <div className="mt-6 pt-6 border-t">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">진행률</span>
-                <span className="text-sm font-semibold">{contest.progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-contest-gradient h-3 rounded-full transition-all duration-300"
-                  style={{ width: `${contest.progress}%` }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }; 
