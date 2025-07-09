@@ -1,32 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { Wand2, Eye, Edit, Copy, Plus, Trash2, Image, FileText, Video, Music, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Wand2, 
-  Image, 
-  FileText, 
-  Video, 
-  Music, 
-  Settings,
-  Eye,
-  Edit,
-  Trash2,
-  Copy,
-  Plus,
-  MessageSquare
-} from 'lucide-react';
 import { PromptService, Prompt } from '@/services/promptService';
 import { FileService, FileItem } from '@/services/fileService';
 import { useToast } from '@/hooks/use-toast';
@@ -34,13 +15,13 @@ import { useAuth } from '@/components/AuthProvider';
 
 interface PromptManagerProps {
   contestId: number;
+  files?: FileItem[]; // 파일 목록을 props로 받아 중복 로딩 방지
 }
 
-export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
+export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, files = [] }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -49,22 +30,10 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
 
-  // 프롬프트 목록 로드
-  useEffect(() => {
-    if (user) {
-      loadPrompts();
-      loadFiles();
-    } else {
-      setPrompts([]);
-      setFiles([]);
-    }
-    // Listen for global event to open prompt register modal
-    const handler = () => handleCreatePromptModal();
-    window.addEventListener('openPromptRegisterModal', handler);
-    return () => window.removeEventListener('openPromptRegisterModal', handler);
-  }, [contestId, user]);
-
-  const loadPrompts = async () => {
+  // 프롬프트 목록 로드 - 성능 최적화
+  const loadPrompts = useCallback(async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
       const promptList = await PromptService.getPrompts(contestId);
@@ -79,16 +48,21 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [contestId, user, toast]);
 
-  const loadFiles = async () => {
-    try {
-      const fileList = await FileService.getFiles(contestId.toString());
-      setFiles(fileList);
-    } catch (error) {
-      console.error('Error loading files:', error);
+  // 프롬프트 목록 로드
+  useEffect(() => {
+    if (user) {
+      loadPrompts();
+    } else {
+      setPrompts([]);
     }
-  };
+    
+    // Listen for global event to open prompt register modal
+    const handler = () => handleCreatePromptModal();
+    window.addEventListener('openPromptRegisterModal', handler);
+    return () => window.removeEventListener('openPromptRegisterModal', handler);
+  }, [user, loadPrompts]);
 
   // 프롬프트 보기
   const handleViewPrompt = (prompt: Prompt) => {
@@ -229,11 +203,6 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
     try {
       const success = await FileService.updateFilePrompt(file.id!, selectedPrompt.prompt_text);
       if (success) {
-        setFiles(prev => prev.map(f => 
-          f.id === file.id 
-            ? { ...f, prompt: selectedPrompt.prompt_text }
-            : f
-        ));
         setLinkModalOpen(false);
         setSelectedPrompt(null);
         setSelectedFile(null);
@@ -276,9 +245,24 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
 
   return (
     <div className="space-y-4">
-      {/* 프롬프트 관리 카드 */}
+      {/* 프롬프트 관리 카드 - UI 일관성을 위해 Card 구조 사용 */}
       <Card>
-        <CardHeader />
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5 text-contest-orange" />
+              프롬프트 관리
+            </div>
+            <Button
+              onClick={() => window.dispatchEvent(new CustomEvent('openPromptRegisterModal'))}
+              size="sm"
+              className="bg-contest-orange hover:bg-contest-orange/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              프롬프트 등록
+            </Button>
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
@@ -286,85 +270,99 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
               <p className="text-sm text-muted-foreground">프롬프트 목록을 불러오는 중...</p>
             </div>
           ) : user ? (
-            <div className="grid gap-4">
-              {prompts.map((prompt) => {
-                const Icon = getPromptTypeIcon(prompt.prompt_type);
-                return (
-                  <Card key={prompt.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Icon className="h-4 w-4" />
-                            <Badge className={getPromptTypeColor(prompt.prompt_type)}>
-                              {prompt.prompt_type}
-                            </Badge>
+            <div className="space-y-2">
+              {prompts.length > 0 ? (
+                prompts.map((prompt) => {
+                  const Icon = getPromptTypeIcon(prompt.prompt_type);
+                  return (
+                    <div key={prompt.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`p-2 rounded ${getPromptTypeColor(prompt.prompt_type)}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-sm">
+                              {PromptService.getPromptTypeDescription(prompt.prompt_type)}
+                            </p>
                             {prompt.ai_model && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 {prompt.ai_model}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {prompt.prompt_text.length > 100 
                               ? `${prompt.prompt_text.substring(0, 100)}...` 
                               : prompt.prompt_text
                             }
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>
-                              {prompt.created_at ? new Date(prompt.created_at).toLocaleDateString() : 'N/A'}
-                            </span>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <span>{prompt.created_at ? new Date(prompt.created_at).toLocaleDateString() : 'N/A'}</span>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewPrompt(prompt)}
-                            title="프롬프트 보기"
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPrompt(prompt)}
-                            title="프롬프트 편집"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCopyPrompt(prompt.prompt_text)}
-                            title="프롬프트 복사"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleLinkPromptToFile(prompt)}
-                            title="파일과 연결"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => prompt.id && handleDeletePrompt(prompt.id)}
-                            className="text-red-500 hover:text-red-700"
-                            title="프롬프트 삭제"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewPrompt(prompt)}
+                          title="프롬프트 보기"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditPrompt(prompt)}
+                          title="프롬프트 편집"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyPrompt(prompt.prompt_text)}
+                          title="프롬프트 복사"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLinkPromptToFile(prompt)}
+                          title="파일과 연결"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => prompt.id && handleDeletePrompt(prompt.id)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                          title="프롬프트 삭제"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8">
+                  <Wand2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">저장된 프롬프트가 없습니다.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    "프롬프트 등록" 버튼을 클릭하여 제작물 생성에 사용된 프롬프트를 등록해보세요.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -564,4 +562,4 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
       </Dialog>
     </div>
   );
-}; 
+}); 

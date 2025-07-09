@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Upload, File, Download, Trash2, Eye, MessageSquare, Plus, FileText, Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,87 @@ interface FileManagerProps {
   contestId: string;
 }
 
-const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
+// 파일 아이템 컴포넌트 - 성능 최적화
+const FileItemComponent = memo(({ 
+  file, 
+  onView, 
+  onDownload, 
+  onDelete, 
+  getFileIcon, 
+  getFileTypeColor 
+}: {
+  file: FileItem;
+  onView: (file: FileItem) => void;
+  onDownload: (file: FileItem) => void;
+  onDelete: (fileId: number) => void;
+  getFileIcon: (type: string) => React.ReactElement;
+  getFileTypeColor: (type: string) => string;
+}) => (
+  <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+    <div className={`p-2 rounded ${getFileTypeColor(file.type)}`}>
+      {getFileIcon(file.type)}
+    </div>
+    
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2">
+        <p className="font-medium text-sm truncate">{file.name}</p>
+        {/* 프롬프트가 있는 파일 표시 */}
+        {file.prompt && (
+          <Badge variant="secondary" className="text-xs">
+            <MessageSquare className="h-3 w-3 mr-1" />
+            프롬프트 포함
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>{FileService.formatFileSize(file.size)}</span>
+        <span>•</span>
+        <span>{file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : 'N/A'}</span>
+      </div>
+      {/* 프롬프트 표시 */}
+      {file.prompt && (
+        <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+          <p className="font-medium text-gray-700 mb-1">사용된 프롬프트:</p>
+          <p className="text-gray-600">{file.prompt}</p>
+        </div>
+      )}
+    </div>
+
+    <div className="flex gap-1">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0"
+        onClick={() => onView(file)}
+        title="파일 보기"
+      >
+        <Eye className="h-3 w-3" />
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-8 w-8 p-0"
+        onClick={() => onDownload(file)}
+        title="파일 다운로드"
+      >
+        <Download className="h-3 w-3" />
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => file.id && onDelete(file.id)}
+        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+        title="파일 삭제"
+      >
+        <Trash2 className="h-3 w-3" />
+      </Button>
+    </div>
+  </div>
+));
+
+FileItemComponent.displayName = 'FileItemComponent';
+
+const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submissionDescription, setSubmissionDescription] = useState('');
@@ -24,18 +104,15 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // 파일 목록 로드
-  useEffect(() => {
-    if (user) {
-      loadFiles();
-      loadSubmissionDescription();
-    } else {
-      setFiles([]);
-      setSubmissionDescription('');
-    }
-  }, [contestId, user]);
+  // 탭 변경 핸들러 - 성능 최적화
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+  }, []);
 
-  const loadFiles = async () => {
+  // 파일 목록 로드 - 성능 최적화
+  const loadFiles = useCallback(async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
       const fileList = await FileService.getFiles(contestId);
@@ -50,9 +127,20 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [contestId, user, toast]);
 
-  const loadSubmissionDescription = () => {
+  // 파일 목록 로드
+  useEffect(() => {
+    if (user) {
+      loadFiles();
+      loadSubmissionDescription();
+    } else {
+      setFiles([]);
+      setSubmissionDescription('');
+    }
+  }, [user, loadFiles]);
+
+  const loadSubmissionDescription = useCallback(() => {
     try {
       const stored = localStorage.getItem(`submission_description_${contestId}`);
       if (stored) {
@@ -61,9 +149,9 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
     } catch (error) {
       console.error('Error loading submission description:', error);
     }
-  };
+  }, [contestId]);
 
-  const saveSubmissionDescription = () => {
+  const saveSubmissionDescription = useCallback(() => {
     try {
       localStorage.setItem(`submission_description_${contestId}`, submissionDescription);
       setIsEditingDescription(false);
@@ -79,18 +167,18 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
         variant: "destructive",
       });
     }
-  };
+  }, [submissionDescription, contestId, toast]);
 
-  const handleCancelDescription = () => {
+  const handleCancelDescription = useCallback(() => {
     loadSubmissionDescription(); // 원래 데이터로 복원
     setIsEditingDescription(false);
-  };
+  }, [loadSubmissionDescription]);
 
-  const getFileIcon = (type: string) => {
+  const getFileIcon = useCallback((type: string) => {
     return <File className="h-4 w-4" />;
-  };
+  }, []);
 
-  const getFileTypeColor = (type: string) => {
+  const getFileTypeColor = useCallback((type: string) => {
     switch (type) {
       case 'document':
         return 'bg-blue-100 text-blue-700';
@@ -103,9 +191,9 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
       default:
         return 'bg-gray-100 text-gray-700';
     }
-  };
+  }, []);
 
-  const deleteFile = async (fileId: number) => {
+  const deleteFile = useCallback(async (fileId: number) => {
     try {
       const success = await FileService.deleteFile(fileId, contestId);
       
@@ -130,23 +218,23 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
         variant: "destructive",
       });
     }
-  };
+  }, [contestId, toast]);
 
-  const downloadFile = (file: FileItem) => {
+  const downloadFile = useCallback((file: FileItem) => {
     const link = document.createElement('a');
     link.href = file.url;
     link.download = file.name;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, []);
 
-  const viewFile = (file: FileItem) => {
+  const viewFile = useCallback((file: FileItem) => {
     window.open(file.url, '_blank');
-  };
+  }, []);
 
   // 기존 파일 업로드 핸들러 (프롬프트 없이)
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = Array.from(event.target.files || []);
     
     if (uploadedFiles.length === 0) return;
@@ -155,25 +243,25 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
     
     // 파일 input 초기화
     event.target.value = '';
-  };
+  }, []);
 
   // 드래그 앤 드롭 핸들러
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  };
+  }, []);
 
-  const handleDragEnter = (e: React.DragEvent) => {
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -181,10 +269,10 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
     if (droppedFiles.length > 0) {
       handleFilesUpload(droppedFiles);
     }
-  };
+  }, []);
 
   // 파일 업로드 처리 (드래그 앤 드롭과 파일 선택 공통)
-  const handleFilesUpload = async (files: File[]) => {
+  const handleFilesUpload = useCallback(async (files: File[]) => {
     for (const file of files) {
       try {
         const uploadedFile = await FileService.uploadFile(file, contestId);
@@ -211,21 +299,19 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
         });
       }
     }
-  };
-
-
+  }, [contestId, toast]);
 
   // 파일 업로드 완료 핸들러 (프롬프트와 함께)
-  const handleFileUploadComplete = (uploadedFile: FileItem) => {
+  const handleFileUploadComplete = useCallback((uploadedFile: FileItem) => {
     setFiles(prev => [uploadedFile, ...prev]);
     toast({
       title: "성공",
       description: `${uploadedFile.name} 파일이 업로드되었습니다.`,
     });
-  };
+  }, [toast]);
 
   return (
-    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
       <div className="flex items-center mb-2">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="files" className="flex items-center gap-2">
@@ -247,7 +333,10 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>파일 관리</span>
+              <div className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-contest-blue" />
+                파일 관리
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-normal text-muted-foreground">
                   {files.length}개 파일
@@ -290,80 +379,29 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
             {/* 파일 목록 */}
             <div className="space-y-2">
               {loading ? (
-                <p className="text-center text-sm text-muted-foreground py-6">
-                  파일 목록을 불러오는 중...
-                </p>
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-contest-orange mx-auto mb-4"></div>
+                  <p className="text-sm text-muted-foreground">파일 목록을 불러오는 중...</p>
+                </div>
               ) : files.length > 0 ? (
                 files.map(file => (
-                  <div key={file.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
-                    <div className={`p-2 rounded ${getFileTypeColor(file.type)}`}>
-                      {getFileIcon(file.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm truncate">{file.name}</p>
-                        {/* 프롬프트가 있는 파일 표시 */}
-                        {file.prompt && (
-                          <Badge variant="secondary" className="text-xs">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            프롬프트 포함
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{FileService.formatFileSize(file.size)}</span>
-                        <span>•</span>
-                        <span>{file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : 'N/A'}</span>
-                      </div>
-                      {/* 프롬프트 표시 */}
-                      {file.prompt && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                          <p className="font-medium text-gray-700 mb-1">사용된 프롬프트:</p>
-                          <p className="text-gray-600">{file.prompt}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => viewFile(file)}
-                        title="파일 보기"
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0"
-                        onClick={() => downloadFile(file)}
-                        title="파일 다운로드"
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => file.id && deleteFile(file.id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                        title="파일 삭제"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
+                  <FileItemComponent
+                    key={file.id}
+                    file={file}
+                    onView={viewFile}
+                    onDownload={downloadFile}
+                    onDelete={deleteFile}
+                    getFileIcon={getFileIcon}
+                    getFileTypeColor={getFileTypeColor}
+                  />
                 ))
               ) : (
                 <div className="text-center py-8">
-                  <Upload className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">파일이 없습니다</h3>
-                  <p className="text-sm text-muted-foreground mb-6">
+                  <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">업로드된 파일이 없습니다.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     파일을 업로드하고 사용된 프롬프트를 함께 관리해보세요.
                   </p>
-
                 </div>
               )}
             </div>
@@ -446,23 +484,14 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
         </Card>
       </TabsContent>
 
-      <TabsContent value="prompts" className="space-y-4">
-        <div className="flex justify-end mb-2">
-          <Button
-            onClick={() => window.dispatchEvent(new CustomEvent('openPromptRegisterModal'))}
-            size="sm"
-            className="bg-contest-orange hover:bg-contest-orange/90"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            프롬프트 등록
-          </Button>
-        </div>
-        <PromptManager contestId={parseInt(contestId)} />
-      </TabsContent>
-
-
+      {/* 프롬프트 관리 탭 - 조건부 렌더링으로 성능 최적화 */}
+      {activeTab === 'prompts' && (
+        <TabsContent value="prompts" className="space-y-4">
+          <PromptManager contestId={parseInt(contestId)} files={files} />
+        </TabsContent>
+      )}
     </Tabs>
   );
-};
+});
 
 export default FileManager;
