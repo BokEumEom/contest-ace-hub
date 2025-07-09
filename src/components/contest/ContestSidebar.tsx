@@ -144,18 +144,22 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
             )}
           </div>
 
-          {/* 결과 보기 버튼 - 완료된 공모전에만 표시 */}
-          {contest.status === 'completed' && (
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              size="sm"
-              onClick={() => navigate(`/contest/${contest.id}/results`)}
-            >
-              <Trophy className="h-4 w-4 mr-2" />
-              결과 보기
-            </Button>
-          )}
+          {/* 결과 관리 버튼 - 탭으로 이동 */}
+          <Button 
+            variant="outline" 
+            className="w-full justify-start" 
+            size="sm"
+            onClick={() => {
+              // ContestDetail 페이지의 results 탭으로 이동
+              const contestDetailElement = document.querySelector('[data-tab="results"]') as HTMLElement;
+              if (contestDetailElement) {
+                contestDetailElement.click();
+              }
+            }}
+          >
+            <Trophy className="h-4 w-4 mr-2" />
+            결과 관리
+          </Button>
 
           <TeamManagementModal
             open={teamModalOpen}

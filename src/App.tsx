@@ -9,7 +9,6 @@ import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import NewContest from "./pages/NewContest";
 import ContestDetail from "./pages/ContestDetail";
-import ContestResults from "./pages/ContestResults";
 import AIHelper from "./pages/AIHelper";
 import Explore from "./pages/Explore";
 import Calendar from "./pages/Calendar";
@@ -35,7 +34,6 @@ const App = () => (
             <Route path="/contests" element={<Contests />} />
             <Route path="/new-contest" element={<NewContest />} />
             <Route path="/contest/:id" element={<ContestDetail />} />
-            <Route path="/contest/:contestId/results" element={<ContestResults />} />
             <Route path="/ai-helper" element={<AIHelper />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/calendar" element={<Calendar />} />
