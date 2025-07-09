@@ -26,7 +26,7 @@ export const useContestDetail = (contestId: string | undefined) => {
   const [loading, setLoading] = useState(true);
 
   // 탭 상태
-  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'files' | 'ai-assistant'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'files' | 'ai-assistant' | 'results'>('overview');
   
   // 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false);

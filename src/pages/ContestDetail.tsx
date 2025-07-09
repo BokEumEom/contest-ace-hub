@@ -4,7 +4,8 @@ import {
   Info,
   Lightbulb,
   Target,
-  Upload
+  Upload,
+  Trophy
 } from 'lucide-react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -87,7 +88,8 @@ const ContestDetail = () => {
     { id: 'overview', label: '개요', icon: Info },
     { id: 'progress', label: '진행 상황', icon: Target },
     { id: 'files', label: '작품 관리', icon: Upload },
-    { id: 'ai-assistant', label: 'AI 어시스턴트', icon: Lightbulb }
+    { id: 'ai-assistant', label: 'AI 어시스턴트', icon: Lightbulb },
+    { id: 'results', label: '결과', icon: Trophy }
   ];
 
   return (

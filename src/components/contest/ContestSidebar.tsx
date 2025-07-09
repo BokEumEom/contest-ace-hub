@@ -1,8 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, ExternalLink, Trash2 } from 'lucide-react';
+import { Calendar, Users, ExternalLink, Trash2, Trophy } from 'lucide-react';
 import { TeamMember, Schedule } from '@/services/contestDetailService';
 import { Contest } from '@/types/contest';
 import { EditContestModal } from './EditContestModal';
@@ -73,10 +74,10 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
   getStatusText,
   getDaysLeftColor
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
-
-
       {/* 빠른 작업 */}
       <Card>
         <CardHeader>
@@ -142,6 +143,19 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
               </div>
             )}
           </div>
+
+          {/* 결과 보기 버튼 - 완료된 공모전에만 표시 */}
+          {contest.status === 'completed' && (
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              size="sm"
+              onClick={() => navigate(`/contest/${contest.id}/results`)}
+            >
+              <Trophy className="h-4 w-4 mr-2" />
+              결과 보기
+            </Button>
+          )}
 
           <TeamManagementModal
             open={teamModalOpen}

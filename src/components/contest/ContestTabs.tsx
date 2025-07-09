@@ -13,18 +13,22 @@ import {
   Info, 
   Lightbulb,
   Clock,
-  Globe
+  Globe,
+  Medal,
+  Star
 } from 'lucide-react';
 import ProgressManager from '@/components/ProgressManager';
 import FileManager from '@/components/FileManager';
 import AIAssistant from '@/components/AIAssistant';
+import { ContestResults } from './ContestResults';
+import { useContestResults } from '@/hooks/useContestResults';
 import { Contest } from '@/types/contest';
 
 interface ContestTabsProps {
-  activeTab: 'overview' | 'progress' | 'files' | 'ai-assistant';
+  activeTab: 'overview' | 'progress' | 'files' | 'ai-assistant' | 'results';
   contest: Contest;
   onProgressUpdate: (progress: number) => void;
-  setActiveTab: (tab: 'overview' | 'progress' | 'files' | 'ai-assistant') => void;
+  setActiveTab: (tab: 'overview' | 'progress' | 'files' | 'ai-assistant' | 'results') => void;
 }
 
 export const ContestTabs: React.FC<ContestTabsProps> = ({
@@ -42,6 +46,22 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
+
+  // 결과 탭용 훅
+  const {
+    results,
+    stats,
+    isLoading: resultsLoading,
+    error: resultsError,
+    filterResultsByStatus,
+    getMyResult,
+    sortResultsByRank,
+    refetch: refetchResults
+  } = useContestResults({
+    contestId: contest.id,
+    userId: 'user1' // 임시 사용자 ID
+  });
+
   if (activeTab === 'overview') {
     return (
       <div className="space-y-6">
@@ -252,8 +272,6 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
     );
   }
 
-
-
   if (activeTab === 'files') {
     return (
       <div className="space-y-6">
@@ -334,6 +352,84 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             />
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (activeTab === 'results') {
+    // 완료된 공모전이 아니면 결과 탭을 표시하지 않음
+    if (contest.status !== 'completed') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-contest-orange" />
+                결과
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">아직 결과가 발표되지 않았습니다</h3>
+                <p className="text-muted-foreground mb-4">
+                  공모전이 완료되면 결과를 확인할 수 있습니다.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>현재 상태: {contest.status === 'preparing' ? '준비중' : 
+                    contest.status === 'in-progress' ? '진행중' : 
+                    contest.status === 'submitted' ? '제출완료' : '알 수 없음'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* 결과 안내 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-contest-orange" />
+              공모전 결과
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-orange-50 p-4 rounded-lg mb-6">
+              <h4 className="font-medium text-contest-orange mb-2">결과 확인 안내</h4>
+              <p className="text-sm text-muted-foreground">
+                공모전 결과를 확인할 수 있습니다. 전체 결과, 우승자, 최종 후보, 내 결과를 탭으로 구분하여 확인하세요.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 결과 컴포넌트 */}
+        <ContestResults
+          results={sortResultsByRank()}
+          stats={stats}
+          isLoading={resultsLoading}
+        />
+
+        {/* 에러 처리 */}
+        {resultsError && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">결과를 불러올 수 없습니다</h3>
+                <p className="text-muted-foreground mb-4">{resultsError}</p>
+                <Button onClick={refetchResults} variant="outline">
+                  다시 시도
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
