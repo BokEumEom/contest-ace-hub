@@ -30,6 +30,7 @@ import {
 import { PromptService, Prompt } from '@/services/promptService';
 import { FileService, FileItem } from '@/services/fileService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/AuthProvider';
 
 interface PromptManagerProps {
   contestId: number;
@@ -37,6 +38,7 @@ interface PromptManagerProps {
 
 export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,13 +51,18 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
 
   // 프롬프트 목록 로드
   useEffect(() => {
-    loadPrompts();
-    loadFiles();
+    if (user) {
+      loadPrompts();
+      loadFiles();
+    } else {
+      setPrompts([]);
+      setFiles([]);
+    }
     // Listen for global event to open prompt register modal
     const handler = () => handleCreatePromptModal();
     window.addEventListener('openPromptRegisterModal', handler);
     return () => window.removeEventListener('openPromptRegisterModal', handler);
-  }, [contestId]);
+  }, [contestId, user]);
 
   const loadPrompts = async () => {
     setLoading(true);
@@ -278,7 +285,7 @@ export const PromptManager: React.FC<PromptManagerProps> = ({ contestId }) => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-contest-orange mx-auto mb-4"></div>
               <p className="text-sm text-muted-foreground">프롬프트 목록을 불러오는 중...</p>
             </div>
-          ) : prompts.length > 0 ? (
+          ) : user ? (
             <div className="grid gap-4">
               {prompts.map((prompt) => {
                 const Icon = getPromptTypeIcon(prompt.prompt_type);

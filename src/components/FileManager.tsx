@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { FileService, FileItem } from '@/services/fileService';
 import { PromptManager } from '@/components/PromptManager';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/AuthProvider';
 
 interface FileManagerProps {
   contestId: string;
@@ -21,12 +22,18 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [activeTab, setActiveTab] = useState('files');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // 파일 목록 로드
   useEffect(() => {
-    loadFiles();
-    loadSubmissionDescription();
-  }, [contestId]);
+    if (user) {
+      loadFiles();
+      loadSubmissionDescription();
+    } else {
+      setFiles([]);
+      setSubmissionDescription('');
+    }
+  }, [contestId, user]);
 
   const loadFiles = async () => {
     setLoading(true);

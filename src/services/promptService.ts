@@ -17,6 +17,13 @@ export class PromptService {
   // 프롬프트 목록 조회
   static async getPrompts(contestId: number): Promise<Prompt[]> {
     try {
+      // 인증 상태 확인
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // 인증되지 않은 사용자는 빈 배열 반환
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('contest_prompts')
         .select('*')

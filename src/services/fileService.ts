@@ -18,6 +18,13 @@ export class FileService {
   // 파일 목록 조회
   static async getFiles(contestId: string): Promise<FileItem[]> {
     try {
+      // 인증 상태 확인
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // 인증되지 않은 사용자는 빈 배열 반환
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('contest_files')
         .select('*')
@@ -181,16 +188,8 @@ export class FileService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 localStorage에서 업데이트
-        const stored = localStorage.getItem(`files_${fileId}`);
-        if (stored) {
-          const files = JSON.parse(stored);
-          const updatedFiles = files.map((file: FileItem) => 
-            file.id === fileId ? { ...file, prompt } : file
-          );
-          localStorage.setItem(`files_${fileId}`, JSON.stringify(updatedFiles));
-        }
-        return true;
+        // 인증된 사용자가 없으면 false 반환
+        return false;
       }
 
       // DB에서 파일 프롬프트 업데이트

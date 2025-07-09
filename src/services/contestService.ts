@@ -29,8 +29,16 @@ export interface Contest {
 }
 
 export class ContestService {
+  // 공모전 목록 조회
   static async getContests(): Promise<Contest[]> {
     try {
+      // 인증 상태 확인
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // 인증되지 않은 사용자는 빈 배열 반환
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('contests')
         .select('*')
@@ -137,18 +145,24 @@ export class ContestService {
     }
   }
 
-  static async getContestById(id: string | number): Promise<Contest | null> {
+  // 공모전 상세 조회
+  static async getContestById(id: string): Promise<Contest | null> {
     try {
-      const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+      // 인증 상태 확인
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // 인증되지 않은 사용자는 null 반환
+        return null;
+      }
 
       const { data, error } = await supabase
         .from('contests')
         .select('*')
-        .eq('id', numericId)
+        .eq('id', id)
         .single();
 
       if (error) {
-        console.error('Error fetching contest by id:', error);
+        console.error('Error fetching contest:', error);
         return null;
       }
 
