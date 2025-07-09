@@ -18,7 +18,7 @@ interface EditContestModalProps {
   onOpenChange: (open: boolean) => void;
   editForm: EditForm;
   setEditForm: (form: EditForm) => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void>;
   onOpen: () => void;
 }
 
@@ -173,7 +173,7 @@ export const EditContestModal: React.FC<EditContestModalProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             취소
           </Button>
-          <Button onClick={onSubmit}>
+          <Button onClick={async () => await onSubmit()}>
             저장
           </Button>
         </div>

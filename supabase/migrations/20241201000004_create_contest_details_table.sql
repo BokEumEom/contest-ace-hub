@@ -1,8 +1,5 @@
 -- Create contest_details table for storing team members and schedules
--- Migration: 20241201000004_create_contest_details_table.sql
-
--- Enable pgvector extension for vector search
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Run this in Supabase SQL Editor to fix the missing table error
 
 -- Create the contest_details table
 CREATE TABLE IF NOT EXISTS contest_details (
@@ -54,4 +51,4 @@ COMMENT ON COLUMN contest_details.contest_id IS 'Reference to the contest this d
 COMMENT ON COLUMN contest_details.detail_type IS 'Type of detail (team_members or schedules)';
 COMMENT ON COLUMN contest_details.data IS 'JSON data containing the detail information';
 COMMENT ON COLUMN contest_details.created_at IS 'When the detail was created';
-COMMENT ON COLUMN contest_details.updated_at IS 'When the detail was last updated'; 
+COMMENT ON COLUMN contest_details.updated_at IS 'When the detail was last updated';

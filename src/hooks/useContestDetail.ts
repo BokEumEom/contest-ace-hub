@@ -132,11 +132,40 @@ export const useContestDetail = (contestId: string | undefined) => {
     }
   };
 
-  const handleEditSubmit = () => {
+  const handleEditSubmit = async () => {
     if (contest) {
-      updateContest(contest.id, editForm);
-      setEditModalOpen(false);
-      alert('공모전 정보가 성공적으로 수정되었습니다.');
+      try {
+        // Transform camelCase field names to snake_case for database compatibility
+        const transformedUpdates = {
+          title: editForm.title,
+          organization: editForm.organization,
+          deadline: editForm.deadline,
+          category: editForm.category,
+          prize: editForm.prize,
+          description: editForm.description,
+          contest_theme: editForm.contestTheme,
+          submission_format: editForm.submissionFormat,
+          contest_schedule: editForm.contestSchedule,
+          submission_method: editForm.submissionMethod,
+          prize_details: editForm.prizeDetails,
+          result_announcement: editForm.resultAnnouncement,
+          precautions: editForm.precautions,
+          contest_url: editForm.contestUrl
+        };
+        
+        const updatedContest = await updateContest(contest.id, transformedUpdates);
+        if (updatedContest) {
+          // 로컬 상태 업데이트
+          setContest(updatedContest);
+          setEditModalOpen(false);
+          alert('공모전 정보가 성공적으로 수정되었습니다.');
+        } else {
+          alert('공모전 정보 수정에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('Error updating contest:', error);
+        alert('공모전 정보 수정 중 오류가 발생했습니다.');
+      }
     }
   };
 

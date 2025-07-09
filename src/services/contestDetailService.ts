@@ -44,7 +44,7 @@ export class ContestDetailService {
         .eq('user_id', userId)
         .eq('contest_id', contestId)
         .eq('detail_type', 'team_members')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching team members:', error);
@@ -53,6 +53,7 @@ export class ContestDetailService {
         return saved ? JSON.parse(saved) : [];
       }
 
+      // If no data found, return empty array
       return data?.data as TeamMember[] || [];
     } catch (error) {
       console.error('Error in getTeamMembers:', error);
@@ -109,7 +110,7 @@ export class ContestDetailService {
         .eq('user_id', userId)
         .eq('contest_id', contestId)
         .eq('detail_type', 'schedules')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching schedules:', error);
@@ -118,6 +119,7 @@ export class ContestDetailService {
         return saved ? JSON.parse(saved) : [];
       }
 
+      // If no data found, return empty array
       return data?.data as Schedule[] || [];
     } catch (error) {
       console.error('Error in getSchedules:', error);

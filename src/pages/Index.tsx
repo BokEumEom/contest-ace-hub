@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Trophy, Users, Clock } from 'lucide-react';
+import { Calendar, Trophy, Users, Clock, AlertTriangle } from 'lucide-react';
 import Header from '@/components/Header';
 import StatsCard from '@/components/StatsCard';
 import ContestCard from '@/components/ContestCard';
@@ -12,11 +12,28 @@ const Index = () => {
   const navigate = useNavigate();
   const { contests, loading } = useContests();
 
+  // 실시간으로 D-day 계산하는 함수
+  const calculateDaysLeft = (deadline: string) => {
+    if (!deadline) return 0;
+    
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays);
+  };
+
   // 통계 계산 (로딩 중이 아닐 때만)
   const inProgressContests = loading ? [] : contests.filter(c => c.status === 'in-progress' || c.status === 'preparing');
   const submittedContests = loading ? [] : contests.filter(c => c.status === 'submitted' || c.status === 'completed');
   const teamProjects = loading ? [] : contests.filter(c => (c.team_members_count || 0) > 1);
-  const urgentContests = loading ? [] : contests.filter(c => (c.days_left || 0) <= 7 && (c.days_left || 0) > 0);
+  
+  // 실시간 계산을 사용한 임박한 마감 공모전 필터링
+  const urgentContests = loading ? [] : contests.filter(c => {
+    const realTimeDaysLeft = calculateDaysLeft(c.deadline);
+    return realTimeDaysLeft <= 7 && realTimeDaysLeft > 0;
+  });
 
   const stats = [
     { 
@@ -87,6 +104,26 @@ const Index = () => {
           <QuickActions />
         </div>
 
+        {/* 임박한 마감 공모전 (우선 표시) */}
+        {!loading && urgentContests.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <h3 className="text-xl font-semibold text-foreground">임박한 마감</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {urgentContests.slice(0, 3).map((contest, index) => (
+                <div key={contest.id} className="animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <ContestCard 
+                    {...contest} 
+                    onClick={() => navigate(`/contest/${contest.id}`)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Active Contests */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -137,27 +174,6 @@ const Index = () => {
             </div>
           )}
         </div>
-
-        {/* Recent Activity - 실제 활동이 있을 때만 표시 */}
-        {!loading && contests.length > 0 && (
-          <div className="contest-card p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">최근 활동</h3>
-            <div className="space-y-4">
-              {contests.slice(0, 4).map((contest, index) => (
-                <div key={contest.id} className="flex items-center space-x-3 py-2">
-                  <div className="h-2 w-2 bg-contest-orange rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">공모전 등록</p>
-                    <p className="text-xs text-muted-foreground">{contest.title}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(contest.created_at || Date.now()).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

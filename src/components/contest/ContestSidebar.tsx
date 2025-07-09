@@ -30,7 +30,7 @@ interface ContestSidebarProps {
   newSchedule: { title: string; date: string; description: string };
   setNewSchedule: (schedule: { title: string; date: string; description: string }) => void;
   // 핸들러
-  handleEditSubmit: () => void;
+  handleEditSubmit: () => Promise<void>;
   handleStatusChange: (status: string) => void;
   handleAddTeamMember: () => void;
   handleRemoveTeamMember: (id: string) => void;
@@ -163,12 +163,12 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
             onRemoveSchedule={handleRemoveSchedule}
           />
 
-          {contest.contestUrl && (
+          {contest.contest_url && (
             <Button 
               variant="outline" 
               className="w-full justify-start" 
               size="sm"
-              onClick={() => window.open(contest.contestUrl, '_blank')}
+              onClick={() => window.open(contest.contest_url, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               공식 사이트
@@ -252,11 +252,11 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
         <CardContent className="space-y-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">등록일</span>
-            <span>{new Date(contest.createdAt).toLocaleDateString()}</span>
+            <span>{new Date(contest.created_at).toLocaleDateString()}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">수정일</span>
-            <span>{new Date(contest.updatedAt).toLocaleDateString()}</span>
+            <span>{new Date(contest.updated_at).toLocaleDateString()}</span>
           </div>
           {contest.category && (
             <div className="flex justify-between">
@@ -264,10 +264,10 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
               <span>{contest.category}</span>
             </div>
           )}
-          {contest.teamMembers > 1 && (
+          {contest.team_members_count > 1 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">팀 구성</span>
-              <span>{contest.teamMembers}명</span>
+              <span>{contest.team_members_count}명</span>
             </div>
           )}
         </CardContent>

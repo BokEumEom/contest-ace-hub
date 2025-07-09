@@ -49,8 +49,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({
   }, [initialContestTitle, initialContestDescription]);
 
   useEffect(() => {
-    const savedKey = GeminiService.getApiKey();
-    setApiKey(savedKey);
+    const loadApiKey = async () => {
+      const savedKey = await GeminiService.getApiKey();
+      setApiKey(savedKey);
+    };
+    loadApiKey();
   }, []);
 
   const generateRichDescription = () => {
