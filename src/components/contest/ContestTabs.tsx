@@ -18,6 +18,7 @@ import {
   Star,
   Settings
 } from 'lucide-react';
+import { useContestDetail } from '@/hooks/useContestDetail';
 import ProgressManager from '@/components/ProgressManager';
 import FileManager from '@/components/FileManager';
 import AIAssistant from '@/components/AIAssistant';
@@ -70,6 +71,14 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
       console.error('Error saving results:', error);
       alert('결과 저장 중 오류가 발생했습니다.');
     }
+  };
+
+  const { updateContest } = useContestDetail(contest.id);
+
+  // tasks와 progress를 함께 업데이트
+  const handleTasksUpdate = (tasks, progress) => {
+    updateContest(contest.id, { tasks, progress });
+    onProgressUpdate(progress); // 기존 진행률도 갱신
   };
 
   if (activeTab === 'overview') {
@@ -274,7 +283,8 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             <ProgressManager 
               contestId={contest.id}
               currentProgress={contest.progress}
-              onProgressUpdate={onProgressUpdate}
+              tasks={contest.tasks || []}
+              onTasksUpdate={handleTasksUpdate}
             />
           </CardContent>
         </Card>

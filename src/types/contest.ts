@@ -1,4 +1,10 @@
 
+export interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Contest {
   id: string;
   title: string;
@@ -22,6 +28,7 @@ export interface Contest {
   contest_url?: string;
   created_at: string;
   updated_at: string;
+  tasks?: Task[]; // 추가: 진행상황 체크리스트
 }
 
 export interface ContestIdea {

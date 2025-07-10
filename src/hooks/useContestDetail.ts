@@ -354,6 +354,7 @@ export const useContestDetail = (contestId: string | undefined) => {
     openEditModal,
     getStatusColor,
     getStatusText,
-    getDaysLeftColor
+    getDaysLeftColor,
+    updateContest // 추가: 외부에서 updateContest 사용 가능
   };
 }; 

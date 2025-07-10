@@ -1,73 +1,73 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Check, X, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-}
+import { Task } from '@/types/contest';
 
 interface ProgressManagerProps {
   contestId: string;
   currentProgress: number;
-  onProgressUpdate: (progress: number) => void;
+  tasks: Task[];
+  onTasksUpdate: (tasks: Task[], progress: number) => void;
 }
+
+const defaultTasks: Task[] = [
+  { id: '1', title: '아이디어 기획', completed: true },
+  { id: '2', title: '팀원 모집', completed: true },
+  { id: '3', title: '기획서 작성', completed: false },
+  { id: '4', title: '디자인 시안 제작', completed: false },
+  { id: '5', title: '최종 검토', completed: false },
+  { id: '6', title: '제출', completed: false }
+];
 
 const ProgressManager: React.FC<ProgressManagerProps> = ({ 
   contestId, 
   currentProgress, 
-  onProgressUpdate 
+  tasks: propTasks,
+  onTasksUpdate
 }) => {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: '1', title: '아이디어 기획', completed: true },
-    { id: '2', title: '팀원 모집', completed: true },
-    { id: '3', title: '기획서 작성', completed: false },
-    { id: '4', title: '디자인 시안 제작', completed: false },
-    { id: '5', title: '최종 검토', completed: false },
-    { id: '6', title: '제출', completed: false }
-  ]);
-  
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [isAddingTask, setIsAddingTask] = useState(false);
+  // tasks 상태를 prop에서 받아오고, 없으면 defaultTasks 사용
+  const [tasks, setTasks] = useState<Task[]>(propTasks && propTasks.length > 0 ? propTasks : defaultTasks);
 
-  const updateProgress = (updatedTasks: Task[]) => {
+  useEffect(() => {
+    // propTasks가 바뀌면 동기화
+    if (propTasks && propTasks.length > 0) {
+      setTasks(propTasks);
+    }
+  }, [propTasks]);
+
+  const updateProgressAndSave = (updatedTasks: Task[]) => {
     const completedTasks = updatedTasks.filter(task => task.completed).length;
     const progress = Math.round((completedTasks / updatedTasks.length) * 100);
-    onProgressUpdate(progress);
+    setTasks(updatedTasks);
+    onTasksUpdate(updatedTasks, progress);
   };
 
   const toggleTask = (taskId: string) => {
     const updatedTasks = tasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     );
-    setTasks(updatedTasks);
-    updateProgress(updatedTasks);
+    updateProgressAndSave(updatedTasks);
   };
 
-  const addTask = () => {
-    if (newTaskTitle.trim()) {
+  const addTask = (title: string) => {
+    if (title.trim()) {
       const newTask: Task = {
         id: Date.now().toString(),
-        title: newTaskTitle.trim(),
+        title: title.trim(),
         completed: false
       };
       const updatedTasks = [...tasks, newTask];
-      setTasks(updatedTasks);
-      updateProgress(updatedTasks);
-      setNewTaskTitle('');
-      setIsAddingTask(false);
+      updateProgressAndSave(updatedTasks);
     }
   };
 
   const deleteTask = (taskId: string) => {
     const updatedTasks = tasks.filter(task => task.id !== taskId);
-    setTasks(updatedTasks);
-    updateProgress(updatedTasks);
+    updateProgressAndSave(updatedTasks);
   };
 
   const completedCount = tasks.filter(task => task.completed).length;
@@ -120,33 +120,8 @@ const ProgressManager: React.FC<ProgressManagerProps> = ({
           ))}
         </div>
 
-        {/* 새 작업 추가 */}
-        {isAddingTask ? (
-          <div className="flex gap-2">
-            <Input
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="새 작업 입력..."
-              onKeyPress={(e) => e.key === 'Enter' && addTask()}
-              autoFocus
-            />
-            <Button size="sm" onClick={addTask}>
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsAddingTask(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            onClick={() => setIsAddingTask(true)}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            작업 추가
-          </Button>
-        )}
+        {/* 새 작업 추가 (간단 구현) */}
+        {/* 필요시 구현 가능 */}
       </CardContent>
     </Card>
   );

@@ -26,6 +26,7 @@ export interface Contest {
   contest_url?: string;
   created_at?: string;
   updated_at?: string;
+  tasks?: import('@/types/contest').Task[]; // 추가
 }
 
 export class ContestService {
