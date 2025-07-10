@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, ExternalLink, Trash2, Trophy } from 'lucide-react';
+import { Calendar, Users, ExternalLink, Trash2 } from 'lucide-react';
 import { TeamMember, Schedule } from '@/services/contestDetailService';
 import { Contest } from '@/types/contest';
 import { EditContestModal } from './EditContestModal';
@@ -143,23 +143,6 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
               </div>
             )}
           </div>
-
-          {/* 결과 관리 버튼 - 탭으로 이동 */}
-          <Button 
-            variant="outline" 
-            className="w-full justify-start" 
-            size="sm"
-            onClick={() => {
-              // ContestDetail 페이지의 results 탭으로 이동
-              const contestDetailElement = document.querySelector('[data-tab="results"]') as HTMLElement;
-              if (contestDetailElement) {
-                contestDetailElement.click();
-              }
-            }}
-          >
-            <Trophy className="h-4 w-4 mr-2" />
-            결과 관리
-          </Button>
 
           <TeamManagementModal
             open={teamModalOpen}

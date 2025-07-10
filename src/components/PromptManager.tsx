@@ -292,7 +292,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2 break-words">
                             {prompt.prompt_text.length > 100 
                               ? `${prompt.prompt_text.substring(0, 100)}...` 
                               : prompt.prompt_text
@@ -378,7 +378,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
 
       {/* 프롬프트 보기 모달 */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wand2 className="h-5 w-5 text-contest-orange" />
@@ -386,7 +386,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
             </DialogTitle>
           </DialogHeader>
           {selectedPrompt && (
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">생성 타입</Label>
@@ -403,15 +403,15 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
               </div>
               <div>
                 <Label className="text-sm font-medium">프롬프트</Label>
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm whitespace-pre-wrap">{selectedPrompt.prompt_text}</p>
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-60 overflow-y-auto">
+                  <p className="text-sm whitespace-pre-wrap break-words">{selectedPrompt.prompt_text}</p>
                 </div>
               </div>
               {selectedPrompt.generation_params && Object.keys(selectedPrompt.generation_params).length > 0 && (
                 <div>
                   <Label className="text-sm font-medium">생성 파라미터</Label>
-                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                    <pre className="text-xs text-muted-foreground">
+                  <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
+                    <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
                       {JSON.stringify(selectedPrompt.generation_params, null, 2)}
                     </pre>
                   </div>
@@ -419,7 +419,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setViewModalOpen(false)}>
               닫기
             </Button>
@@ -429,7 +429,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
 
       {/* 프롬프트 편집 모달 */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedPrompt ? (
@@ -445,7 +445,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="prompt-type">생성 타입</Label>
@@ -481,12 +481,12 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                 id="prompt-text"
                 value={editForm.prompt_text || ''}
                 onChange={(e) => setEditForm(prev => ({ ...prev, prompt_text: e.target.value }))}
-                className="min-h-[120px] mt-2"
+                className="min-h-[120px] max-h-60 mt-2 resize-none"
                 placeholder="프롬프트를 입력하세요..."
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setEditModalOpen(false)}>
               취소
             </Button>
@@ -502,7 +502,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
 
       {/* 파일 연결 모달 */}
       <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-contest-orange" />
@@ -510,10 +510,10 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
             </DialogTitle>
           </DialogHeader>
           {selectedPrompt && (
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1 overflow-y-auto">
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm font-medium mb-2">선택된 프롬프트:</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground break-words">
                   {selectedPrompt.prompt_text.length > 100 
                     ? `${selectedPrompt.prompt_text.substring(0, 100)}...` 
                     : selectedPrompt.prompt_text
@@ -531,14 +531,14 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                         className="flex items-center justify-between p-2 border rounded hover:bg-gray-50 cursor-pointer"
                         onClick={() => handleLinkFileToPrompt(file)}
                       >
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{file.name}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {FileService.formatFileSize(file.size)} • {file.type}
                           </p>
                         </div>
                         {file.prompt && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
                             프롬프트 있음
                           </Badge>
                         )}
@@ -553,7 +553,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setLinkModalOpen(false)}>
               취소
             </Button>

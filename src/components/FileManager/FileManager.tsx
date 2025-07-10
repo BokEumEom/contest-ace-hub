@@ -3,12 +3,12 @@ import { Upload, FileText, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PromptManager } from '@/components/PromptManager';
-import { useFileManager } from './FileManager/hooks/useFileManager';
-import { isImageFile, getFileTypeColor } from './FileManager/utils/fileUtils';
-import FileUploadArea from './FileManager/FileUploadArea';
-import FileList from './FileManager/FileList';
-import DescriptionEditor from './FileManager/DescriptionEditor';
-import ImageViewerModal from './FileManager/ImageViewerModal';
+import { useFileManager } from './hooks/useFileManager';
+import { isImageFile, getFileTypeColor } from './utils/fileUtils';
+import FileUploadArea from './FileUploadArea';
+import FileList from './FileList';
+import DescriptionEditor from './DescriptionEditor';
+import ImageViewerModal from './ImageViewerModal';
 
 interface FileManagerProps {
   contestId: string;
@@ -174,4 +174,4 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
 
 FileManager.displayName = 'FileManager';
 
-export default FileManager;
+export default FileManager; 

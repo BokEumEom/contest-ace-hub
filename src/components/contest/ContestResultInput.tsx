@@ -3,16 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Trophy, 
-  Medal, 
-  Award, 
-  FileText,
-  Plus,
-  Trash2,
-  Save,
-  Edit
+  Edit, 
+  Save, 
+  Trash2, 
+  Trophy 
 } from 'lucide-react';
 
 interface ContestResult {
@@ -36,10 +33,11 @@ interface ContestResultInputProps {
 }
 
 const getStatusOptions = () => [
-  { value: 'winner', label: '우승', icon: Trophy, color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'runner_up', label: '준우승', icon: Medal, color: 'bg-gray-100 text-gray-800' },
-  { value: 'shortlisted', label: '최종 후보', icon: Award, color: 'bg-blue-100 text-blue-800' },
-  { value: 'not_selected', label: '미선정', icon: FileText, color: 'bg-red-100 text-red-800' }
+  { value: 'winner', label: '우승', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'runner-up', label: '준우승', color: 'bg-gray-100 text-gray-800' },
+  { value: 'third', label: '3위', color: 'bg-orange-100 text-orange-800' },
+  { value: 'shortlisted', label: '최종 후보', color: 'bg-blue-100 text-blue-800' },
+  { value: 'participant', label: '참가', color: 'bg-green-100 text-green-800' }
 ];
 
 export const ContestResultInput: React.FC<ContestResultInputProps> = ({
@@ -138,24 +136,24 @@ export const ContestResultInput: React.FC<ContestResultInputProps> = ({
       {isEditing && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              새 결과 추가
-            </CardTitle>
+            <CardTitle className="text-md">새 결과 추가</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">팀명 *</label>
+              <div className="space-y-2">
+                <Label htmlFor="teamName">팀명 *</Label>
                 <Input
+                  id="teamName"
                   value={newResult.teamName}
                   onChange={(e) => setNewResult({...newResult, teamName: e.target.value})}
                   placeholder="팀명을 입력하세요"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">프로젝트 제목 *</label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="projectTitle">프로젝트 제목 *</Label>
                 <Input
+                  id="projectTitle"
                   value={newResult.projectTitle}
                   onChange={(e) => setNewResult({...newResult, projectTitle: e.target.value})}
                   placeholder="프로젝트 제목을 입력하세요"
@@ -163,20 +161,22 @@ export const ContestResultInput: React.FC<ContestResultInputProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">프로젝트 설명</label>
+            <div className="space-y-2">
+              <Label htmlFor="description">프로젝트 설명</Label>
               <Textarea
+                id="description"
                 value={newResult.description}
                 onChange={(e) => setNewResult({...newResult, description: e.target.value})}
-                placeholder="프로젝트에 대한 설명을 입력하세요"
+                placeholder="프로젝트에 대한 간단한 설명을 입력하세요"
                 rows={3}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium">결과</label>
+              <div className="space-y-2">
+                <Label htmlFor="status">결과 상태</Label>
                 <select
+                  id="status"
                   value={newResult.status}
                   onChange={(e) => setNewResult({...newResult, status: e.target.value})}
                   className="w-full p-2 border rounded-md"
@@ -188,40 +188,45 @@ export const ContestResultInput: React.FC<ContestResultInputProps> = ({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-sm font-medium">순위</label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="rank">순위</Label>
                 <Input
+                  id="rank"
                   type="number"
                   value={newResult.rank}
                   onChange={(e) => setNewResult({...newResult, rank: e.target.value})}
-                  placeholder="순위"
+                  placeholder="순위 (숫자)"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">점수</label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="score">점수</Label>
                 <Input
+                  id="score"
                   type="number"
-                  min="0"
-                  max="100"
                   value={newResult.score}
                   onChange={(e) => setNewResult({...newResult, score: e.target.value})}
-                  placeholder="0-100"
+                  placeholder="점수"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">상금</label>
+              <div className="space-y-2">
+                <Label htmlFor="prizeAmount">상금</Label>
                 <Input
+                  id="prizeAmount"
                   value={newResult.prizeAmount}
                   onChange={(e) => setNewResult({...newResult, prizeAmount: e.target.value})}
-                  placeholder="예: 500만원"
+                  placeholder="상금 금액"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">발표일</label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="announcementDate">발표일</Label>
                 <Input
+                  id="announcementDate"
                   type="date"
                   value={newResult.announcementDate}
                   onChange={(e) => setNewResult({...newResult, announcementDate: e.target.value})}
@@ -229,25 +234,26 @@ export const ContestResultInput: React.FC<ContestResultInputProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">심사 피드백</label>
+            <div className="space-y-2">
+              <Label htmlFor="feedback">심사 피드백</Label>
               <Textarea
+                id="feedback"
                 value={newResult.feedback}
                 onChange={(e) => setNewResult({...newResult, feedback: e.target.value})}
-                placeholder="심사 피드백을 입력하세요"
+                placeholder="심사위원의 피드백을 입력하세요"
                 rows={3}
               />
             </div>
 
             <Button onClick={handleAddResult} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
+              <Trophy className="h-4 w-4 mr-2" />
               결과 추가
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* 결과 목록 */}
+      {/* 등록된 결과 목록 */}
       <div className="space-y-4">
         <h4 className="text-md font-semibold">등록된 결과 ({results.length}개)</h4>
         {results.map((result) => {
