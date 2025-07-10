@@ -1,8 +1,9 @@
 import React, { memo, useState, useEffect } from 'react';
-import { Eye, ZoomIn, ZoomOut, RotateCw, Download as DownloadIcon } from 'lucide-react';
+import { Eye, ZoomIn, ZoomOut, RotateCw, Download as DownloadIcon, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileItem } from '@/services/fileService';
+import { useImageCache } from './hooks/useImageCache';
 
 interface ImageViewerModalProps {
   file: FileItem | null;
@@ -19,14 +20,26 @@ const ImageViewerModal = memo(({
 }: ImageViewerModalProps) => {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // 이미지 캐싱 훅 사용
+  const {
+    isLoading,
+    isLoaded,
+    isFailed,
+    cachedUrl,
+    error,
+    reload
+  } = useImageCache(file?.url || null, {
+    preloadOnMount: true,
+    retryCount: 3,
+    retryDelay: 1000,
+  });
 
   // 모달이 열릴 때마다 초기화
   useEffect(() => {
     if (isOpen) {
       setScale(1);
       setRotation(0);
-      setIsLoading(true);
     }
   }, [isOpen]);
 
@@ -86,6 +99,15 @@ const ImageViewerModal = memo(({
               <Button
                 variant="outline"
                 size="sm"
+                onClick={reload}
+                disabled={isLoading}
+                title="이미지 다시 로드"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => onDownload(file)}
               >
                 <DownloadIcon className="h-4 w-4 mr-2" />
@@ -101,16 +123,26 @@ const ImageViewerModal = memo(({
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-contest-orange"></div>
             </div>
           )}
-          <img
-            src={file.url}
-            alt={file.name}
-            className="max-w-full max-h-full object-contain transition-transform duration-200"
-            style={{
-              transform: `scale(${scale}) rotate(${rotation}deg)`,
-            }}
-            onLoad={() => setIsLoading(false)}
-            onError={() => setIsLoading(false)}
-          />
+          {isFailed && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+              <div className="text-center">
+                <div className="text-red-500 mb-2">이미지 로드 실패</div>
+                <Button variant="outline" size="sm" onClick={reload}>
+                  다시 시도
+                </Button>
+              </div>
+            </div>
+          )}
+          {isLoaded && (
+            <img
+              src={cachedUrl || file.url}
+              alt={file.name}
+              className="max-w-full max-h-full object-contain transition-transform duration-200"
+              style={{
+                transform: `scale(${scale}) rotate(${rotation}deg)`,
+              }}
+            />
+          )}
         </div>
         
         {file.prompt && (

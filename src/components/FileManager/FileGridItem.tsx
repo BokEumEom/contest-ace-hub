@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileItem as FileItemType } from '@/services/fileService';
 import { FileService } from '@/services/fileService';
+import { useImageCache } from './hooks/useImageCache';
 
 interface FileGridItemProps {
   file: FileItemType;
@@ -29,15 +30,28 @@ const FileGridItem = memo(({
   getFileTypeColor,
   gridMode = true // 기본값 true (FileList에서 grid 모드만 사용)
 }: FileGridItemProps) => {
+  // 이미지 캐싱 훅 사용
+  const { cachedUrl, isLoading } = useImageCache(
+    isImageFile(file.name) ? file.url : null,
+    { preloadOnMount: true }
+  );
+
   // gridMode가 true일 때만 썸네일만 보여주기
   if (gridMode && isImageFile(file.name)) {
     return (
       <div className="relative group aspect-[2/3] bg-black/5 overflow-hidden rounded-lg cursor-pointer" onClick={() => onView(file)}>
-        <img
-          src={file.url}
-          alt={file.name}
-          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-        />
+        {isLoading && (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-contest-orange"></div>
+          </div>
+        )}
+        {!isLoading && (
+          <img
+            src={cachedUrl || file.url}
+            alt={file.name}
+            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+          />
+        )}
         {/* 호버 시 액션 버튼 (다운로드) */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
@@ -58,22 +72,29 @@ const FileGridItem = memo(({
       {/* 이미지 파일인 경우 썸네일 표시 */}
       {isImageFile(file.name) ? (
         <div className="relative mb-3 cursor-pointer" onClick={() => onView(file)}>
-          <img 
-            src={file.url} 
-            alt={file.name}
-            className="w-full h-32 object-cover rounded border hover:scale-105 transition-transform duration-200"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              const parent = target.parentElement;
-              if (parent) {
-                const fallbackIcon = document.createElement('div');
-                fallbackIcon.className = `w-full h-32 flex items-center justify-center ${getFileTypeColor('image')} rounded`;
-                fallbackIcon.innerHTML = '<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
-                parent.appendChild(fallbackIcon);
-              }
-            }}
-          />
+          {isLoading && (
+            <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded border">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-contest-orange"></div>
+            </div>
+          )}
+          {!isLoading && (
+            <img 
+              src={cachedUrl || file.url} 
+              alt={file.name}
+              className="w-full h-32 object-cover rounded border hover:scale-105 transition-transform duration-200"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  const fallbackIcon = document.createElement('div');
+                  fallbackIcon.className = `w-full h-32 flex items-center justify-center ${getFileTypeColor('image')} rounded`;
+                  fallbackIcon.innerHTML = '<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+                  parent.appendChild(fallbackIcon);
+                }
+              }}
+            />
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
             <Eye className="h-6 w-6 text-white" />
           </div>

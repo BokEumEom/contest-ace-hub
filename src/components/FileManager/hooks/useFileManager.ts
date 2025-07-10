@@ -3,6 +3,7 @@ import { FileService, FileItem } from '@/services/fileService';
 import { ContestSubmissionService } from '@/services/contestSubmissionService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
+import { preloadImages } from '../utils/imageCache';
 
 export const useFileManager = (contestId: string) => {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -15,6 +16,7 @@ export const useFileManager = (contestId: string) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [imageViewerFile, setImageViewerFile] = useState<FileItem | null>(null);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [cacheTabOpen, setCacheTabOpen] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -27,6 +29,22 @@ export const useFileManager = (contestId: string) => {
     try {
       const fileList = await FileService.getFiles(contestId);
       setFiles(fileList);
+      
+      // 이미지 파일들 프리로딩
+      const imageUrls = fileList
+        .filter(file => {
+          const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+          const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+          return imageExtensions.includes(extension);
+        })
+        .map(file => file.url);
+      
+      if (imageUrls.length > 0) {
+        // 백그라운드에서 이미지 프리로딩
+        preloadImages(imageUrls).catch(error => {
+          console.warn('Failed to preload images:', error);
+        });
+      }
     } catch (error) {
       console.error('Error loading files:', error);
       toast({
@@ -226,6 +244,8 @@ export const useFileManager = (contestId: string) => {
     setSortOrder,
     imageViewerFile,
     imageViewerOpen,
+    cacheTabOpen,
+    setCacheTabOpen,
     
     // Actions
     loadFiles,

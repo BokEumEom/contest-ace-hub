@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import { Upload, FileText, MessageSquare } from 'lucide-react';
+import { Upload, FileText, MessageSquare, HardDrive } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PromptManager } from '@/components/PromptManager';
@@ -9,6 +9,7 @@ import FileUploadArea from './FileManager/FileUploadArea';
 import FileList from './FileManager/FileList';
 import DescriptionEditor from './FileManager/DescriptionEditor';
 import ImageViewerModal from './FileManager/ImageViewerModal';
+import CacheManager from './FileManager/CacheManager';
 
 interface FileManagerProps {
   contestId: string;
@@ -72,7 +73,7 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
       <div className="flex items-center mb-2">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="files" className="flex items-center gap-2">
             <Upload className="h-4 w-4" />
             파일 관리
@@ -84,6 +85,10 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
           <TabsTrigger value="prompts" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             프롬프트 관리
+          </TabsTrigger>
+          <TabsTrigger value="cache" className="flex items-center gap-2">
+            <HardDrive className="h-4 w-4" />
+            캐시 관리
           </TabsTrigger>
         </TabsList>
       </div>
@@ -150,6 +155,11 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
           <PromptManager contestId={parseInt(contestId)} files={files} />
         </TabsContent>
       )}
+
+      {/* 캐시 관리 탭 */}
+      <TabsContent value="cache" className="space-y-4">
+        <CacheManager />
+      </TabsContent>
 
       {/* 이미지 뷰어 모달 */}
       <ImageViewerModal
