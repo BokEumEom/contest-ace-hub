@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Wand2, Eye, Edit, Copy, Plus, Trash2, Image, FileText, Video, Music, Settings } from 'lucide-react';
+import { Wand2, Eye, Edit, Copy, Plus, Trash2, Image, FileText, Video, Music, Settings, File, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PromptService, Prompt } from '@/services/promptService';
 import { FileService, FileItem } from '@/services/fileService';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +30,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
   const [editForm, setEditForm] = useState<Partial<Prompt>>({});
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [newPromptFileIds, setNewPromptFileIds] = useState<number[]>([]);
 
   // 프롬프트 목록 로드 - 성능 최적화
   const loadPrompts = useCallback(async () => {
@@ -86,6 +88,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
   const handleCreatePromptModal = () => {
     setSelectedPrompt(null);
     setEditForm({});
+    setNewPromptFileIds([]);
     setEditModalOpen(true);
   };
 
@@ -118,6 +121,15 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
     }
   };
 
+  // 파일 선택 토글 (새 프롬프트 등록용)
+  const toggleNewPromptFileSelection = (fileId: number) => {
+    setNewPromptFileIds(prev => 
+      prev.includes(fileId) 
+        ? prev.filter(id => id !== fileId)
+        : [...prev, fileId]
+    );
+  };
+
   // 프롬프트 생성
   const handleCreatePrompt = async () => {
     if (!editForm.prompt_text || !editForm.prompt_type) {
@@ -136,10 +148,22 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
       } as Prompt);
       
       if (newPrompt) {
+        // 선택된 파일들에 프롬프트 연결
+        if (newPromptFileIds.length > 0) {
+          for (const fileId of newPromptFileIds) {
+            try {
+              await FileService.updateFilePrompt(fileId, newPrompt.prompt_text);
+            } catch (error) {
+              console.error(`Error linking prompt to file ${fileId}:`, error);
+            }
+          }
+        }
+
         setPrompts(prev => [newPrompt, ...prev]);
         setEditModalOpen(false);
         setSelectedPrompt(null);
         setEditForm({});
+        setNewPromptFileIds([]);
         toast({
           title: "생성 완료",
           description: "프롬프트가 생성되었습니다.",
@@ -339,7 +363,7 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                           title="파일과 연결"
                           className="h-8 w-8 p-0"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Link className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -485,6 +509,39 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                 placeholder="프롬프트를 입력하세요..."
               />
             </div>
+            {!selectedPrompt && files.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium">연결할 파일 선택 (선택사항)</Label>
+                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                  {files.map(file => (
+                    <div key={file.id} className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50">
+                      <Checkbox
+                        id={`new-prompt-file-${file.id}`}
+                        checked={newPromptFileIds.includes(file.id)}
+                        onCheckedChange={() => toggleNewPromptFileSelection(file.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <File className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">{file.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {file.type}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          크기: {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {newPromptFileIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {newPromptFileIds.length}개 파일이 선택되었습니다.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setEditModalOpen(false)}>

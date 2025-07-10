@@ -42,3 +42,14 @@ export interface ContestFile {
   size: number;
   uploadedAt: string;
 }
+
+export interface ContestSubmission {
+  id: string;
+  contestId: string;
+  title: string;
+  description: string;
+  fileIds: number[];
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+}

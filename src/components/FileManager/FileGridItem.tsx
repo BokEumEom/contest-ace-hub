@@ -11,6 +11,7 @@ interface FileGridItemProps {
   onDownload: (file: FileItemType) => void;
   onDelete: (fileId: number) => void;
   getFileTypeColor: (type: string) => string;
+  gridMode?: boolean; // grid 모드 여부 prop 추가 (추후 확장성)
 }
 
 // 이미지 파일인지 확인하는 함수
@@ -25,8 +26,33 @@ const FileGridItem = memo(({
   onView, 
   onDownload, 
   onDelete, 
-  getFileTypeColor 
+  getFileTypeColor,
+  gridMode = true // 기본값 true (FileList에서 grid 모드만 사용)
 }: FileGridItemProps) => {
+  // gridMode가 true일 때만 썸네일만 보여주기
+  if (gridMode && isImageFile(file.name)) {
+    return (
+      <div className="relative group aspect-[2/3] bg-black/5 overflow-hidden rounded-lg cursor-pointer" onClick={() => onView(file)}>
+        <img
+          src={file.url}
+          alt={file.name}
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+        />
+        {/* 호버 시 액션 버튼 (다운로드) */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={e => { e.stopPropagation(); onDownload(file); }}
+            className="text-white"
+          >
+            <Download className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  // 기존(리스트 등) 모드에서는 기존 정보 표시
   return (
     <div className="relative group border rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* 이미지 파일인 경우 썸네일 표시 */}
@@ -57,7 +83,6 @@ const FileGridItem = memo(({
           <File className="h-8 w-8" />
         </div>
       )}
-      
       <div className="space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -68,7 +93,6 @@ const FileGridItem = memo(({
               <span>{file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : 'N/A'}</span>
             </div>
           </div>
-          
           <div className="flex gap-1 ml-2">
             <Button 
               variant="ghost" 
@@ -90,7 +114,6 @@ const FileGridItem = memo(({
             </Button>
           </div>
         </div>
-        
         {/* 프롬프트가 있는 파일 표시 */}
         {file.prompt && (
           <Badge variant="secondary" className="text-xs">

@@ -61,8 +61,17 @@ const FileList = memo(({
       filtered = filtered.filter(file => file.type === fileTypeFilter);
     }
 
+    // 그리드 모드일 때는 이미지 파일만 표시
+    if (viewMode === 'grid') {
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+      filtered = filtered.filter(file => {
+        const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        return imageExtensions.includes(extension);
+      });
+    }
+
     return filtered;
-  }, [files, searchTerm, fileTypeFilter]);
+  }, [files, searchTerm, fileTypeFilter, viewMode]);
 
   // 정렬된 파일 목록
   const sortedFiles = useMemo(() => {
@@ -226,28 +235,29 @@ const FileList = memo(({
           // 리스트 뷰
           <div className="space-y-2">
             {sortedFiles.map(file => (
-                             <FileItem
-                 key={file.id}
-                 file={file}
-                 onView={onView}
-                 onDownload={onDownload}
-                 onDelete={onDelete}
-                 getFileTypeColor={getFileTypeColor}
-               />
+              <FileItem
+                key={file.id}
+                file={file}
+                onView={onView}
+                onDownload={onDownload}
+                onDelete={onDelete}
+                getFileTypeColor={getFileTypeColor}
+              />
             ))}
           </div>
         ) : (
           // 그리드 뷰
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {sortedFiles.map(file => (
-                             <FileGridItem
-                 key={file.id}
-                 file={file}
-                 onView={onView}
-                 onDownload={onDownload}
-                 onDelete={onDelete}
-                 getFileTypeColor={getFileTypeColor}
-               />
+              <FileGridItem
+                key={file.id}
+                file={file}
+                onView={onView}
+                onDownload={onDownload}
+                onDelete={onDelete}
+                getFileTypeColor={getFileTypeColor}
+                gridMode={true}
+              />
             ))}
           </div>
         )
@@ -259,6 +269,22 @@ const FileList = memo(({
               <p className="text-sm text-muted-foreground">업로드된 파일이 없습니다.</p>
               <p className="text-xs text-muted-foreground mt-1">
                 파일을 업로드하고 사용된 프롬프트를 함께 관리해보세요.
+              </p>
+            </>
+          ) : viewMode === 'grid' && !filteredFiles.some(file => {
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+            const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+            return imageExtensions.includes(extension);
+          }) ? (
+            <>
+              <div className="h-12 w-12 text-muted-foreground mx-auto mb-4 flex items-center justify-center">
+                <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <p className="text-sm text-muted-foreground">이미지 파일이 없습니다.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                그리드 모드에서는 이미지 파일만 표시됩니다. 리스트 모드에서 다른 파일을 확인하세요.
               </p>
             </>
           ) : (

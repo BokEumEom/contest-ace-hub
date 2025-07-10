@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileService, FileItem } from '@/services/fileService';
+import { ContestSubmissionService } from '@/services/contestSubmissionService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
 
 export const useFileManager = (contestId: string) => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [submissionDescription, setSubmissionDescription] = useState('');
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [activeTab, setActiveTab] = useState('files');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,42 +39,7 @@ export const useFileManager = (contestId: string) => {
     }
   }, [contestId, user, toast]);
 
-  // 작품 설명 로드
-  const loadSubmissionDescription = useCallback(() => {
-    try {
-      const stored = localStorage.getItem(`submission_description_${contestId}`);
-      if (stored) {
-        setSubmissionDescription(stored);
-      }
-    } catch (error) {
-      console.error('Error loading submission description:', error);
-    }
-  }, [contestId]);
 
-  // 작품 설명 저장
-  const saveSubmissionDescription = useCallback(() => {
-    try {
-      localStorage.setItem(`submission_description_${contestId}`, submissionDescription);
-      setIsEditingDescription(false);
-      toast({
-        title: "저장 완료",
-        description: "작품 설명이 저장되었습니다.",
-      });
-    } catch (error) {
-      console.error('Error saving submission description:', error);
-      toast({
-        title: "오류",
-        description: "작품 설명 저장에 실패했습니다.",
-        variant: "destructive",
-      });
-    }
-  }, [submissionDescription, contestId, toast]);
-
-  // 작품 설명 편집 취소
-  const handleCancelDescription = useCallback(() => {
-    loadSubmissionDescription(); // 원래 데이터로 복원
-    setIsEditingDescription(false);
-  }, [loadSubmissionDescription]);
 
   // 파일 삭제
   const deleteFile = useCallback(async (fileId: number) => {
@@ -239,21 +203,15 @@ export const useFileManager = (contestId: string) => {
   useEffect(() => {
     if (user) {
       loadFiles();
-      loadSubmissionDescription();
     } else {
       setFiles([]);
-      setSubmissionDescription('');
     }
-  }, [user, loadFiles, loadSubmissionDescription]);
+  }, [user, loadFiles]);
 
   return {
     // State
     files,
     loading,
-    submissionDescription,
-    setSubmissionDescription,
-    isEditingDescription,
-    setIsEditingDescription,
     activeTab,
     setActiveTab,
     viewMode,
@@ -271,8 +229,6 @@ export const useFileManager = (contestId: string) => {
     
     // Actions
     loadFiles,
-    saveSubmissionDescription,
-    handleCancelDescription,
     deleteFile,
     downloadFile,
     viewFile,

@@ -7,8 +7,9 @@ import { useFileManager } from './hooks/useFileManager';
 import { isImageFile, getFileTypeColor } from './utils/fileUtils';
 import FileUploadArea from './FileUploadArea';
 import FileList from './FileList';
-import DescriptionEditor from './DescriptionEditor';
+import DescriptionManager from './DescriptionEditor'; // 파일명은 아직 DescriptionEditor.tsx
 import ImageViewerModal from './ImageViewerModal';
+import { useState } from 'react';
 
 interface FileManagerProps {
   contestId: string;
@@ -52,6 +53,8 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     handleDragLeave,
     handleDrop,
   } = useFileManager(contestId);
+
+  const [descriptions, setDescriptions] = useState([]); // 작품 설명 멀티 상태 추가
 
   // 탭 변경 핸들러
   const handleTabChange = useCallback((value: string) => {
@@ -144,13 +147,9 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
       </TabsContent>
 
       <TabsContent value="description" className="space-y-4">
-        <DescriptionEditor
-          submissionDescription={submissionDescription}
-          setSubmissionDescription={setSubmissionDescription}
-          isEditingDescription={isEditingDescription}
-          setIsEditingDescription={setIsEditingDescription}
-          onSave={saveSubmissionDescription}
-          onCancel={handleCancelDescription}
+        <DescriptionManager
+          descriptions={descriptions}
+          setDescriptions={setDescriptions}
         />
       </TabsContent>
 

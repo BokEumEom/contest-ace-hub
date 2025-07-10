@@ -19,10 +19,6 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     // State
     files,
     loading,
-    submissionDescription,
-    setSubmissionDescription,
-    isEditingDescription,
-    setIsEditingDescription,
     activeTab,
     setActiveTab,
     viewMode,
@@ -39,8 +35,6 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     imageViewerOpen,
     
     // Actions
-    saveSubmissionDescription,
-    handleCancelDescription,
     deleteFile,
     downloadFile,
     viewFile,
@@ -145,12 +139,8 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
 
       <TabsContent value="description" className="space-y-4">
         <DescriptionEditor
-          submissionDescription={submissionDescription}
-          setSubmissionDescription={setSubmissionDescription}
-          isEditingDescription={isEditingDescription}
-          setIsEditingDescription={setIsEditingDescription}
-          onSave={saveSubmissionDescription}
-          onCancel={handleCancelDescription}
+          contestId={contestId}
+          files={files}
         />
       </TabsContent>
 
