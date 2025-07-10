@@ -4,17 +4,17 @@ import { LucideIcon } from 'lucide-react';
 
 interface StatsCardProps {
   title: string;
-  value: string | number;
+  value: string;
   icon: LucideIcon;
+  color: 'orange' | 'blue' | 'coral' | 'light-blue';
   trend?: {
     value: string;
     isPositive: boolean;
   };
-  color: 'orange' | 'blue' | 'coral' | 'light-blue';
   onClick?: () => void;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, color, onClick }) => {
+const StatsCard: React.FC<StatsCardProps> = React.memo(({ title, value, icon: Icon, trend, color, onClick }) => {
   const colorClasses = {
     orange: 'bg-contest-orange/10 text-contest-orange border-contest-orange/20',
     blue: 'bg-contest-blue/10 text-contest-blue border-contest-blue/20',
@@ -45,6 +45,8 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon: Icon, trend, 
       </div>
     </div>
   );
-};
+});
+
+StatsCard.displayName = 'StatsCard';
 
 export default StatsCard;
