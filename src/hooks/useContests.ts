@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react';
 import { ContestService, Contest } from '@/services/contestService';
 import { useAuth } from '@/components/AuthProvider';
+import { useProfile } from '@/hooks/useProfile';
 
 export const useContests = () => {
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const { user } = useAuth();
+  const { addActivity, updateStatistics } = useProfile();
 
   // 공모전 데이터 로드
   useEffect(() => {
@@ -51,6 +53,37 @@ export const useContests = () => {
       const newContest = await ContestService.addContest(contest);
       if (newContest) {
         setContests(prev => [newContest, ...prev]);
+        
+        // Add activity for contest creation
+        await addActivity({
+          activity_type: 'contest_created',
+          title: `새 공모전 등록: ${contest.title}`,
+          description: `${contest.organization}에서 주최하는 "${contest.title}" 공모전을 등록했습니다.`,
+          points: 20,
+          metadata: { 
+            contest_id: newContest.id,
+            organization: contest.organization,
+            category: contest.category,
+            deadline: contest.deadline
+          },
+          contest_id: newContest.id
+        });
+
+        // Update user statistics
+        const currentStats = await ContestService.getUserStatistics();
+        if (currentStats) {
+          await updateStatistics({
+            total_contests: (currentStats.total_contests || 0) + 1,
+            last_activity_at: new Date().toISOString()
+          });
+        } else {
+          // Initialize statistics if they don't exist
+          await updateStatistics({
+            total_contests: 1,
+            last_activity_at: new Date().toISOString()
+          });
+        }
+
         return newContest;
       }
       return null;
@@ -64,11 +97,77 @@ export const useContests = () => {
     try {
       const updatedContest = await ContestService.updateContest(id, updates);
       if (updatedContest) {
-        setContests(prev => 
-          prev.map(contest => 
-            contest.id === id ? updatedContest : contest
-          )
-        );
+        setContests(prev => prev.map(contest => 
+          contest.id === id ? updatedContest : contest
+        ));
+
+        // Add activity for contest updates
+        if (updates.status) {
+          let activityType = 'contest_participated';
+          let title = '';
+          let description = '';
+          let points = 0;
+
+          switch (updates.status) {
+            case 'in-progress':
+              activityType = 'contest_participated';
+              title = `공모전 시작: ${updatedContest.title}`;
+              description = `"${updatedContest.title}" 공모전 작업을 시작했습니다.`;
+              points = 15;
+              break;
+            case 'submitted':
+              activityType = 'contest_submitted';
+              title = `작품 제출: ${updatedContest.title}`;
+              description = `"${updatedContest.title}" 공모전에 작품을 제출했습니다.`;
+              points = 30;
+              break;
+            case 'completed':
+              activityType = 'contest_completed';
+              title = `공모전 완료: ${updatedContest.title}`;
+              description = `"${updatedContest.title}" 공모전을 완료했습니다.`;
+              points = 50;
+              break;
+          }
+
+          await addActivity({
+            activity_type: activityType as any,
+            title,
+            description,
+            points,
+            metadata: { 
+              contest_id: updatedContest.id,
+              status: updates.status,
+              organization: updatedContest.organization
+            },
+            contest_id: updatedContest.id
+          });
+
+          // Update statistics based on status change
+          const currentStats = await ContestService.getUserStatistics();
+          if (currentStats) {
+            const updates: any = {
+              last_activity_at: new Date().toISOString()
+            };
+
+            if (updates.status === 'completed') {
+              updates.completed_contests = (currentStats.completed_contests || 0) + 1;
+            }
+
+            await updateStatistics(updates);
+          } else {
+            // Initialize statistics if they don't exist
+            const updates: any = {
+              last_activity_at: new Date().toISOString()
+            };
+
+            if (updates.status === 'completed') {
+              updates.completed_contests = 1;
+            }
+
+            await updateStatistics(updates);
+          }
+        }
+
         return updatedContest;
       }
       return null;
@@ -103,6 +202,8 @@ export const useContests = () => {
     addContest,
     updateContest,
     deleteContest,
-    getContestById,
+    refresh: () => {
+      setInitialized(false);
+    }
   };
 };

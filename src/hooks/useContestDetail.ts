@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useContests } from './useContests';
 import { ContestDetailService, TeamMember, Schedule } from '@/services/contestDetailService';
 import { ContestService } from '@/services/contestService';
+import { useProfile } from '@/hooks/useProfile';
 
 export interface EditForm {
   title: string;
@@ -21,7 +22,8 @@ export interface EditForm {
 }
 
 export const useContestDetail = (contestId: string | undefined) => {
-  const { getContestById, updateContest, deleteContest } = useContests();
+  const { updateContest, deleteContest } = useContests();
+  const { addActivity, updateStatistics } = useProfile();
   const [contest, setContest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,16 +73,8 @@ export const useContestDetail = (contestId: string | undefined) => {
     const loadContest = async () => {
       setLoading(true);
       try {
-        // 1. 먼저 메모리에서 찾기 (목록에서 진입한 경우)
-        const found = getContestById(contestId);
-        if (found) {
-          setContest(found);
-          setLoading(false);
-          return;
-        }
-
-        // 2. 없으면 서버에서 직접 fetch (직접 URL 진입한 경우)
-        const data = await ContestService.getContestById(contestId);
+        // 서버에서 직접 fetch
+        const data = await ContestService.getContestById(parseInt(contestId));
         setContest(data);
       } catch (error) {
         console.error('Error loading contest:', error);
@@ -91,7 +85,7 @@ export const useContestDetail = (contestId: string | undefined) => {
     };
 
     loadContest();
-  }, [contestId, getContestById]);
+  }, [contestId]);
 
   // 팀원 데이터 Supabase에서 불러오기
   useEffect(() => {
@@ -169,87 +163,143 @@ export const useContestDetail = (contestId: string | undefined) => {
     }
   };
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string) => {
     if (contest) {
-      updateContest(contest.id, { status: newStatus as any });
-      setStatusModalOpen(false);
-      alert(`상태가 "${getStatusText(newStatus)}"로 변경되었습니다.`);
+      try {
+        const updatedContest = await updateContest(contest.id, { status: newStatus as any });
+        if (updatedContest) {
+          setContest(updatedContest);
+          setStatusModalOpen(false);
+          
+          // Add activity for status change
+          let activityType = 'contest_participated';
+          let title = '';
+          let description = '';
+          let points = 0;
+
+          switch (newStatus) {
+            case 'in-progress':
+              activityType = 'contest_participated';
+              title = `공모전 시작: ${contest.title}`;
+              description = `"${contest.title}" 공모전 작업을 시작했습니다.`;
+              points = 15;
+              break;
+            case 'submitted':
+              activityType = 'contest_submitted';
+              title = `작품 제출: ${contest.title}`;
+              description = `"${contest.title}" 공모전에 작품을 제출했습니다.`;
+              points = 30;
+              break;
+            case 'completed':
+              activityType = 'contest_completed';
+              title = `공모전 완료: ${contest.title}`;
+              description = `"${contest.title}" 공모전을 완료했습니다.`;
+              points = 50;
+              break;
+          }
+
+          await addActivity({
+            activity_type: activityType as any,
+            title,
+            description,
+            points,
+            metadata: { 
+              contest_id: contest.id,
+              status: newStatus,
+              organization: contest.organization
+            },
+            contest_id: contest.id
+          });
+
+          // Update statistics based on status change
+          const currentStats = await ContestService.getUserStatistics();
+          if (currentStats) {
+            const updates: any = {
+              last_activity_at: new Date().toISOString()
+            };
+
+            if (newStatus === 'completed') {
+              updates.completed_contests = (currentStats.completed_contests || 0) + 1;
+            }
+
+            await updateStatistics(updates);
+          }
+
+          alert(`상태가 "${getStatusText(newStatus)}"로 변경되었습니다.`);
+        } else {
+          alert('상태 변경에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('Error changing status:', error);
+        alert('상태 변경 중 오류가 발생했습니다.');
+      }
     }
   };
 
   const handleAddTeamMember = async () => {
-    if (newMember.name && newMember.role && contest?.id) {
-      const member = {
-        id: crypto.randomUUID(),
-        name: newMember.name,
-        role: newMember.role
-      };
-      const updatedTeamMembers = [...teamMembers, member];
-      setTeamMembers(updatedTeamMembers);
+    if (!newMember.name || !newMember.role) {
+      alert('팀원 이름과 역할을 모두 입력해주세요.');
+      return;
+    }
+
+    try {
+      const updatedMembers = [...teamMembers, { id: Date.now().toString(), ...newMember }];
+      await ContestDetailService.saveTeamMembers(contest.id, updatedMembers);
+      setTeamMembers(updatedMembers);
       setNewMember({ name: '', role: '' });
-      
-      try {
-        await ContestDetailService.saveTeamMembers(contest.id, updatedTeamMembers);
-        alert(`${newMember.name} 팀원이 추가되었습니다.`);
-      } catch (error) {
-        console.error('Error saving team member:', error);
-        alert('팀원 추가 중 오류가 발생했습니다.');
-      }
+      setTeamModalOpen(false);
+      alert('팀원이 추가되었습니다.');
+    } catch (error) {
+      console.error('Error adding team member:', error);
+      alert('팀원 추가 중 오류가 발생했습니다.');
     }
   };
 
   const handleRemoveTeamMember = async (id: string) => {
-    const member = teamMembers.find(m => m.id === id);
-    if (member && contest?.id && confirm(`${member.name} 팀원을 삭제하시겠습니까?`)) {
-      const updatedTeamMembers = teamMembers.filter(m => m.id !== id);
-      setTeamMembers(updatedTeamMembers);
-      
-      try {
-        await ContestDetailService.saveTeamMembers(contest.id, updatedTeamMembers);
-        alert(`${member.name} 팀원이 삭제되었습니다.`);
-      } catch (error) {
-        console.error('Error removing team member:', error);
-        alert('팀원 삭제 중 오류가 발생했습니다.');
-      }
+    try {
+      const updatedMembers = teamMembers.filter(member => member.id !== id);
+      await ContestDetailService.saveTeamMembers(contest.id, updatedMembers);
+      setTeamMembers(updatedMembers);
+      alert('팀원이 제거되었습니다.');
+    } catch (error) {
+      console.error('Error removing team member:', error);
+      alert('팀원 제거 중 오류가 발생했습니다.');
     }
   };
 
   const handleAddSchedule = async () => {
-    if (newSchedule.title && newSchedule.date && contest?.id) {
-      const schedule = {
-        id: crypto.randomUUID(),
-        title: newSchedule.title,
-        date: newSchedule.date,
-        description: newSchedule.description,
-        completed: false
+    if (!newSchedule.title || !newSchedule.date) {
+      alert('일정 제목과 날짜를 모두 입력해주세요.');
+      return;
+    }
+
+    try {
+      const newScheduleItem = { 
+        id: Date.now().toString(), 
+        ...newSchedule, 
+        completed: false 
       };
-      const updatedSchedules = [...schedules, schedule];
+      const updatedSchedules = [...schedules, newScheduleItem];
+      await ContestDetailService.saveSchedules(contest.id, updatedSchedules);
       setSchedules(updatedSchedules);
       setNewSchedule({ title: '', date: '', description: '' });
-      
-      try {
-        await ContestDetailService.saveSchedules(contest.id, updatedSchedules);
-        alert(`"${newSchedule.title}" 일정이 추가되었습니다.`);
-      } catch (error) {
-        console.error('Error saving schedule:', error);
-        alert('일정 추가 중 오류가 발생했습니다.');
-      }
+      setScheduleModalOpen(false);
+      alert('일정이 추가되었습니다.');
+    } catch (error) {
+      console.error('Error adding schedule:', error);
+      alert('일정 추가 중 오류가 발생했습니다.');
     }
   };
 
   const handleRemoveSchedule = async (id: string) => {
-    const schedule = schedules.find(s => s.id === id);
-    if (schedule && contest?.id && confirm(`"${schedule.title}" 일정을 삭제하시겠습니까?`)) {
-      const updatedSchedules = schedules.filter(s => s.id !== id);
+    try {
+      const updatedSchedules = schedules.filter(schedule => schedule.id !== id);
+      await ContestDetailService.saveSchedules(contest.id, updatedSchedules);
       setSchedules(updatedSchedules);
-      
-      try {
-        await ContestDetailService.saveSchedules(contest.id, updatedSchedules);
-        alert(`"${schedule.title}" 일정이 삭제되었습니다.`);
-      } catch (error) {
-        console.error('Error removing schedule:', error);
-        alert('일정 삭제 중 오류가 발생했습니다.');
-      }
+      alert('일정이 제거되었습니다.');
+    } catch (error) {
+      console.error('Error removing schedule:', error);
+      alert('일정 제거 중 오류가 발생했습니다.');
     }
   };
 

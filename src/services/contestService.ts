@@ -29,20 +29,36 @@ export interface Contest {
   tasks?: import('@/types/contest').Task[]; // 추가
 }
 
+export interface UserStatistics {
+  id: number;
+  user_id: string;
+  total_contests: number;
+  completed_contests: number;
+  won_contests: number;
+  total_points: number;
+  total_hours: number;
+  current_streak: number;
+  longest_streak: number;
+  achievements: any[];
+  last_activity_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export class ContestService {
-  // 공모전 목록 조회
   static async getContests(): Promise<Contest[]> {
     try {
-      // 인증 상태 확인
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // 인증되지 않은 사용자는 빈 배열 반환
+      const userId = user?.id;
+
+      if (!userId) {
         return [];
       }
 
       const { data, error } = await supabase
         .from('contests')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -54,6 +70,34 @@ export class ContestService {
     } catch (error) {
       console.error('Error in getContests:', error);
       return [];
+    }
+  }
+
+  static async getContestById(id: number): Promise<Contest | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
+      if (!userId) {
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('contests')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching contest:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getContestById:', error);
+      return null;
     }
   }
 
@@ -94,7 +138,6 @@ export class ContestService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 null 반환
         return null;
       }
 
@@ -124,7 +167,6 @@ export class ContestService {
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 false 반환
         return false;
       }
 
@@ -146,30 +188,29 @@ export class ContestService {
     }
   }
 
-  // 공모전 상세 조회
-  static async getContestById(id: string): Promise<Contest | null> {
+  static async getUserStatistics(): Promise<UserStatistics | null> {
     try {
-      // 인증 상태 확인
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // 인증되지 않은 사용자는 null 반환
+      const userId = user?.id;
+
+      if (!userId) {
         return null;
       }
 
       const { data, error } = await supabase
-        .from('contests')
+        .from('user_statistics')
         .select('*')
-        .eq('id', id)
+        .eq('user_id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching contest:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user statistics:', error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('Error in getContestById:', error);
+      console.error('Error in getUserStatistics:', error);
       return null;
     }
   }
