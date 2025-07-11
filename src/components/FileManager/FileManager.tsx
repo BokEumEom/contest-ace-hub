@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Upload, FileText, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,9 +7,17 @@ import { useFileManager } from './hooks/useFileManager';
 import { isImageFile, getFileTypeColor } from './utils/fileUtils';
 import FileUploadArea from './FileUploadArea';
 import FileList from './FileList';
-import DescriptionManager from './DescriptionEditor'; // 파일명은 아직 DescriptionEditor.tsx
+import DescriptionEditor from './DescriptionEditor';
 import ImageViewerModal from './ImageViewerModal';
-import { useState } from 'react';
+
+// 탭 상수 정의
+const TAB_VALUES = {
+  FILES: 'files',
+  DESCRIPTION: 'description',
+  PROMPTS: 'prompts',
+} as const;
+
+type TabValue = typeof TAB_VALUES[keyof typeof TAB_VALUES];
 
 interface FileManagerProps {
   contestId: string;
@@ -20,10 +28,6 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     // State
     files,
     loading,
-    submissionDescription,
-    setSubmissionDescription,
-    isEditingDescription,
-    setIsEditingDescription,
     activeTab,
     setActiveTab,
     viewMode,
@@ -40,8 +44,6 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     imageViewerOpen,
     
     // Actions
-    saveSubmissionDescription,
-    handleCancelDescription,
     deleteFile,
     downloadFile,
     viewFile,
@@ -54,14 +56,12 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     handleDrop,
   } = useFileManager(contestId);
 
-  const [descriptions, setDescriptions] = useState([]); // 작품 설명 멀티 상태 추가
-
-  // 탭 변경 핸들러
+  // 탭 변경 핸들러 - 메모이제이션
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
   }, [setActiveTab]);
 
-  // 파일 업로드 핸들러
+  // 파일 업로드 핸들러 - 메모이제이션
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = Array.from(event.target.files || []);
     
@@ -73,31 +73,86 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     event.target.value = '';
   }, [handleFilesUpload]);
 
-  // 프롬프트 업로드 핸들러
+  // 프롬프트 업로드 핸들러 - 메모이제이션
   const handlePromptUpload = useCallback(() => {
-    setActiveTab('prompts');
+    setActiveTab(TAB_VALUES.PROMPTS);
   }, [setActiveTab]);
+
+  // 파일 업로드 영역 props 메모이제이션
+  const fileUploadAreaProps = useMemo(() => ({
+    onFileSelect: handleFileUpload,
+    onDrop: handleDrop,
+    onDragOver: handleDragOver,
+    onDragEnter: handleDragEnter,
+    onDragLeave: handleDragLeave,
+    onPromptUpload: handlePromptUpload,
+  }), [handleFileUpload, handleDrop, handleDragOver, handleDragEnter, handleDragLeave, handlePromptUpload]);
+
+  // 파일 목록 props 메모이제이션
+  const fileListProps = useMemo(() => ({
+    files,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    fileTypeFilter,
+    setFileTypeFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
+    viewMode,
+    setViewMode,
+    onView: viewFile,
+    onDownload: downloadFile,
+    onDelete: deleteFile,
+    getFileTypeColor,
+  }), [
+    files,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    fileTypeFilter,
+    setFileTypeFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
+    viewMode,
+    setViewMode,
+    viewFile,
+    downloadFile,
+    deleteFile,
+    getFileTypeColor,
+  ]);
+
+  // 이미지 뷰어 모달 props 메모이제이션
+  const imageViewerModalProps = useMemo(() => ({
+    file: imageViewerFile,
+    isOpen: imageViewerOpen,
+    onClose: closeImageViewer,
+    onDownload: downloadFile,
+  }), [imageViewerFile, imageViewerOpen, closeImageViewer, downloadFile]);
 
   return (
     <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
       <div className="flex items-center mb-2">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="files" className="flex items-center gap-2">
+          <TabsTrigger value={TAB_VALUES.FILES} className="flex items-center gap-2">
             <Upload className="h-4 w-4" />
             파일 관리
           </TabsTrigger>
-          <TabsTrigger value="description" className="flex items-center gap-2">
+          <TabsTrigger value={TAB_VALUES.DESCRIPTION} className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             작품 설명
           </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex items-center gap-2">
+          <TabsTrigger value={TAB_VALUES.PROMPTS} className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             프롬프트 관리
           </TabsTrigger>
         </TabsList>
       </div>
 
-      <TabsContent value="files" className="space-y-4">
+      <TabsContent value={TAB_VALUES.FILES} className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -114,59 +169,30 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* 파일 업로드 */}
-            <FileUploadArea
-              onFileSelect={handleFileUpload}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onPromptUpload={handlePromptUpload}
-            />
+            <FileUploadArea {...fileUploadAreaProps} />
 
             {/* 파일 목록 */}
-            <FileList
-              files={files}
-              loading={loading}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              fileTypeFilter={fileTypeFilter}
-              setFileTypeFilter={setFileTypeFilter}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              sortOrder={sortOrder}
-              setSortOrder={setSortOrder}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              onView={viewFile}
-              onDownload={downloadFile}
-              onDelete={deleteFile}
-              getFileTypeColor={getFileTypeColor}
-            />
+            <FileList {...fileListProps} />
           </CardContent>
         </Card>
       </TabsContent>
 
-      <TabsContent value="description" className="space-y-4">
-        <DescriptionManager
-          descriptions={descriptions}
-          setDescriptions={setDescriptions}
+      <TabsContent value={TAB_VALUES.DESCRIPTION} className="space-y-4">
+        <DescriptionEditor
+          contestId={contestId}
+          files={files}
         />
       </TabsContent>
 
       {/* 프롬프트 관리 탭 - 조건부 렌더링으로 성능 최적화 */}
-      {activeTab === 'prompts' && (
-        <TabsContent value="prompts" className="space-y-4">
+      {activeTab === TAB_VALUES.PROMPTS && (
+        <TabsContent value={TAB_VALUES.PROMPTS} className="space-y-4">
           <PromptManager contestId={parseInt(contestId)} files={files} />
         </TabsContent>
       )}
 
       {/* 이미지 뷰어 모달 */}
-      <ImageViewerModal
-        file={imageViewerFile}
-        isOpen={imageViewerOpen}
-        onClose={closeImageViewer}
-        onDownload={downloadFile}
-      />
+      <ImageViewerModal {...imageViewerModalProps} />
     </Tabs>
   );
 });

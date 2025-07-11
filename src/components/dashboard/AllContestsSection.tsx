@@ -2,16 +2,7 @@ import React from 'react';
 import { Calendar, Trophy } from 'lucide-react';
 import ContestCard from '@/components/ContestCard';
 import { Button } from '@/components/ui/button';
-
-interface Contest {
-  id: string | number;
-  title: string;
-  description?: string;
-  deadline?: string;
-  status?: string;
-  team_members_count?: number;
-  [key: string]: any;
-}
+import { Contest } from '@/services/contestService';
 
 interface AllContestsSectionProps {
   contests: Contest[];

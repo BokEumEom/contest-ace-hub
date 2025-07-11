@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Contests from "./pages/Contests";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import TestTransition from "./pages/TestTransition";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/test-transition" element={<TestTransition />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
