@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar, Users, ExternalLink, Trash2 } from 'lucide-react';
 import { TeamMember, Schedule } from '@/services/contestDetailService';
 import { Contest } from '@/types/contest';
@@ -35,6 +36,7 @@ interface ContestSidebarProps {
   handleStatusChange: (status: string) => void;
   handleAddTeamMember: () => void;
   handleRemoveTeamMember: (id: string) => void;
+  handleAddUserFromSearch?: (user: any) => void;
   handleAddSchedule: () => void;
   handleRemoveSchedule: (id: string) => void;
   handleDeleteContest: () => Promise<boolean>;
@@ -66,6 +68,7 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
   handleStatusChange,
   handleAddTeamMember,
   handleRemoveTeamMember,
+  handleAddUserFromSearch,
   handleAddSchedule,
   handleRemoveSchedule,
   handleDeleteContest,
@@ -144,15 +147,45 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
             )}
           </div>
 
+          <Button 
+            variant="outline" 
+            className="w-full justify-start" 
+            size="sm"
+            onClick={() => setTeamModalOpen(true)}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            팀원 관리
+          </Button>
+
           <TeamManagementModal
-            open={teamModalOpen}
-            onOpenChange={setTeamModalOpen}
+            isOpen={teamModalOpen}
+            onClose={() => setTeamModalOpen(false)}
             teamMembers={teamMembers}
-            newMember={newMember}
-            setNewMember={setNewMember}
-            onAddMember={handleAddTeamMember}
+            onAddMember={(member) => {
+              // TeamMember 객체를 받아서 처리
+              // handleAddUserFromSearch를 사용하여 팀원 추가
+              if (handleAddUserFromSearch) {
+                handleAddUserFromSearch({
+                  id: member.id,
+                  display_name: member.name,
+                  email: member.email || '',
+                  avatar_url: member.avatar_url
+                });
+              }
+            }}
             onRemoveMember={handleRemoveTeamMember}
+            onUpdateMember={() => {}}
           />
+
+          <Button 
+            variant="outline" 
+            className="w-full justify-start" 
+            size="sm"
+            onClick={() => setScheduleModalOpen(true)}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            일정 관리
+          </Button>
 
           <ScheduleManagementModal
             open={scheduleModalOpen}
@@ -206,10 +239,19 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
           <CardContent>
             <div className="space-y-2">
               {teamMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium text-sm">{member.name}</div>
+                <div key={member.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={member.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                      {member.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{member.name}</div>
                     <div className="text-xs text-muted-foreground">{member.role}</div>
+                    {member.email && (
+                      <div className="text-xs text-muted-foreground truncate">{member.email}</div>
+                    )}
                   </div>
                 </div>
               ))}

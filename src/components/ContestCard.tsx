@@ -18,6 +18,8 @@ interface ContestCardProps {
   submission_format?: string;
   contest_theme?: string;
   updated_at?: string;
+  user_id?: string; // 작성자 ID
+  showOwner?: boolean; // 작성자 표시 여부
   onClick?: () => void;
 }
 
@@ -36,6 +38,8 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
   submission_format,
   contest_theme,
   updated_at,
+  user_id,
+  showOwner = false,
   onClick
 }) => {
   // 실시간으로 D-day 계산 (메모이제이션)
@@ -116,6 +120,11 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
             {title}
           </h3>
           <p className="text-sm text-muted-foreground truncate">{organization}</p>
+          {showOwner && user_id && (
+            <p className="text-xs text-blue-600 mt-1">
+              작성자: {user_id.slice(0, 8)}...
+            </p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
           <Badge className={statusBadge.className}>

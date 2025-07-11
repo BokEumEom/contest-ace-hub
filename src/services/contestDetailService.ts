@@ -6,6 +6,7 @@ export interface TeamMember {
   role: string;
   email?: string;
   phone?: string;
+  avatar_url?: string;
 }
 
 export interface Schedule {

@@ -38,19 +38,19 @@ const LandingPage = React.memo(() => {
 // 메모이제이션된 대시보드 컴포넌트
 const Dashboard = React.memo(() => {
   const navigate = useNavigate();
-  const { contests, loading } = useContests();
+  const { contests, myContests, loading } = useContests();
   const { user } = useAuth();
   const { calculateStats, getUrgentContests } = useDashboardUtils();
 
-  // 통계 계산 (메모이제이션)
+  // 통계 계산 (메모이제이션) - 개인 공모전 기준
   const stats = React.useMemo(() => {
-    return calculateStats(contests, loading, user);
-  }, [contests, loading, user, calculateStats]);
+    return calculateStats(myContests, loading, user);
+  }, [myContests, loading, user, calculateStats]);
 
-  // 임박한 마감 공모전 (메모이제이션)
+  // 임박한 마감 공모전 (메모이제이션) - 개인 공모전 기준
   const urgentContests = React.useMemo(() => {
-    return getUrgentContests(contests, loading, user);
-  }, [contests, loading, user, getUrgentContests]);
+    return getUrgentContests(myContests, loading, user);
+  }, [myContests, loading, user, getUrgentContests]);
 
   // 네비게이션 핸들러 (메모이제이션)
   const handleContestClick = useCallback((contestId: string | number) => {
@@ -88,20 +88,52 @@ const Dashboard = React.memo(() => {
           <QuickActions />
         </div>
 
-        <UrgentContestsSection
-          urgentContests={urgentContests}
-          onContestClick={handleContestClick}
-        />
+        {/* 개인 공모전 섹션 */}
+        {user && (
+          <>
+            <UrgentContestsSection
+              urgentContests={urgentContests}
+              onContestClick={handleContestClick}
+            />
 
-        <AllContestsSection
-          contests={contests}
-          loading={loading}
-          user={user}
-          onContestClick={handleContestClick}
-          onViewAllClick={handleViewAllClick}
-          onNewContestClick={handleNewContestClick}
-          onAuthClick={handleAuthClick}
-        />
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-foreground">내가 올린 공모전</h3>
+                {myContests.length > 0 && (
+                  <button 
+                    onClick={() => navigate('/contests?tab=my')}
+                    className="text-contest-orange font-medium hover:text-contest-coral transition-colors"
+                  >
+                    전체 보기 →
+                  </button>
+                )}
+              </div>
+              <AllContestsSection
+                contests={myContests}
+                loading={loading}
+                user={user}
+                onContestClick={handleContestClick}
+                onViewAllClick={handleViewAllClick}
+                onNewContestClick={handleNewContestClick}
+                onAuthClick={handleAuthClick}
+              />
+            </div>
+          </>
+        )}
+
+        {/* 전체 공모전 섹션 */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold text-foreground mb-4">전체 공모전</h3>
+          <AllContestsSection
+            contests={contests}
+            loading={loading}
+            user={user}
+            onContestClick={handleContestClick}
+            onViewAllClick={handleViewAllClick}
+            onNewContestClick={handleNewContestClick}
+            onAuthClick={handleAuthClick}
+          />
+        </div>
       </main>
     </div>
   );

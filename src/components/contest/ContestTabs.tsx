@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Trophy, 
@@ -76,166 +76,230 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
   const { updateContest } = useContestDetail(contest.id);
 
   // tasks와 progress를 함께 업데이트
-  const handleTasksUpdate = (tasks, progress) => {
-    updateContest(contest.id, { tasks, progress });
+  const handleTasksUpdate = (tasks: any, progress: number) => {
+    updateContest(parseInt(contest.id), { tasks, progress });
     onProgressUpdate(progress); // 기존 진행률도 갱신
   };
 
   if (activeTab === 'overview') {
     return (
       <div className="space-y-6">
-        {/* 공모전 소개 */}
-        {contest.description && (
-          <Card>
+        {/* 주요 정보 섹션 */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Info className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">공모전 개요</CardTitle>
+                <CardDescription className="text-sm text-blue-600">
+                  공모전의 핵심 정보를 확인하세요
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 왼쪽: 핵심 정보 */}
+              <div className="space-y-4">
+                {/* 공모전 소개 */}
+                {contest.description && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Info className="h-3 w-3 text-blue-600" />
+                        </div>
+                        공모전 소개
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700">{contest.description}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 공모 주제 */}
+                {contest.contest_theme && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Target className="h-3 w-3 text-blue-600" />
+                        </div>
+                        공모 주제
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700">{contest.contest_theme}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 출품 규격 */}
+                {contest.submission_format && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-coral-100 rounded-full flex items-center justify-center">
+                          <FileText className="h-3 w-3 text-contest-coral" />
+                        </div>
+                        출품 규격
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700">{contest.submission_format}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* 오른쪽: 상세 정보 */}
+              <div className="space-y-4">
+                {/* 출품 방법 */}
+                {contest.submission_method && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-light-blue-100 rounded-full flex items-center justify-center">
+                          <Upload className="h-3 w-3 text-contest-light-blue" />
+                        </div>
+                        출품 방법
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700">{contest.submission_method}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 상금/혜택 요약 */}
+                {contest.prize && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-coral-100 rounded-full flex items-center justify-center">
+                          <Trophy className="h-3 w-3 text-contest-coral" />
+                        </div>
+                        상금/혜택 요약
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm font-medium leading-relaxed text-gray-700">{contest.prize}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 시상 내역 */}
+                {contest.prize_details && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                          <Award className="h-3 w-3 text-contest-orange" />
+                        </div>
+                        시상 내역
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700">{contest.prize_details}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 일정 정보 섹션 */}
+        {(contest.contest_schedule || contest.result_announcement) && (
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-teal-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-contest-blue" />
-                공모전 소개
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Calendar className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">일정 정보</CardTitle>
+                  <CardDescription className="text-sm text-green-600">
+                    공모전 일정과 발표 일정을 확인하세요
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.description}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {contest.contest_schedule && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                          <Calendar className="h-3 w-3 text-green-600" />
+                        </div>
+                        공모 일정
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+                        {contest.contest_schedule}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+                {contest.result_announcement && (
+                  <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="w-6 h-6 bg-coral-100 rounded-full flex items-center justify-center">
+                          <Clock className="h-3 w-3 text-contest-coral" />
+                        </div>
+                        발표 일정
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+                        {contest.result_announcement}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* 공모 주제 */}
-        {contest.contest_theme && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-contest-blue" />
-                공모 주제
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.contest_theme}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 출품 규격 */}
-        {contest.submission_format && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-contest-coral" />
-                출품 규격
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.submission_format}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 출품 방법 */}
-        {contest.submission_method && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5 text-contest-light-blue" />
-                출품 방법
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.submission_method}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 공모 일정 */}
-        {contest.contest_schedule && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-contest-blue" />
-                공모 일정
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.contest_schedule}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 발표 일정 */}
-        {contest.result_announcement && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-contest-coral" />
-                발표 일정
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.result_announcement}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 시상 내역 */}
-        {contest.prize_details && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-contest-orange" />
-                시상 내역
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.prize_details}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 상금/혜택 요약 */}
-        {contest.prize && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-contest-coral" />
-                상금/혜택 요약
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm font-medium">{contest.prize}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 유의사항 */}
-        {contest.precautions && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                유의사항
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{contest.precautions}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {!contest.precautions && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-muted-foreground" />
-                유의사항
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                등록된 유의사항이 없습니다.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-
+        {/* 유의사항 섹션 */}
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-red-50">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="h-3 w-3 text-orange-600" />
+                  </div>
+                  유의사항
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {contest.precautions ? (
+                  <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">{contest.precautions}</p>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    등록된 유의사항이 없습니다.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
       </div>
     );
   }

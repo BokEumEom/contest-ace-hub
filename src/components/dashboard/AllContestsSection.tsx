@@ -25,20 +25,6 @@ const AllContestsSection: React.FC<AllContestsSectionProps> = ({
 }) => {
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-foreground">
-          {!user ? '로그인이 필요합니다' : contests.length > 0 ? '모든 공모전' : '등록된 공모전이 없습니다'}
-        </h3>
-        {user && contests.length > 0 && (
-          <button 
-            onClick={onViewAllClick}
-            className="text-contest-orange font-medium hover:text-contest-coral transition-colors"
-          >
-            전체 보기 →
-          </button>
-        )}
-      </div>
-      
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-contest-orange mx-auto mb-4"></div>

@@ -3,6 +3,9 @@ import { useContests } from './useContests';
 import { ContestDetailService, TeamMember, Schedule } from '@/services/contestDetailService';
 import { ContestService } from '@/services/contestService';
 import { useProfile } from '@/hooks/useProfile';
+import { UserSearchResult } from '@/services/userService';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 export interface EditForm {
   title: string;
@@ -267,6 +270,27 @@ export const useContestDetail = (contestId: string | undefined) => {
     }
   };
 
+  // 사용자 검색으로 팀원 추가
+  const handleAddUserFromSearch = async (user: UserSearchResult) => {
+    try {
+      const newMember = {
+        id: user.id,
+        name: user.display_name || user.email,
+        role: '팀원',
+        email: user.email,
+        avatar_url: user.avatar_url
+      };
+      
+      const updatedMembers = [...teamMembers, newMember];
+      await ContestDetailService.saveTeamMembers(contest.id, updatedMembers);
+      setTeamMembers(updatedMembers);
+      alert(`${newMember.name}님이 팀에 추가되었습니다.`);
+    } catch (error) {
+      console.error('Error adding user from search:', error);
+      alert('팀원 추가 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleAddSchedule = async () => {
     if (!newSchedule.title || !newSchedule.date) {
       alert('일정 제목과 날짜를 모두 입력해주세요.');
@@ -372,6 +396,92 @@ export const useContestDetail = (contestId: string | undefined) => {
     return 'text-green-600 bg-green-50';
   };
 
+  // 팀원 추가 (사용자 검색 결과에서)
+  const { toast } = useToast();
+  const onCloseUserSearch = () => {
+    // 사용자 검색 모달을 닫는 로직
+    // 예: setUserSearchModalOpen(false);
+  };
+
+  const addTeamMemberFromSearch = async (user: UserSearchResult) => {
+    if (!contest) return;
+
+    try {
+      // 이미 팀원인지 확인
+      const existingMember = contest.team_members?.find(
+        member => member.id === user.id
+      );
+
+      if (existingMember) {
+        toast({
+          title: "이미 팀원입니다",
+          description: `${user.display_name}님은 이미 팀원으로 등록되어 있습니다.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 새 팀원 정보 생성
+      const newMember: TeamMember = {
+        id: user.id,
+        name: user.display_name,
+        email: user.email,
+        avatar_url: user.avatar_url,
+        role: 'member'
+      };
+
+      // 팀원 목록 업데이트
+      const updatedTeamMembers = [
+        ...(contest.team_members || []),
+        newMember
+      ];
+
+      // contest_details 테이블 업데이트
+      const { error } = await supabase
+        .from('contest_details')
+        .upsert({
+          user_id: contest.user_id,
+          contest_id: contest.id,
+          detail_type: 'team_members',
+          data: updatedTeamMembers
+        });
+
+      if (error) {
+        console.error('Error adding team member:', error);
+        toast({
+          title: "팀원 추가 실패",
+          description: "팀원을 추가하는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 로컬 상태 업데이트
+      setContest(prev => prev ? {
+        ...prev,
+        team_members: updatedTeamMembers,
+        team_members_count: updatedTeamMembers.length
+      } : null);
+
+      toast({
+        title: "팀원 추가 완료",
+        description: `${user.display_name}님이 팀에 추가되었습니다.`,
+      });
+
+      // 사용자 검색 모달 닫기
+      if (onCloseUserSearch) {
+        onCloseUserSearch();
+      }
+    } catch (error) {
+      console.error('Error adding team member from search:', error);
+      toast({
+        title: "팀원 추가 실패",
+        description: "팀원을 추가하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     contest,
     loading,
@@ -398,6 +508,7 @@ export const useContestDetail = (contestId: string | undefined) => {
     handleStatusChange,
     handleAddTeamMember,
     handleRemoveTeamMember,
+    handleAddUserFromSearch,
     handleAddSchedule,
     handleRemoveSchedule,
     handleDeleteContest,
@@ -405,6 +516,7 @@ export const useContestDetail = (contestId: string | undefined) => {
     getStatusColor,
     getStatusText,
     getDaysLeftColor,
-    updateContest // 추가: 외부에서 updateContest 사용 가능
+    updateContest, // 추가: 외부에서 updateContest 사용 가능
+    addTeamMemberFromSearch // 추가: 사용자 검색 결과에서 팀원 추가 함수
   };
 }; 

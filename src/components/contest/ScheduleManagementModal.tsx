@@ -11,7 +11,7 @@ import {
   DialogTrigger 
 } from '@/components/ui/dialog';
 import { Calendar, Plus, Trash2 } from 'lucide-react';
-import { Schedule } from '@/hooks/useContestDetail';
+import { Schedule } from '@/services/contestDetailService';
 
 interface ScheduleManagementModalProps {
   open: boolean;
@@ -34,12 +34,6 @@ export const ScheduleManagementModal: React.FC<ScheduleManagementModalProps> = (
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full justify-start" size="sm">
-          <Calendar className="h-4 w-4 mr-2" />
-          일정 추가
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>일정 관리</DialogTitle>

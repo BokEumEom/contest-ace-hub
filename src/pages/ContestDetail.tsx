@@ -45,6 +45,7 @@ const ContestDetail = () => {
     handleStatusChange,
     handleAddTeamMember,
     handleRemoveTeamMember,
+    handleAddUserFromSearch,
     handleAddSchedule,
     handleRemoveSchedule,
     handleDeleteContest,
@@ -140,6 +141,7 @@ const ContestDetail = () => {
                   handleStatusChange={handleStatusChange}
                   handleAddTeamMember={handleAddTeamMember}
                   handleRemoveTeamMember={handleRemoveTeamMember}
+                  handleAddUserFromSearch={handleAddUserFromSearch}
                   handleAddSchedule={handleAddSchedule}
                   handleRemoveSchedule={handleRemoveSchedule}
                   handleDeleteContest={handleDeleteContest}
