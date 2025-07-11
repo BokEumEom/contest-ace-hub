@@ -1,5 +1,5 @@
 -- Fix duplicate user records in user_profiles and user_statistics
--- Migration: 20241201000016_fix_duplicate_user_records.sql
+-- Migration: 20241201000017_fix_duplicate_user_records.sql
 
 -- Remove duplicate user_profiles records, keeping the most recent one
 DELETE FROM user_profiles 

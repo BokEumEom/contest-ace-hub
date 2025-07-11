@@ -1,5 +1,5 @@
 -- Create profile-images storage bucket
--- Migration: 20241201000015_create_profile_images_bucket.sql
+-- Migration: 20241201000016_create_profile_images_bucket.sql
 
 -- Note: Storage bucket and policies must be created manually in Supabase dashboard
 -- 
