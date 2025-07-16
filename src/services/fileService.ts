@@ -12,6 +12,8 @@ export interface FileItem {
   uploaded_at?: string;
   created_at?: string;
   updated_at?: string;
+  canEdit?: boolean; // 편집 권한
+  canDelete?: boolean; // 삭제 권한
 }
 
 export class FileService {
@@ -25,6 +27,22 @@ export class FileService {
         return [];
       }
 
+      // 먼저 공모전 정보를 조회하여 작성자 확인
+      const { data: contestData, error: contestError } = await supabase
+        .from('contests')
+        .select('user_id')
+        .eq('id', contestId)
+        .single();
+
+      if (contestError || !contestData) {
+        console.error('Error fetching contest:', contestError);
+        return [];
+      }
+
+      // 현재 사용자가 공모전 작성자인지 확인
+      const isContestOwner = contestData.user_id === user.id;
+
+      // 파일 조회 - 작성자이거나 공모전을 볼 수 있는 사용자
       const { data, error } = await supabase
         .from('contest_files')
         .select('*')
@@ -36,7 +54,14 @@ export class FileService {
         return [];
       }
 
-      return data || [];
+      // 작성자가 아닌 경우 읽기 전용으로 표시
+      const filesWithPermissions = (data || []).map(file => ({
+        ...file,
+        canEdit: isContestOwner && file.user_id === user.id,
+        canDelete: isContestOwner && file.user_id === user.id,
+      }));
+
+      return filesWithPermissions;
     } catch (error) {
       console.error('Error in getFiles:', error);
       return [];

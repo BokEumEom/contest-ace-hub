@@ -109,15 +109,18 @@ const FileItem = memo(({
             >
               <Download className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => file.id && onDelete(file.id)}
-              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-              title="파일 삭제"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
+            {file.canDelete && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => file.id && onDelete(file.id)}
+                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                title="파일 삭제"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         

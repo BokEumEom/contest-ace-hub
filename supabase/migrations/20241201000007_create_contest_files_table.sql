@@ -28,6 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_contest_files_uploaded_at ON contest_files(upload
 ALTER TABLE contest_files ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for contest_files
+-- 기존 정책들 (작성자만 관리 가능)
 CREATE POLICY "Users can manage their own contest files" ON contest_files
   FOR ALL USING (auth.uid() = user_id);
 
@@ -42,6 +43,16 @@ CREATE POLICY "Users can update their own contest files" ON contest_files
 
 CREATE POLICY "Users can delete their own contest files" ON contest_files
   FOR DELETE USING (auth.uid() = user_id);
+
+-- 새로운 정책: 공모전 작성자의 파일을 공모전을 본 사용자가 읽을 수 있도록
+CREATE POLICY "Users can read contest files of contests they can view" ON contest_files
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM contests 
+      WHERE contests.id = contest_files.contest_id 
+      AND contests.user_id = contest_files.user_id
+    )
+  );
 
 -- Create trigger to automatically update updated_at
 CREATE TRIGGER update_contest_files_updated_at 

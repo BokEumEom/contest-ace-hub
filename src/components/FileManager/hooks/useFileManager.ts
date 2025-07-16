@@ -62,6 +62,17 @@ export const useFileManager = (contestId: string) => {
   // 파일 삭제
   const deleteFile = useCallback(async (fileId: number) => {
     try {
+      // 파일의 권한 확인
+      const file = files.find(f => f.id === fileId);
+      if (!file || !file.canDelete) {
+        toast({
+          title: "권한 없음",
+          description: "이 파일을 삭제할 권한이 없습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const success = await FileService.deleteFile(fileId, contestId);
       
       if (success) {
@@ -85,7 +96,7 @@ export const useFileManager = (contestId: string) => {
         variant: "destructive",
       });
     }
-  }, [contestId, toast]);
+  }, [contestId, toast, files]);
 
   // 파일 다운로드
   const downloadFile = useCallback((file: FileItem) => {

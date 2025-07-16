@@ -19,6 +19,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useContestDetail } from '@/hooks/useContestDetail';
+import { useAuth } from '@/components/AuthProvider';
 import ProgressManager from '@/components/ProgressManager';
 import FileManager from '@/components/FileManager';
 import AIAssistant from '@/components/AIAssistant';
@@ -74,6 +75,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
   };
 
   const { updateContest } = useContestDetail(contest.id);
+  const { user } = useAuth();
 
   // tasks와 progress를 함께 업데이트
   const handleTasksUpdate = (tasks: any, progress: number) => {
@@ -401,6 +403,24 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* 권한 안내 메시지 */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Upload className="h-3 w-3 text-blue-600" />
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-blue-800 mb-1">작품 관리 권한</p>
+                  <p className="text-blue-700">
+                    {(contest as any).user_id === user?.id 
+                      ? "이 공모전의 작성자입니다. 모든 파일을 관리할 수 있습니다."
+                      : "이 공모전의 파일을 조회할 수 있습니다. 편집은 작성자만 가능합니다."
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <FileManager contestId={contest.id} />
           </CardContent>
         </Card>
