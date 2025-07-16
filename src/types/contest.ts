@@ -59,4 +59,6 @@ export interface ContestSubmission {
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
+  canEdit?: boolean; // 편집 권한
+  canDelete?: boolean; // 삭제 권한
 }

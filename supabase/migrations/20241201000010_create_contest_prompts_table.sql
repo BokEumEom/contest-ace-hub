@@ -26,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_contest_prompts_created_at ON contest_prompts(cre
 ALTER TABLE contest_prompts ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for contest_prompts
+-- 기존 정책들 (작성자만 관리 가능)
 CREATE POLICY "Users can manage their own contest prompts" ON contest_prompts
   FOR ALL USING (auth.uid() = user_id);
 
@@ -41,6 +42,16 @@ CREATE POLICY "Users can update their own contest prompts" ON contest_prompts
 CREATE POLICY "Users can delete their own contest prompts" ON contest_prompts
   FOR DELETE USING (auth.uid() = user_id);
 
+-- 새로운 정책: 공모전 작성자의 프롬프트를 공모전을 본 사용자가 읽을 수 있도록
+CREATE POLICY "Users can read contest prompts of contests they can view" ON contest_prompts
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM contests 
+      WHERE contests.id = contest_prompts.contest_id 
+      AND contests.user_id = contest_prompts.user_id
+    )
+  );
+
 -- Create trigger to automatically update updated_at
 CREATE TRIGGER update_contest_prompts_updated_at 
   BEFORE UPDATE ON contest_prompts 
@@ -48,13 +59,13 @@ CREATE TRIGGER update_contest_prompts_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comments for documentation
-COMMENT ON TABLE contest_prompts IS 'Stores AI generation prompts for contest files';
+COMMENT ON TABLE contest_prompts IS 'Stores AI generation prompts for contests';
 COMMENT ON COLUMN contest_prompts.user_id IS 'Reference to the user who owns this prompt';
 COMMENT ON COLUMN contest_prompts.contest_id IS 'Reference to the contest this prompt belongs to';
-COMMENT ON COLUMN contest_prompts.file_id IS 'Reference to the generated file';
+COMMENT ON COLUMN contest_prompts.file_id IS 'Reference to the file this prompt is connected to';
 COMMENT ON COLUMN contest_prompts.prompt_type IS 'Type of prompt (image, document, video, audio, other)';
-COMMENT ON COLUMN contest_prompts.prompt_text IS 'The actual prompt text used for generation';
+COMMENT ON COLUMN contest_prompts.prompt_text IS 'The actual prompt text';
 COMMENT ON COLUMN contest_prompts.ai_model IS 'AI model used for generation';
-COMMENT ON COLUMN contest_prompts.generation_params IS 'Additional generation parameters as JSON';
+COMMENT ON COLUMN contest_prompts.generation_params IS 'Parameters used for generation';
 COMMENT ON COLUMN contest_prompts.created_at IS 'When the prompt was created';
 COMMENT ON COLUMN contest_prompts.updated_at IS 'When the prompt was last updated'; 

@@ -268,6 +268,17 @@ const DescriptionEditor = memo(({ contestId, files }: DescriptionEditorProps) =>
 
   // 설명 삭제
   const handleDelete = async (id: string) => {
+    // 삭제 권한 확인
+    const submission = submissions.find(s => s.id === id);
+    if (!submission || !submission.canDelete) {
+      toast({
+        title: "권한 없음",
+        description: "이 작품 설명을 삭제할 권한이 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (confirm('이 작품 설명을 삭제하시겠습니까?')) {
       try {
         await ContestSubmissionService.deleteSubmission(id);
@@ -373,42 +384,30 @@ const DescriptionEditor = memo(({ contestId, files }: DescriptionEditorProps) =>
                         >
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditSubmission(submission)}
-                          title="작품 설명 편집"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopySubmission(submission.description)}
-                          title="작품 설명 복사"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenLinkModal(submission)}
-                          title="파일과 연결"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Link className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(submission.id)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                          title="작품 설명 삭제"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {/* 편집 권한이 있는 경우에만 편집 버튼 표시 */}
+                        {submission.canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditSubmission(submission)}
+                            title="작품 설명 편집"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
+                        {submission.canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(submission.id)}
+                            title="작품 설명 삭제"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );

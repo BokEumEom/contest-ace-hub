@@ -155,11 +155,27 @@ export class ContestSubmissionService {
       throw new Error('User not authenticated');
     }
 
+    // 먼저 공모전 정보를 조회하여 작성자 확인
+    const { data: contestData, error: contestError } = await supabase
+      .from('contests')
+      .select('user_id')
+      .eq('id', parseInt(contestId))
+      .single();
+
+    if (contestError || !contestData) {
+      console.error('Error fetching contest:', contestError);
+      throw new Error('Failed to fetch contest');
+    }
+
+    // 현재 사용자가 공모전 작성자인지 확인
+    const isContestOwner = contestData.user_id === user.id;
+
+    // 작품 설명 조회 - 작성자이거나 공모전을 볼 수 있는 사용자
     const { data: results, error } = await supabase
       .from('contest_submissions')
       .select()
       .eq('contest_id', parseInt(contestId))
-      .eq('user_id', user.id)
+      .eq('user_id', contestData.user_id) // 공모전 작성자의 작품 설명만 조회
       .order('order_index', { ascending: true });
 
     if (error) {
@@ -167,7 +183,8 @@ export class ContestSubmissionService {
       throw new Error('Failed to fetch submissions');
     }
 
-    return (results || []).map(result => ({
+    // 작성자가 아닌 경우 읽기 전용으로 표시
+    const submissionsWithPermissions = (results || []).map(result => ({
       id: result.id.toString(),
       contestId: result.contest_id.toString(),
       title: result.title,
@@ -176,7 +193,11 @@ export class ContestSubmissionService {
       orderIndex: result.order_index,
       createdAt: result.created_at,
       updatedAt: result.updated_at,
+      canEdit: isContestOwner,
+      canDelete: isContestOwner,
     }));
+
+    return submissionsWithPermissions;
   }
 
   /**

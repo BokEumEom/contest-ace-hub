@@ -94,6 +94,17 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
 
   // 프롬프트 삭제
   const handleDeletePrompt = async (promptId: number) => {
+    // 삭제 권한 확인
+    const prompt = prompts.find(p => p.id === promptId);
+    if (!prompt || !prompt.canDelete) {
+      toast({
+        title: "권한 없음",
+        description: "이 프롬프트를 삭제할 권한이 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (confirm('이 프롬프트를 삭제하시겠습니까?')) {
       try {
         const success = await PromptService.deletePrompt(promptId, contestId);
@@ -338,15 +349,18 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                         >
                           <Eye className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditPrompt(prompt)}
-                          title="프롬프트 편집"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
+                        {/* 편집 권한이 있는 경우에만 편집 버튼 표시 */}
+                        {prompt.canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditPrompt(prompt)}
+                            title="프롬프트 편집"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -356,24 +370,30 @@ export const PromptManager: React.FC<PromptManagerProps> = memo(({ contestId, fi
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleLinkPromptToFile(prompt)}
-                          title="파일과 연결"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Link className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => prompt.id && handleDeletePrompt(prompt.id)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                          title="프롬프트 삭제"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {/* 편집 권한이 있는 경우에만 연결 버튼 표시 */}
+                        {prompt.canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleLinkPromptToFile(prompt)}
+                            title="파일과 연결"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Link className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
+                        {prompt.canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePrompt(prompt.id!)}
+                            title="프롬프트 삭제"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
