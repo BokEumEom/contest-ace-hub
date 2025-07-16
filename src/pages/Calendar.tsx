@@ -7,12 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useContests } from '@/hooks/useContests';
 import ScheduleDialog from '@/components/ScheduleDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileCalendar from '@/components/mobile/MobileCalendar';
 
 const Calendar = () => {
   const navigate = useNavigate();
   const { contests } = useContests();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState<any[]>([]);
+  const isMobile = useIsMobile();
+
+  // 모바일에서는 MobileCalendar 컴포넌트 사용
+  if (isMobile) {
+    return <MobileCalendar />;
+  }
 
   // 현재 월의 첫날과 마지막날 계산
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -194,10 +202,10 @@ const Calendar = () => {
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{contest.deadline}</span>
                           <Badge 
-                            variant={contest.daysLeft <= 7 ? "destructive" : "secondary"}
+                            variant={contest.days_left <= 7 ? "destructive" : "secondary"}
                             className="text-xs"
                           >
-                            D-{contest.daysLeft}
+                            D-{contest.days_left}
                           </Badge>
                         </div>
                       </div>

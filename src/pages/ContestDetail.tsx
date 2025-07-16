@@ -14,10 +14,13 @@ import { useContestDetail } from '@/hooks/useContestDetail';
 import { ContestTabs } from '@/components/contest/ContestTabs';
 import { ContestSidebar } from '@/components/contest/ContestSidebar';
 import { ContestHeader } from '@/components/contest/ContestHeader';
+import MobileContestDetail from '@/components/mobile/MobileContestDetail';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ContestDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const {
     contest,
@@ -63,6 +66,11 @@ const ContestDetail = () => {
     { id: 'results', label: '결과', icon: Trophy }
   ];
 
+  // 모바일에서는 모바일 전용 컴포넌트 사용
+  if (isMobile) {
+    return <MobileContestDetail />;
+  }
+
   return (
     <PageTransition isLoading={loading}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -106,11 +114,10 @@ const ContestDetail = () => {
                 })}
               </div>
 
+              {/* 메인 컨텐츠 */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 메인 콘텐츠 */}
                 <div className="lg:col-span-2 space-y-6">
-                  {/* 탭 콘텐츠 */}
-                  <ContestTabs 
+                  <ContestTabs
                     activeTab={activeTab}
                     contest={contest}
                     onProgressUpdate={handleProgressUpdate}
@@ -119,37 +126,39 @@ const ContestDetail = () => {
                 </div>
 
                 {/* 사이드바 */}
-                <ContestSidebar
-                  contest={contest}
-                  teamMembers={teamMembers}
-                  schedules={schedules}
-                  editModalOpen={editModalOpen}
-                  setEditModalOpen={setEditModalOpen}
-                  statusModalOpen={statusModalOpen}
-                  setStatusModalOpen={setStatusModalOpen}
-                  teamModalOpen={teamModalOpen}
-                  setTeamModalOpen={setTeamModalOpen}
-                  scheduleModalOpen={scheduleModalOpen}
-                  setScheduleModalOpen={setScheduleModalOpen}
-                  editForm={editForm}
-                  setEditForm={setEditForm}
-                  newMember={newMember}
-                  setNewMember={setNewMember}
-                  newSchedule={newSchedule}
-                  setNewSchedule={setNewSchedule}
-                  handleEditSubmit={handleEditSubmit}
-                  handleStatusChange={handleStatusChange}
-                  handleAddTeamMember={handleAddTeamMember}
-                  handleRemoveTeamMember={handleRemoveTeamMember}
-                  handleAddUserFromSearch={handleAddUserFromSearch}
-                  handleAddSchedule={handleAddSchedule}
-                  handleRemoveSchedule={handleRemoveSchedule}
-                  handleDeleteContest={handleDeleteContest}
-                  openEditModal={openEditModal}
-                  getStatusColor={getStatusColor}
-                  getStatusText={getStatusText}
-                  getDaysLeftColor={getDaysLeftColor}
-                />
+                <div className="lg:col-span-1">
+                  <ContestSidebar
+                    contest={contest}
+                    teamMembers={teamMembers}
+                    schedules={schedules}
+                    editModalOpen={editModalOpen}
+                    setEditModalOpen={setEditModalOpen}
+                    statusModalOpen={statusModalOpen}
+                    setStatusModalOpen={setStatusModalOpen}
+                    teamModalOpen={teamModalOpen}
+                    setTeamModalOpen={setTeamModalOpen}
+                    scheduleModalOpen={scheduleModalOpen}
+                    setScheduleModalOpen={setScheduleModalOpen}
+                    editForm={editForm}
+                    setEditForm={setEditForm}
+                    newMember={newMember}
+                    setNewMember={setNewMember}
+                    newSchedule={newSchedule}
+                    setNewSchedule={setNewSchedule}
+                    handleEditSubmit={handleEditSubmit}
+                    handleStatusChange={handleStatusChange}
+                    handleAddTeamMember={handleAddTeamMember}
+                    handleRemoveTeamMember={handleRemoveTeamMember}
+                    handleAddUserFromSearch={handleAddUserFromSearch}
+                    handleAddSchedule={handleAddSchedule}
+                    handleRemoveSchedule={handleRemoveSchedule}
+                    handleDeleteContest={handleDeleteContest}
+                    openEditModal={openEditModal}
+                    getStatusColor={getStatusColor}
+                    getStatusText={getStatusText}
+                    getDaysLeftColor={getDaysLeftColor}
+                  />
+                </div>
               </div>
             </>
           ) : null}

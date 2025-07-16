@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
+import MobileNavigation from "@/components/MobileNavigation";
 import Index from "./pages/Index";
 import NewContest from "./pages/NewContest";
 import ContestDetail from "./pages/ContestDetail";
@@ -28,23 +29,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* All routes are now public */}
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/contests" element={<Contests />} />
-            <Route path="/new-contest" element={<NewContest />} />
-            <Route path="/contest/:id" element={<ContestDetail />} />
-            <Route path="/ai-helper" element={<AIHelper />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/test-transition" element={<TestTransition />} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="pb-16 md:pb-0"> {/* 모바일에서 하단 네비게이션 공간 확보 */}
+            <Routes>
+              {/* All routes are now public */}
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/contests" element={<Contests />} />
+              <Route path="/new-contest" element={<NewContest />} />
+              <Route path="/contest/:id" element={<ContestDetail />} />
+              <Route path="/ai-helper" element={<AIHelper />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/test-transition" element={<TestTransition />} />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <MobileNavigation />
+          </div>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

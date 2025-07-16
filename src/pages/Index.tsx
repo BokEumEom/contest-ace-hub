@@ -2,10 +2,12 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
+import MobileHeader from '@/components/mobile/MobileHeader';
 import QuickActions from '@/components/QuickActions';
 import { useContests } from '@/hooks/useContests';
 import { useAuth } from '@/components/AuthProvider';
 import { useDashboardUtils } from '@/hooks/useDashboardUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import refactored components
 import HeroSection from '@/components/landing/HeroSection';
@@ -16,6 +18,7 @@ import WelcomeSection from '@/components/dashboard/WelcomeSection';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import UrgentContestsSection from '@/components/dashboard/UrgentContestsSection';
 import AllContestsSection from '@/components/dashboard/AllContestsSection';
+import MobileDashboard from '@/components/mobile/MobileDashboard';
 
 // 메모이제이션된 랜딩 페이지 컴포넌트
 const LandingPage = React.memo(() => {
@@ -41,6 +44,7 @@ const Dashboard = React.memo(() => {
   const { contests, myContests, loading } = useContests();
   const { user } = useAuth();
   const { calculateStats, getUrgentContests } = useDashboardUtils();
+  const isMobile = useIsMobile();
 
   // 통계 계산 (메모이제이션) - 개인 공모전 기준
   const stats = React.useMemo(() => {
@@ -68,6 +72,11 @@ const Dashboard = React.memo(() => {
   const handleAuthClick = useCallback(() => {
     navigate('/auth');
   }, [navigate]);
+
+  // 모바일에서는 모바일 전용 대시보드 사용
+  if (isMobile) {
+    return <MobileDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -141,6 +150,7 @@ const Dashboard = React.memo(() => {
 
 const Index = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   // 로그아웃 상태일 때 랜딩 페이지 표시
   if (!user) {

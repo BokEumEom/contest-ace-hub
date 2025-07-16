@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileProfile from '@/components/mobile/MobileProfile';
 
 // Import refactored components
 import ProfileHeader from '@/components/profile/ProfileHeader';
@@ -67,6 +69,7 @@ const Profile = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   // Update form values when profile loads
   React.useEffect(() => {
@@ -260,142 +263,149 @@ const Profile = () => {
     );
   }
 
+  // 모바일과 데스크톱 렌더링 분리
   return (
-    <PageTransition isLoading={loading}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 relative overflow-hidden">
-        {/* Enhanced background with animated elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-purple-400/5 to-blue-400/5 rounded-full blur-2xl animate-pulse delay-500"></div>
-        </div>
-        
-        <Header />
-        
-        <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <ProfileHeader />
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
-            {/* Enhanced sidebar with better visual design */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-8">
-                <ProfileSidebar
-                  avatarUrl={profile?.avatar_url}
-                  displayName={profile?.display_name}
-                  email={user?.email}
-                  isUploading={isUploadingImage}
-                  statistics={statistics}
-                  onImageEdit={() => setShowImageDialog(true)}
-                  onEdit={() => setIsEditing(true)}
-                  onSignOut={handleSignOut}
-                  getUserInitials={getUserInitials}
-                />
-              </div>
+    <>
+      {isMobile ? (
+        <MobileProfile />
+      ) : (
+        <PageTransition isLoading={loading}>
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 relative overflow-hidden">
+            {/* Enhanced background with animated elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-indigo-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-purple-400/5 to-blue-400/5 rounded-full blur-2xl animate-pulse delay-500"></div>
             </div>
+            
+            <Header />
+            
+            <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <ProfileHeader />
 
-            {/* Enhanced main content area */}
-            <div className="lg:col-span-3">
-              <div className="space-y-8">
-                {/* Enhanced tabs with better styling */}
-                <Tabs defaultValue="profile" className="space-y-8">
-                  <div className="relative">
-                    <TabsList className="grid w-full grid-cols-2 bg-white/90 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-1 h-16">
-                      <TabsTrigger 
-                        value="profile" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105"
-                      >
-                        <User className="h-5 w-5 mr-2" />
-                        프로필
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="activity" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105"
-                      >
-                        <Activity className="h-5 w-5 mr-2" />
-                        활동
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <TabsContent value="profile" className="space-y-8">
-                    {/* Enhanced profile card with better visual hierarchy */}
-                    <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-md rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500">
-                      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-white/20">
-                        <CardTitle className="flex items-center gap-3 text-2xl font-bold text-gray-800">
-                          <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
-                            <User className="h-6 w-6 text-white" />
-                          </div>
-                          기본 정보
-                        </CardTitle>
-                        <CardDescription className="text-gray-600 text-lg">
-                          프로필 정보를 업데이트하세요.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-8 space-y-8">
-                        {isEditing ? (
-                          <ProfileForm
-                            displayName={displayName}
-                            bio={bio}
-                            location={location}
-                            website={website}
-                            onDisplayNameChange={setDisplayName}
-                            onBioChange={setBio}
-                            onLocationChange={setLocation}
-                            onWebsiteChange={setWebsite}
-                            onSave={handleSave}
-                            onCancel={() => setIsEditing(false)}
-                          />
-                        ) : (
-                          <ProfileInfo
-                            displayName={profile?.display_name}
-                            bio={profile?.bio}
-                            location={profile?.location}
-                            website={profile?.website}
-                          />
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* AccountInfo component already includes its own Card */}
-                    <AccountInfo
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
+                {/* Enhanced sidebar with better visual design */}
+                <div className="lg:col-span-1">
+                  <div className="sticky top-8">
+                    <ProfileSidebar
+                      avatarUrl={profile?.avatar_url}
+                      displayName={profile?.display_name}
                       email={user?.email}
-                      joinDate={getJoinDate(user?.created_at)}
-                      lastLogin={getLastLogin(user?.last_sign_in_at)}
+                      isUploading={isUploadingImage}
+                      statistics={statistics}
+                      onImageEdit={() => setShowImageDialog(true)}
+                      onEdit={() => setIsEditing(true)}
+                      onSignOut={handleSignOut}
+                      getUserInitials={getUserInitials}
                     />
-                  </TabsContent>
+                  </div>
+                </div>
 
-                  <TabsContent value="activity" className="space-y-8">
-                    {/* ActivityList component already includes its own Card */}
-                    <ActivityList
-                      activities={activities}
-                      getActivityIcon={getActivityIcon}
-                      getActivityColor={getActivityColor}
-                    />
-                  </TabsContent>
-                </Tabs>
+                {/* Enhanced main content area */}
+                <div className="lg:col-span-3">
+                  <div className="space-y-8">
+                    {/* Enhanced tabs with better styling */}
+                    <Tabs defaultValue="profile" className="space-y-8">
+                      <div className="relative">
+                        <TabsList className="grid w-full grid-cols-2 bg-white/90 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-1 h-16">
+                          <TabsTrigger 
+                            value="profile" 
+                            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105"
+                          >
+                            <User className="h-5 w-5 mr-2" />
+                            프로필
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="activity" 
+                            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105"
+                          >
+                            <Activity className="h-5 w-5 mr-2" />
+                            활동
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
+
+                      <TabsContent value="profile" className="space-y-8">
+                        {/* Enhanced profile card with better visual hierarchy */}
+                        <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-md rounded-3xl overflow-hidden hover:shadow-3xl transition-all duration-500">
+                          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-white/20">
+                            <CardTitle className="flex items-center gap-3 text-2xl font-bold text-gray-800">
+                              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
+                                <User className="h-6 w-6 text-white" />
+                              </div>
+                              기본 정보
+                            </CardTitle>
+                            <CardDescription className="text-gray-600 text-lg">
+                              프로필 정보를 업데이트하세요.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-8 space-y-8">
+                            {isEditing ? (
+                              <ProfileForm
+                                displayName={displayName}
+                                bio={bio}
+                                location={location}
+                                website={website}
+                                onDisplayNameChange={setDisplayName}
+                                onBioChange={setBio}
+                                onLocationChange={setLocation}
+                                onWebsiteChange={setWebsite}
+                                onSave={handleSave}
+                                onCancel={() => setIsEditing(false)}
+                              />
+                            ) : (
+                              <ProfileInfo
+                                displayName={profile?.display_name}
+                                bio={profile?.bio}
+                                location={profile?.location}
+                                website={profile?.website}
+                              />
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {/* AccountInfo component already includes its own Card */}
+                        <AccountInfo
+                          email={user?.email}
+                          joinDate={getJoinDate(user?.created_at)}
+                          lastLogin={getLastLogin(user?.last_sign_in_at)}
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="activity" className="space-y-8">
+                        {/* ActivityList component already includes its own Card */}
+                        <ActivityList
+                          activities={activities}
+                          getActivityIcon={getActivityIcon}
+                          getActivityColor={getActivityColor}
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              <ImageUploadDialog
+                open={showImageDialog}
+                onOpenChange={setShowImageDialog}
+                isUploading={isUploadingImage}
+                hasAvatar={!!profile?.avatar_url}
+                onImageSelect={() => fileInputRef.current?.click()}
+                onImageDelete={handleImageDelete}
+              />
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </main>
           </div>
-
-          <ImageUploadDialog
-            open={showImageDialog}
-            onOpenChange={setShowImageDialog}
-            isUploading={isUploadingImage}
-            hasAvatar={!!profile?.avatar_url}
-            onImageSelect={() => fileInputRef.current?.click()}
-            onImageDelete={handleImageDelete}
-          />
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-        </main>
-      </div>
-    </PageTransition>
+        </PageTransition>
+      )}
+    </>
   );
 };
 

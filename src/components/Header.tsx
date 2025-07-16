@@ -9,11 +9,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import NotificationDropdown from '@/components/NotificationDropdown';
 import NavigationTransition from '@/components/NavigationTransition';
 import { useAuth } from './AuthProvider';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const isMobile = useIsMobile();
 
   // 네비게이션 핸들러들 (메모이제이션)
   const handleHomeClick = useCallback(() => {
@@ -45,36 +47,50 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <NavigationTransition to="/" className="flex items-center space-x-4 group">
+          <NavigationTransition to="/" className="flex items-center space-x-2 sm:space-x-4 group">
             <div className="bg-contest-gradient p-2 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
-              <Calendar className="h-6 w-6 text-white" />
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold bg-contest-gradient bg-clip-text text-transparent transition-all duration-300 group-hover:scale-105">
+            <h1 className="text-lg sm:text-xl font-bold bg-contest-gradient bg-clip-text text-transparent transition-all duration-300 group-hover:scale-105">
               ContestHub
             </h1>
           </NavigationTransition>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="공모전 검색..." 
-                className="pl-10 bg-gray-50/50 transition-all duration-300 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:shadow-lg"
-              />
+          {/* Search Bar - 모바일에서는 숨김 */}
+          {!isMobile && (
+            <div className="flex-1 max-w-md mx-8">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="공모전 검색..." 
+                  className="pl-10 bg-gray-50/50 transition-all duration-300 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:shadow-lg"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* 모바일에서 검색 버튼 추가 */}
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 sm:h-8 sm:w-8"
+                onClick={() => navigate('/explore')}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            )}
+            
             <NotificationDropdown />
             
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-md">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-contest-gradient text-white">
+                  <Button variant="ghost" className="relative h-10 w-10 sm:h-8 sm:w-8 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-md">
+                    <Avatar className="h-10 w-10 sm:h-8 sm:w-8">
+                      <AvatarFallback className="bg-contest-gradient text-white text-sm">
                         {user.email?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -108,9 +124,10 @@ const Header = () => {
               <NavigationTransition to="/auth">
                 <Button 
                   variant="outline"
+                  size={isMobile ? "sm" : "default"}
                   className="bg-contest-gradient text-white hover:bg-contest-gradient/90 transition-all duration-300 hover:scale-105 hover:shadow-lg"
                 >
-                  로그인
+                  {isMobile ? '로그인' : '로그인'}
                 </Button>
               </NavigationTransition>
             )}

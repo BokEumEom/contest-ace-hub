@@ -7,6 +7,8 @@ import { useContests } from '@/hooks/useContests';
 import { Trophy, Plus, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileContestList from '@/components/mobile/MobileContestList';
 
 const Contests = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const Contests = () => {
   const { contests, myContests, loading } = useContests();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'my'>('all');
+  const isMobile = useIsMobile();
 
   // URL 파라미터에서 탭 설정 읽기
   useEffect(() => {
@@ -22,6 +25,11 @@ const Contests = () => {
       setActiveTab('my');
     }
   }, [searchParams, user]);
+
+  // 모바일에서는 모바일 전용 컴포넌트 사용
+  if (isMobile) {
+    return <MobileContestList />;
+  }
 
   const currentContests = activeTab === 'all' ? contests : myContests;
   const isMyContests = activeTab === 'my';

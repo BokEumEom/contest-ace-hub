@@ -314,6 +314,157 @@
   }
 }
 
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* 터치 최적화 */
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* 스크롤 성능 최적화 */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 모바일에서 텍스트 선택 방지 */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* 모바일에서 터치 피드백 */
+  .touch-feedback {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* 모바일에서 스크롤바 숨김 */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* 모바일에서 안전 영역 고려 */
+  .safe-area-inset {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* 모바일에서 카드 터치 최적화 */
+  .contest-card {
+    touch-action: pan-y;
+  }
+  
+  /* 모바일에서 버튼 크기 최적화 */
+  .mobile-button {
+    min-height: 48px;
+    min-width: 48px;
+    font-size: 16px; /* iOS에서 줌 방지 */
+  }
+  
+  /* 모바일에서 입력 필드 최적화 */
+  input, textarea, select {
+    font-size: 16px; /* iOS에서 줌 방지 */
+  }
+  
+  /* 모바일 전용 스타일 */
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  /* 모바일에서 카드 호버 효과 비활성화 */
+  .contest-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* 모바일에서 터치 피드백 개선 */
+  .mobile-touch {
+    transition: all 0.1s ease-out;
+  }
+  
+  .mobile-touch:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  
+  /* 모바일에서 스와이프 제스처 최적화 */
+  .swipe-container {
+    touch-action: pan-x pan-y;
+    user-select: none;
+  }
+  
+  /* 모바일에서 롱프레스 피드백 */
+  .long-press {
+    transition: all 0.2s ease-out;
+  }
+  
+  .long-press:active {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 모바일에서 텍스트 크기 최적화 */
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  /* 모바일에서 간격 최적화 */
+  .mobile-spacing {
+    gap: 0.75rem;
+  }
+  
+  .mobile-padding {
+    padding: 1rem;
+  }
+  
+  /* 모바일에서 그림자 최적화 */
+  .mobile-shadow {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  /* 모바일에서 애니메이션 최적화 */
+  .mobile-animate {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* 모바일에서 포커스 스타일 */
+  .mobile-focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+  
+  .mobile-focus:focus {
+    outline: 2px solid #3b82f6;
+  }
+}
+
+/* 데스크톱 전용 스타일 */
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+}
+
 /* Loading States */
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -660,4 +811,482 @@ html {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* 모바일 최적화 스타일 */
+@layer utilities {
+  /* 터치 최적화 */
+  .touch-optimized {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* 안전 영역 */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 모바일에서만 적용되는 스타일 */
+  @media (max-width: 768px) {
+    /* 터치 친화적 버튼 크기 */
+    .mobile-button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* 모바일 텍스트 크기 */
+    .mobile-text-sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .mobile-text-base {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+
+    .mobile-text-lg {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+
+    /* 모바일 간격 */
+    .mobile-space-y-2 > * + * {
+      margin-top: 0.5rem;
+    }
+
+    .mobile-space-y-3 > * + * {
+      margin-top: 0.75rem;
+    }
+
+    .mobile-space-y-4 > * + * {
+      margin-top: 1rem;
+    }
+
+    /* 모바일 패딩 */
+    .mobile-p-3 {
+      padding: 0.75rem;
+    }
+
+    .mobile-p-4 {
+      padding: 1rem;
+    }
+
+    .mobile-p-6 {
+      padding: 1.5rem;
+    }
+
+    /* 모바일 마진 */
+    .mobile-m-2 {
+      margin: 0.5rem;
+    }
+
+    .mobile-m-4 {
+      margin: 1rem;
+    }
+
+    /* 모바일 그리드 */
+    .mobile-grid-cols-1 {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    .mobile-grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* 모바일 플렉스 */
+    .mobile-flex-col {
+      flex-direction: column;
+    }
+
+    .mobile-flex-row {
+      flex-direction: row;
+    }
+
+    /* 모바일 숨김 */
+    .mobile-hidden {
+      display: none;
+    }
+
+    .mobile-block {
+      display: block;
+    }
+
+    /* 모바일 포지션 */
+    .mobile-sticky {
+      position: sticky;
+    }
+
+    .mobile-fixed {
+      position: fixed;
+    }
+
+    /* 모바일 z-index */
+    .mobile-z-10 {
+      z-index: 10;
+    }
+
+    .mobile-z-20 {
+      z-index: 20;
+    }
+
+    .mobile-z-30 {
+      z-index: 30;
+    }
+
+    .mobile-z-40 {
+      z-index: 40;
+    }
+
+    .mobile-z-50 {
+      z-index: 50;
+    }
+
+    /* 모바일 그림자 */
+    .mobile-shadow-sm {
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+
+    .mobile-shadow {
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .mobile-shadow-md {
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    .mobile-shadow-lg {
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* 모바일 둥근 모서리 */
+    .mobile-rounded-lg {
+      border-radius: 0.5rem;
+    }
+
+    .mobile-rounded-xl {
+      border-radius: 0.75rem;
+    }
+
+    .mobile-rounded-2xl {
+      border-radius: 1rem;
+    }
+
+    /* 모바일 배경 */
+    .mobile-bg-white {
+      background-color: rgb(255 255 255);
+    }
+
+    .mobile-bg-gray-50 {
+      background-color: rgb(249 250 251);
+    }
+
+    .mobile-bg-gray-100 {
+      background-color: rgb(243 244 246);
+    }
+
+    /* 모바일 테두리 */
+    .mobile-border {
+      border-width: 1px;
+    }
+
+    .mobile-border-gray-200 {
+      border-color: rgb(229 231 235);
+    }
+
+    /* 모바일 호버 비활성화 (모바일에서는 호버 효과가 불필요) */
+    .mobile-no-hover:hover {
+      /* 호버 효과 제거 */
+    }
+
+    /* 모바일 스크롤 최적화 */
+    .mobile-scroll-smooth {
+      scroll-behavior: smooth;
+    }
+
+    .mobile-overflow-x-auto {
+      overflow-x: auto;
+    }
+
+    .mobile-overflow-y-auto {
+      overflow-y: auto;
+    }
+
+    /* 모바일 애니메이션 */
+    .mobile-transition {
+      transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 150ms;
+    }
+
+    .mobile-transition-all {
+      transition-property: all;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 150ms;
+    }
+
+    .mobile-duration-200 {
+      transition-duration: 200ms;
+    }
+
+    .mobile-duration-300 {
+      transition-duration: 300ms;
+    }
+
+    /* 모바일 변환 */
+    .mobile-transform {
+      transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+    }
+
+    .mobile-scale-95 {
+      --tw-scale-x: 0.95;
+      --tw-scale-y: 0.95;
+      transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+    }
+
+    .mobile-scale-105 {
+      --tw-scale-x: 1.05;
+      --tw-scale-y: 1.05;
+      transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+    }
+
+    /* 모바일 그라데이션 */
+    .mobile-bg-contest-gradient {
+      background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    }
+
+    /* 모바일 텍스트 색상 */
+    .mobile-text-contest-orange {
+      color: #ff6b35;
+    }
+
+    .mobile-text-gray-500 {
+      color: rgb(107 114 128);
+    }
+
+    .mobile-text-gray-600 {
+      color: rgb(75 85 99);
+    }
+
+    .mobile-text-gray-700 {
+      color: rgb(55 65 81);
+    }
+
+    .mobile-text-gray-900 {
+      color: rgb(17 24 39);
+    }
+
+    /* 모바일 배경 색상 */
+    .mobile-bg-red-50 {
+      background-color: rgb(254 242 242);
+    }
+
+    .mobile-bg-blue-50 {
+      background-color: rgb(239 246 255);
+    }
+
+    .mobile-bg-purple-50 {
+      background-color: rgb(250 245 255);
+    }
+
+    /* 모바일 텍스트 색상 */
+    .mobile-text-red-600 {
+      color: rgb(220 38 38);
+    }
+
+    .mobile-text-blue-600 {
+      color: rgb(37 99 235);
+    }
+
+    .mobile-text-blue-700 {
+      color: rgb(29 78 216);
+    }
+
+    .mobile-text-blue-900 {
+      color: rgb(30 58 138);
+    }
+
+    .mobile-text-purple-600 {
+      color: rgb(147 51 234);
+    }
+
+    .mobile-text-purple-700 {
+      color: rgb(126 34 206);
+    }
+
+    .mobile-text-purple-900 {
+      color: rgb(88 28 135);
+    }
+  }
+
+  /* 데스크톱에서 모바일 스타일 숨김 */
+  @media (min-width: 769px) {
+    .mobile-only {
+      display: none;
+    }
+  }
+
+  /* 모바일에서 데스크톱 스타일 숨김 */
+  @media (max-width: 768px) {
+    .desktop-only {
+      display: none;
+    }
+    
+    /* 모바일 전체 보기 페이지 스타일 */
+    .mobile-contest-list {
+      @apply bg-gray-50 min-h-screen pb-20;
+    }
+    
+    .mobile-contest-list-header {
+      @apply sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3;
+    }
+    
+    .mobile-contest-list-content {
+      @apply px-4 py-4;
+    }
+    
+    .mobile-contest-list-search {
+      @apply mt-3;
+    }
+    
+    .mobile-contest-list-tabs {
+      @apply flex space-x-1 mt-3 bg-gray-100 p-1 rounded-lg;
+    }
+    
+    .mobile-contest-list-tab {
+      @apply flex-1 text-xs;
+    }
+    
+    .mobile-contest-list-empty {
+      @apply text-center py-16;
+    }
+    
+    .mobile-contest-list-empty-icon {
+      @apply h-20 w-20 text-gray-300 mx-auto mb-6;
+    }
+    
+    .mobile-contest-list-empty-title {
+      @apply text-lg font-semibold text-gray-900 mb-2;
+    }
+    
+    .mobile-contest-list-empty-description {
+      @apply text-gray-500 mb-6 max-w-sm mx-auto;
+    }
+    
+    .mobile-contest-list-cards {
+      @apply space-y-3;
+    }
+    
+    .mobile-contest-list-loading {
+      @apply text-center py-16;
+    }
+    
+    .mobile-contest-list-loading-spinner {
+      @apply animate-spin rounded-full h-12 w-12 border-b-2 border-contest-orange mx-auto mb-4;
+    }
+    
+    .mobile-contest-list-loading-text {
+      @apply text-gray-500;
+    }
+    
+    /* 파일 관리 썸네일 스타일 */
+    .file-thumbnail {
+      @apply w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer;
+    }
+    
+    .file-thumbnail img {
+      @apply w-full h-full object-cover;
+    }
+    
+    .file-thumbnail:hover {
+      @apply opacity-80 transition-opacity;
+    }
+    
+    .file-icon-container {
+      @apply w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0;
+    }
+    
+    .file-item {
+      @apply flex items-center justify-between p-3 bg-gray-50 rounded-lg;
+    }
+    
+    .file-info {
+      @apply flex items-center gap-3 flex-1 min-w-0;
+    }
+    
+    .file-details {
+      @apply flex-1 min-w-0;
+    }
+    
+    .file-name {
+      @apply text-sm font-medium truncate;
+    }
+    
+    .file-size {
+      @apply text-xs text-gray-500;
+    }
+    
+    .file-actions {
+      @apply flex items-center gap-1;
+    }
+    
+    /* 이미지 슬라이드 카드 스타일 */
+    .image-slide-container {
+      @apply overflow-x-auto;
+    }
+    
+    .image-slide-wrapper {
+      @apply flex space-x-3 pb-2;
+      min-width: max-content;
+    }
+    
+    .image-card {
+      @apply w-24 h-24 rounded-lg overflow-hidden bg-gray-200 cursor-pointer hover:opacity-80 transition-opacity relative;
+    }
+    
+    .image-card.group {
+      /* group 클래스를 위한 별도 스타일 */
+    }
+    
+    .image-card img {
+      @apply w-full h-full object-cover;
+    }
+    
+    .image-delete-button {
+      @apply absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity;
+    }
+    
+    .file-section-title {
+      @apply text-sm font-medium text-gray-700;
+    }
+    
+    /* 모바일 네비게이션 개선 */
+    .mobile-nav-tab {
+      @apply flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 relative;
+    }
+    
+    .mobile-nav-tab-active {
+      @apply text-contest-orange bg-orange-50;
+    }
+    
+    .mobile-nav-tab-inactive {
+      @apply text-gray-500 hover:text-gray-700 hover:bg-gray-50;
+    }
+    
+    .mobile-nav-indicator {
+      @apply absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-1 bg-contest-orange rounded-full;
+    }
+  }
 }
