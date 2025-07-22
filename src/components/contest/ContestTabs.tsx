@@ -414,7 +414,7 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
                   <p className="text-blue-700">
                     {(contest as any).user_id === user?.id 
                       ? "이 공모전의 작성자입니다. 모든 파일을 관리할 수 있습니다."
-                      : "이 공모전의 파일을 조회할 수 있습니다. 편집은 작성자만 가능합니다."
+                      : "모든 인증된 사용자가 파일을 업로드할 수 있습니다. 작성자는 모든 파일을 관리할 수 있고, 다른 사용자는 자신이 업로드한 파일만 편집/삭제할 수 있습니다."
                     }
                   </p>
                 </div>

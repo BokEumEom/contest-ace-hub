@@ -28,29 +28,27 @@ CREATE INDEX IF NOT EXISTS idx_contest_files_uploaded_at ON contest_files(upload
 ALTER TABLE contest_files ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for contest_files
--- 기존 정책들 (작성자만 관리 가능)
-CREATE POLICY "Users can manage their own contest files" ON contest_files
-  FOR ALL USING (auth.uid() = user_id);
+-- 모든 인증된 사용자가 파일을 업로드할 수 있도록 정책 수정
+CREATE POLICY "Users can insert contest files" ON contest_files
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can read their own contest files" ON contest_files
-  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can read all contest files" ON contest_files
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can insert their own contest files" ON contest_files
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- 작성자는 모든 파일을 관리할 수 있고, 다른 사용자는 자신의 파일만 관리 가능
+CREATE POLICY "Users can update contest files" ON contest_files
+  FOR UPDATE USING (
+    auth.uid() = user_id OR 
+    auth.uid() IN (
+      SELECT user_id FROM contests WHERE id = contest_files.contest_id
+    )
+  );
 
-CREATE POLICY "Users can update their own contest files" ON contest_files
-  FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own contest files" ON contest_files
-  FOR DELETE USING (auth.uid() = user_id);
-
--- 새로운 정책: 공모전 작성자의 파일을 공모전을 본 사용자가 읽을 수 있도록
-CREATE POLICY "Users can read contest files of contests they can view" ON contest_files
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM contests 
-      WHERE contests.id = contest_files.contest_id 
-      AND contests.user_id = contest_files.user_id
+CREATE POLICY "Users can delete contest files" ON contest_files
+  FOR DELETE USING (
+    auth.uid() = user_id OR 
+    auth.uid() IN (
+      SELECT user_id FROM contests WHERE id = contest_files.contest_id
     )
   );
 

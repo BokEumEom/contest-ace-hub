@@ -42,7 +42,7 @@ export class FileService {
       // 현재 사용자가 공모전 작성자인지 확인
       const isContestOwner = contestData.user_id === user.id;
 
-      // 파일 조회 - 작성자이거나 공모전을 볼 수 있는 사용자
+      // 파일 조회 - 모든 인증된 사용자가 조회 가능
       const { data, error } = await supabase
         .from('contest_files')
         .select('*')
@@ -54,11 +54,11 @@ export class FileService {
         return [];
       }
 
-      // 작성자가 아닌 경우 읽기 전용으로 표시
+      // 권한 설정: 작성자는 모든 파일 관리 가능, 다른 사용자는 자신이 업로드한 파일만
       const filesWithPermissions = (data || []).map(file => ({
         ...file,
-        canEdit: isContestOwner && file.user_id === user.id,
-        canDelete: isContestOwner && file.user_id === user.id,
+        canEdit: isContestOwner || file.user_id === user.id, // 작성자이거나 자신이 업로드한 파일
+        canDelete: isContestOwner || file.user_id === user.id, // 작성자이거나 자신이 업로드한 파일
       }));
 
       return filesWithPermissions;
@@ -150,16 +150,35 @@ export class FileService {
         return false;
       }
 
+      // 공모전 작성자 확인
+      const { data: contestData, error: contestError } = await supabase
+        .from('contests')
+        .select('user_id')
+        .eq('id', contestId)
+        .single();
+
+      if (contestError || !contestData) {
+        console.error('Error fetching contest:', contestError);
+        return false;
+      }
+
+      const isContestOwner = contestData.user_id === userId;
+
       // DB에서 파일 정보 조회
       const { data: fileData, error: fetchError } = await supabase
         .from('contest_files')
         .select('*')
         .eq('id', fileId)
-        .eq('user_id', userId)
         .single();
 
       if (fetchError || !fileData) {
         console.error('Error fetching file for deletion:', fetchError);
+        return false;
+      }
+
+      // 권한 확인: 작성자이거나 파일 업로더만 삭제 가능
+      if (!isContestOwner && fileData.user_id !== userId) {
+        console.error('User does not have permission to delete this file');
         return false;
       }
 
@@ -179,8 +198,7 @@ export class FileService {
       const { error: deleteError } = await supabase
         .from('contest_files')
         .delete()
-        .eq('id', fileId)
-        .eq('user_id', userId);
+        .eq('id', fileId);
 
       if (deleteError) {
         console.error('Error deleting file from database:', deleteError);
@@ -217,12 +235,44 @@ export class FileService {
         return false;
       }
 
+      // 파일 정보 조회
+      const { data: fileData, error: fetchError } = await supabase
+        .from('contest_files')
+        .select('contest_id, user_id')
+        .eq('id', fileId)
+        .single();
+
+      if (fetchError || !fileData) {
+        console.error('Error fetching file:', fetchError);
+        return false;
+      }
+
+      // 공모전 작성자 확인
+      const { data: contestData, error: contestError } = await supabase
+        .from('contests')
+        .select('user_id')
+        .eq('id', fileData.contest_id)
+        .single();
+
+      if (contestError || !contestData) {
+        console.error('Error fetching contest:', contestError);
+        return false;
+      }
+
+      const isContestOwner = contestData.user_id === userId;
+      const isFileOwner = fileData.user_id === userId;
+
+      // 권한 확인: 작성자이거나 파일 업로더만 편집 가능
+      if (!isContestOwner && !isFileOwner) {
+        console.error('User does not have permission to edit this file');
+        return false;
+      }
+
       // DB에서 파일 프롬프트 업데이트
       const { error } = await supabase
         .from('contest_files')
         .update({ prompt })
-        .eq('id', fileId)
-        .eq('user_id', userId);
+        .eq('id', fileId);
 
       if (error) {
         console.error('Error updating file prompt:', error);
