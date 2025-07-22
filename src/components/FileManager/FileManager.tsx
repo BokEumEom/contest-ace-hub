@@ -1,14 +1,16 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { Upload, FileText, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PromptManager } from '@/components/PromptManager';
 import { useFileManager } from './hooks/useFileManager';
-import { isImageFile, getFileTypeColor } from './utils/fileUtils';
+import { isImageFile, isVideoFile, getFileTypeColor } from './utils/fileUtils';
 import FileUploadArea from './FileUploadArea';
 import FileList from './FileList';
 import DescriptionEditor from './DescriptionEditor';
 import ImageViewerModal from './ImageViewerModal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Button } from '@/components/ui/button';
 
 // 탭 상수 정의
 const TAB_VALUES = {
@@ -23,7 +25,7 @@ interface FileManagerProps {
   contestId: string;
 }
 
-const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
+const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
   const {
     // State
     files,
@@ -42,9 +44,15 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     setSortOrder,
     imageViewerFile,
     imageViewerOpen,
+    deleteDialogOpen,
+    fileToDelete,
+    isDeleting,
     
     // Actions
     deleteFile,
+    openDeleteDialog,
+    closeDeleteDialog,
+    executeDelete,
     downloadFile,
     viewFile,
     closeImageViewer,
@@ -54,7 +62,15 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     handleDragEnter,
     handleDragLeave,
     handleDrop,
+    cleanupDuplicateFiles,
   } = useFileManager(contestId);
+
+  // 파일 뷰어 핸들러 - 이미지와 비디오 파일 모두 ImageViewerModal에서 처리
+  const handleViewFile = useCallback((file: any) => {
+    if (isImageFile(file.name) || isVideoFile(file.name)) {
+      viewFile(file);
+    }
+  }, [viewFile]);
 
   // 탭 변경 핸들러 - 메모이제이션
   const handleTabChange = useCallback((value: string) => {
@@ -102,28 +118,11 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     setSortOrder,
     viewMode,
     setViewMode,
-    onView: viewFile,
-    onDownload: downloadFile,
+    onView: handleViewFile,
     onDelete: deleteFile,
+    onDownload: downloadFile,
     getFileTypeColor,
-  }), [
-    files,
-    loading,
-    searchTerm,
-    setSearchTerm,
-    fileTypeFilter,
-    setFileTypeFilter,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
-    viewMode,
-    setViewMode,
-    viewFile,
-    downloadFile,
-    deleteFile,
-    getFileTypeColor,
-  ]);
+  }), [files, loading, searchTerm, setSearchTerm, fileTypeFilter, setFileTypeFilter, sortBy, setSortBy, sortOrder, setSortOrder, viewMode, setViewMode, handleViewFile, deleteFile, downloadFile, getFileTypeColor]);
 
   // 이미지 뷰어 모달 props 메모이제이션
   const imageViewerModalProps = useMemo(() => ({
@@ -164,6 +163,17 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
                 <span className="text-sm font-normal text-muted-foreground">
                   {files.length}개 파일
                 </span>
+                {files.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={cleanupDuplicateFiles}
+                    className="text-xs"
+                    title="중복 파일 정리"
+                  >
+                    중복 정리
+                  </Button>
+                )}
               </div>
             </CardTitle>
           </CardHeader>
@@ -191,11 +201,23 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
         </TabsContent>
       )}
 
-      {/* 이미지 뷰어 모달 */}
+      {/* 통합 뷰어 모달 (이미지 + 비디오) */}
       <ImageViewerModal {...imageViewerModalProps} />
+
+      {/* 파일 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={executeDelete}
+        title="파일 삭제"
+        description={fileToDelete ? `"${fileToDelete.name}" 파일을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.` : ''}
+        confirmText={isDeleting ? "삭제 중..." : "삭제"}
+        cancelText="취소"
+        variant="destructive"
+      />
     </Tabs>
   );
-});
+};
 
 FileManager.displayName = 'FileManager';
 

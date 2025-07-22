@@ -36,6 +36,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/components/AuthProvider';
 import { useFileManager } from '@/components/FileManager/hooks/useFileManager';
 import { FileItem } from '@/services/fileService';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const MobileContestDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -92,7 +93,12 @@ const MobileContestDetail = () => {
     handleFilesUpload,
     deleteFile,
     downloadFile,
-    viewFile
+    viewFile,
+    // 삭제 다이얼로그 관련 추가
+    deleteDialogOpen,
+    fileToDelete,
+    closeDeleteDialog,
+    executeDelete
   } = useFileManager(id || '');
 
   const handleBack = useCallback(() => {
@@ -535,6 +541,7 @@ const MobileContestDetail = () => {
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
+                                            // 커스텀 다이얼로그 사용
                                             deleteFile(file.id!);
                                           }}
                                           className="image-delete-button"
@@ -583,7 +590,10 @@ const MobileContestDetail = () => {
                                           <Button
                                             size="sm"
                                             variant="ghost"
-                                            onClick={() => deleteFile(file.id!)}
+                                            onClick={() => {
+                                              // 커스텀 다이얼로그 사용
+                                              deleteFile(file.id!);
+                                            }}
                                             className="text-red-500 hover:text-red-700"
                                           >
                                             <Trash2 className="h-4 w-4" />
@@ -966,6 +976,18 @@ const MobileContestDetail = () => {
           </div>
         </div>
       )}
+
+      {/* 파일 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={executeDelete}
+        title="파일 삭제"
+        description={fileToDelete ? `"${fileToDelete.name}" 파일을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.` : ''}
+        confirmText="삭제"
+        cancelText="취소"
+        variant="destructive"
+      />
     </div>
   );
 };

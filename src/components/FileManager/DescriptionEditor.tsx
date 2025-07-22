@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ContestSubmission } from '@/types/contest';
@@ -434,6 +434,9 @@ const DescriptionEditor = memo(({ contestId, files }: DescriptionEditorProps) =>
               <FileText className="h-5 w-5 text-contest-orange" />
               작품 설명 상세 보기
             </DialogTitle>
+            <DialogDescription>
+              선택한 작품 설명의 상세 내용을 확인할 수 있습니다.
+            </DialogDescription>
           </DialogHeader>
           {selectedSubmission && (
             <div className="space-y-4 flex-1 overflow-y-auto">
@@ -514,6 +517,12 @@ const DescriptionEditor = memo(({ contestId, files }: DescriptionEditorProps) =>
                 </>
               )}
             </DialogTitle>
+            <DialogDescription>
+              {selectedSubmission 
+                ? "작품 설명을 수정할 수 있습니다." 
+                : "새로운 작품 설명을 등록할 수 있습니다."
+              }
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 flex-1 overflow-y-auto">
             <div>
@@ -597,6 +606,9 @@ const DescriptionEditor = memo(({ contestId, files }: DescriptionEditorProps) =>
                 </span>
               )}
             </DialogTitle>
+            <DialogDescription>
+              작품 설명과 연결할 파일을 선택할 수 있습니다.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 flex-1 overflow-y-auto">
             {files.length > 0 ? (

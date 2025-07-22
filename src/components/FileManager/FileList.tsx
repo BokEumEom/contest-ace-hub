@@ -1,10 +1,11 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { Search, Filter, SortAsc, SortDesc, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileItem as FileItemType } from '@/services/fileService';
+import { isImageFile, isVideoFile } from './utils/fileUtils';
 import FileItem from './FileItem';
 import FileGridItem from './FileGridItem';
 
@@ -45,6 +46,30 @@ const FileList = memo(({
   onDelete,
   getFileTypeColor
 }: FileListProps) => {
+  // 검색 핸들러 메모이제이션
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, [setSearchTerm]);
+
+  // 파일 타입 필터 핸들러 메모이제이션
+  const handleFileTypeFilterChange = useCallback((value: string) => {
+    setFileTypeFilter(value);
+  }, [setFileTypeFilter]);
+
+  // 정렬 핸들러들 메모이제이션
+  const handleSortByChange = useCallback((value: string) => {
+    setSortBy(value as 'name' | 'date' | 'size' | 'type');
+  }, [setSortBy]);
+
+  const handleSortOrderChange = useCallback((value: string) => {
+    setSortOrder(value as 'asc' | 'desc');
+  }, [setSortOrder]);
+
+  // 뷰 모드 핸들러 메모이제이션
+  const handleViewModeChange = useCallback((mode: 'list' | 'grid') => {
+    setViewMode(mode);
+  }, [setViewMode]);
+
   // 필터링된 파일 목록
   const filteredFiles = useMemo(() => {
     let filtered = files;
@@ -61,13 +86,9 @@ const FileList = memo(({
       filtered = filtered.filter(file => file.type === fileTypeFilter);
     }
 
-    // 그리드 모드일 때는 이미지 파일만 표시
+    // 그리드 모드일 때는 이미지, 비디오 파일만 표시
     if (viewMode === 'grid') {
-      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
-      filtered = filtered.filter(file => {
-        const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-        return imageExtensions.includes(extension);
-      });
+      filtered = filtered.filter(file => isImageFile(file.name) || isVideoFile(file.name));
     }
 
     return filtered;
@@ -99,108 +120,134 @@ const FileList = memo(({
     });
   }, [filteredFiles, sortBy, sortOrder]);
 
-  // 파일 타입별 통계
-  const fileStats = useMemo(() => {
-    const stats = {
-      total: files.length,
-      images: files.filter(f => f.type === 'image').length,
-      documents: files.filter(f => f.type === 'document').length,
-      videos: files.filter(f => f.type === 'video').length,
-      audio: files.filter(f => f.type === 'audio').length,
-      other: files.filter(f => !['image', 'document', 'video', 'audio'].includes(f.type)).length
-    };
-    return stats;
-  }, [files]);
+  // 파일 타입 옵션들
+  const fileTypeOptions = useMemo(() => [
+    { value: 'all', label: '전체' },
+    { value: 'image', label: '이미지' },
+    { value: 'video', label: '비디오' },
+    { value: 'audio', label: '오디오' },
+    { value: 'document', label: '문서' },
+  ], []);
+
+  // 정렬 옵션들
+  const sortOptions = useMemo(() => [
+    { value: 'date', label: '업로드 날짜' },
+    { value: 'name', label: '파일명' },
+    { value: 'size', label: '파일 크기' },
+    { value: 'type', label: '파일 타입' },
+  ], []);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="파일 검색..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-10 w-64"
+                disabled
+              />
+            </div>
+            <Select disabled>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="타입" />
+              </SelectTrigger>
+            </Select>
+            <Select disabled>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="정렬" />
+              </SelectTrigger>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled>
+              <SortAsc className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" disabled>
+              <SortDesc className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="h-32 bg-gray-200 animate-pulse rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* 파일 통계 */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 bg-gray-50 rounded-lg">
-        <div className="text-center">
-          <div className="text-lg font-semibold text-blue-600">{fileStats.total}</div>
-          <div className="text-xs text-muted-foreground">전체</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-semibold text-green-600">{fileStats.images}</div>
-          <div className="text-xs text-muted-foreground">이미지</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-semibold text-blue-600">{fileStats.documents}</div>
-          <div className="text-xs text-muted-foreground">문서</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-semibold text-purple-600">{fileStats.videos}</div>
-          <div className="text-xs text-muted-foreground">비디오</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-semibold text-yellow-600">{fileStats.audio}</div>
-          <div className="text-xs text-muted-foreground">오디오</div>
-        </div>
-      </div>
-
-      {/* 검색 및 필터 */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="파일명으로 검색..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Select value={fileTypeFilter} onValueChange={setFileTypeFilter}>
+      {/* 필터 및 정렬 컨트롤 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="파일 검색..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-10 w-64"
+            />
+          </div>
+          <Select value={fileTypeFilter} onValueChange={handleFileTypeFilterChange}>
             <SelectTrigger className="w-32">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
+              <SelectValue placeholder="타입" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              <SelectItem value="image">이미지</SelectItem>
-              <SelectItem value="document">문서</SelectItem>
-              <SelectItem value="video">비디오</SelectItem>
-              <SelectItem value="audio">오디오</SelectItem>
+              {fileTypeOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-            <SelectTrigger className="w-32">
-              <SortAsc className="h-4 w-4 mr-2" />
-              <SelectValue />
+          <Select value={sortBy} onValueChange={handleSortByChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="정렬" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="date">날짜순</SelectItem>
-              <SelectItem value="name">이름순</SelectItem>
-              <SelectItem value="size">크기순</SelectItem>
-              <SelectItem value="type">타입순</SelectItem>
+              {sortOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant={sortOrder === 'asc' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-2"
+            onClick={() => handleSortOrderChange('asc')}
           >
-            {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+            <SortAsc className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={sortOrder === 'desc' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSortOrderChange('desc')}
+          >
+            <SortDesc className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       {/* 뷰 모드 토글 */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-muted-foreground">파일 목록</h3>
-          {filteredFiles.length !== files.length && (
-            <Badge variant="secondary" className="text-xs">
-              {filteredFiles.length} / {files.length}
-            </Badge>
-          )}
+        <div className="text-sm text-muted-foreground">
+          {sortedFiles.length}개 파일
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setViewMode('list')}
+            onClick={() => handleViewModeChange('list')}
             className="h-8 px-3"
           >
             <div className="flex flex-col gap-0.5">
@@ -212,7 +259,7 @@ const FileList = memo(({
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setViewMode('grid')}
+            onClick={() => handleViewModeChange('grid')}
             className="h-8 px-3"
           >
             <div className="grid grid-cols-2 gap-0.5">
@@ -225,16 +272,32 @@ const FileList = memo(({
         </div>
       </div>
 
-      {loading ? (
+      {/* 파일 목록 */}
+      {sortedFiles.length === 0 ? (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-contest-orange mx-auto mb-4"></div>
-          <p className="text-sm text-muted-foreground">파일 목록을 불러오는 중...</p>
+          <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            {searchTerm || fileTypeFilter !== 'all' 
+              ? '검색 결과가 없습니다.' 
+              : '업로드된 파일이 없습니다.'}
+          </p>
         </div>
-      ) : sortedFiles.length > 0 ? (
-        viewMode === 'list' ? (
-          // 리스트 뷰
-          <div className="space-y-2">
-            {sortedFiles.map(file => (
+      ) : (
+        <div className={viewMode === 'grid' 
+          ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4'
+          : 'space-y-2'
+        }>
+          {sortedFiles.map(file => (
+            viewMode === 'grid' ? (
+              <FileGridItem
+                key={file.id}
+                file={file}
+                onView={onView}
+                onDownload={onDownload}
+                onDelete={onDelete}
+                getFileTypeColor={getFileTypeColor}
+              />
+            ) : (
               <FileItem
                 key={file.id}
                 file={file}
@@ -243,59 +306,8 @@ const FileList = memo(({
                 onDelete={onDelete}
                 getFileTypeColor={getFileTypeColor}
               />
-            ))}
-          </div>
-        ) : (
-          // 그리드 뷰
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {sortedFiles.map(file => (
-              <FileGridItem
-                key={file.id}
-                file={file}
-                onView={onView}
-                onDownload={onDownload}
-                onDelete={onDelete}
-                getFileTypeColor={getFileTypeColor}
-                gridMode={true}
-              />
-            ))}
-          </div>
-        )
-      ) : (
-        <div className="text-center py-8">
-          {files.length === 0 ? (
-            <>
-              <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground">업로드된 파일이 없습니다.</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                파일을 업로드하고 사용된 프롬프트를 함께 관리해보세요.
-              </p>
-            </>
-          ) : viewMode === 'grid' && !filteredFiles.some(file => {
-            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
-            const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-            return imageExtensions.includes(extension);
-          }) ? (
-            <>
-              <div className="h-12 w-12 text-muted-foreground mx-auto mb-4 flex items-center justify-center">
-                <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-              </div>
-              <p className="text-sm text-muted-foreground">이미지 파일이 없습니다.</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                그리드 모드에서는 이미지 파일만 표시됩니다. 리스트 모드에서 다른 파일을 확인하세요.
-              </p>
-            </>
-          ) : (
-            <>
-              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground">검색 결과가 없습니다.</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                검색어나 필터를 변경해보세요.
-              </p>
-            </>
-          )}
+            )
+          ))}
         </div>
       )}
     </div>

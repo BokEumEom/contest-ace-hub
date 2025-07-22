@@ -56,6 +56,19 @@ export const useImageCache = (
       // 캐시된 URL 가져오기
       const cachedUrl = await getCachedImageUrl(url);
       
+      // 캐시된 이미지가 있으면 즉시 로드 완료로 처리
+      if (cachedUrl) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isLoaded: true,
+          isFailed: false,
+          cachedUrl,
+          error: null,
+        }));
+        return;
+      }
+      
       // 이미지 로딩 상태 확인
       const success = await imageLoaderRef.current.loadImage(url);
       

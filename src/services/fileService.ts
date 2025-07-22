@@ -142,13 +142,17 @@ export class FileService {
   // 파일 삭제
   static async deleteFile(fileId: number, contestId: string): Promise<boolean> {
     try {
+      console.log(`Starting file deletion for fileId: ${fileId}, contestId: ${contestId}`);
+      
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
       if (!userId) {
-        // 인증된 사용자가 없으면 false 반환
+        console.error('No authenticated user found');
         return false;
       }
+
+      console.log(`Authenticated user: ${userId}`);
 
       // 공모전 작성자 확인
       const { data: contestData, error: contestError } = await supabase
@@ -163,6 +167,7 @@ export class FileService {
       }
 
       const isContestOwner = contestData.user_id === userId;
+      console.log(`Is contest owner: ${isContestOwner}`);
 
       // DB에서 파일 정보 조회
       const { data: fileData, error: fetchError } = await supabase
@@ -176,22 +181,53 @@ export class FileService {
         return false;
       }
 
+      console.log(`File data:`, fileData);
+
       // 권한 확인: 작성자이거나 파일 업로더만 삭제 가능
-      if (!isContestOwner && fileData.user_id !== userId) {
+      const canDelete = isContestOwner || fileData.user_id === userId;
+      if (!canDelete) {
         console.error('User does not have permission to delete this file');
+        console.error(`User ID: ${userId}, File user ID: ${fileData.user_id}, Is owner: ${isContestOwner}`);
         return false;
       }
 
-      // Storage에서 파일 삭제
-      // URL에서 파일 경로 추출: https://xxx.supabase.co/storage/v1/object/public/contest-files/userId/contestId/filename
-      const urlParts = fileData.url.split('/');
-      const filePath = urlParts.slice(-3).join('/'); // userId/contestId/filename
-      const { error: storageError } = await supabase.storage
-        .from('contest-files')
-        .remove([filePath]);
+      console.log('Permission check passed, proceeding with deletion');
 
-      if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
+      // Storage에서 파일 삭제
+      let storageDeleted = false;
+      try {
+        console.log('Deleting file from storage:', fileData.url);
+
+        // URL에서 파일 경로 추출 개선
+        const urlParts = fileData.url.split('/');
+        const bucketIndex = urlParts.findIndex(part => part === 'contest-files');
+        
+        if (bucketIndex === -1) {
+          console.error('Could not find contest-files bucket in URL');
+          // URL 형식이 예상과 다르면 DB에서만 삭제
+          console.log('Proceeding with database deletion only');
+        } else {
+          // contest-files 이후의 모든 경로를 파일 경로로 사용
+          const filePath = urlParts.slice(bucketIndex + 1).join('/');
+          console.log('Storage file path:', filePath);
+          
+          const { error: storageError } = await supabase.storage
+            .from('contest-files')
+            .remove([filePath]);
+
+          if (storageError) {
+            console.error('Error deleting file from storage:', storageError);
+            // Storage 삭제 실패 시에도 DB 삭제는 진행
+            console.log('Storage deletion failed, but proceeding with database deletion');
+          } else {
+            console.log('File deleted from storage successfully');
+            storageDeleted = true;
+          }
+        }
+      } catch (storageError) {
+        console.error('Error in storage deletion:', storageError);
+        // Storage 삭제 중 오류가 발생해도 DB 삭제는 진행
+        console.log('Storage deletion error, but proceeding with database deletion');
       }
 
       // DB에서 파일 정보 삭제
@@ -205,6 +241,13 @@ export class FileService {
         return false;
       }
 
+      console.log('File deleted from database successfully');
+      
+      // Storage 삭제가 실패했지만 DB 삭제는 성공한 경우
+      if (!storageDeleted) {
+        console.warn('File was deleted from database but not from storage. This may need manual cleanup.');
+      }
+      
       return true;
     } catch (error) {
       console.error('Error in deleteFile:', error);
@@ -301,5 +344,89 @@ export class FileService {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // 삭제된 파일 정리 (관리자용)
+  static async cleanupDeletedFiles(contestId: string): Promise<number> {
+    try {
+      console.log(`Starting cleanup for contest: ${contestId}`);
+      
+      // 해당 공모전의 모든 파일 조회
+      const { data: files, error: fetchError } = await supabase
+        .from('contest_files')
+        .select('*')
+        .eq('contest_id', contestId);
+
+      if (fetchError) {
+        console.error('Error fetching files for cleanup:', fetchError);
+        return 0;
+      }
+
+      if (!files || files.length === 0) {
+        console.log('No files found for cleanup');
+        return 0;
+      }
+
+      let deletedCount = 0;
+
+      for (const file of files) {
+        try {
+          // Storage에서 파일 존재 여부 확인
+          const urlParts = file.url.split('/');
+          const bucketIndex = urlParts.findIndex(part => part === 'contest-files');
+          
+          if (bucketIndex === -1) {
+            console.log(`Invalid URL format for file ${file.id}: ${file.url}`);
+            continue;
+          }
+          
+          const filePath = urlParts.slice(bucketIndex + 1).join('/');
+          
+          // Storage에서 파일 존재 여부 확인
+          const { data: storageData, error: storageError } = await supabase.storage
+            .from('contest-files')
+            .list(filePath.split('/').slice(0, -1).join('/'));
+
+          if (storageError) {
+            console.log(`Storage error for file ${file.id}:`, storageError);
+            // Storage 접근 오류 시 DB에서 삭제
+            const { error: deleteError } = await supabase
+              .from('contest_files')
+              .delete()
+              .eq('id', file.id);
+            
+            if (!deleteError) {
+              deletedCount++;
+              console.log(`Deleted orphaned file record: ${file.id}`);
+            }
+            continue;
+          }
+
+          // 파일이 Storage에 존재하지 않으면 DB에서도 삭제
+          const fileName = filePath.split('/').pop();
+          const fileExists = storageData?.some(item => item.name === fileName);
+          
+          if (!fileExists) {
+            const { error: deleteError } = await supabase
+              .from('contest_files')
+              .delete()
+              .eq('id', file.id);
+            
+            if (!deleteError) {
+              deletedCount++;
+              console.log(`Deleted orphaned file record: ${file.id} (${file.name})`);
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing file ${file.id}:`, error);
+        }
+      }
+
+      console.log(`Cleanup completed. Deleted ${deletedCount} orphaned files.`);
+      return deletedCount;
+    } catch (error) {
+      console.error('Error in cleanupDeletedFiles:', error);
+      return 0;
+    }
   }
 } 

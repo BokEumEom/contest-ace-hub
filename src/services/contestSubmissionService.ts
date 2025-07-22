@@ -170,12 +170,12 @@ export class ContestSubmissionService {
     // 현재 사용자가 공모전 작성자인지 확인
     const isContestOwner = contestData.user_id === user.id;
 
-    // 작품 설명 조회 - 작성자이거나 공모전을 볼 수 있는 사용자
+    // 작품 설명 조회 - 현재 사용자의 작품 설명 조회
     const { data: results, error } = await supabase
       .from('contest_submissions')
       .select()
       .eq('contest_id', parseInt(contestId))
-      .eq('user_id', contestData.user_id) // 공모전 작성자의 작품 설명만 조회
+      .eq('user_id', user.id) // 현재 로그인한 사용자의 작품 설명 조회
       .order('order_index', { ascending: true });
 
     if (error) {

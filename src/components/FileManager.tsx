@@ -9,6 +9,7 @@ import FileUploadArea from './FileManager/FileUploadArea';
 import FileList from './FileManager/FileList';
 import DescriptionEditor from './FileManager/DescriptionEditor';
 import ImageViewerModal from './FileManager/ImageViewerModal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 
 interface FileManagerProps {
@@ -34,9 +35,15 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
     setSortOrder,
     imageViewerFile,
     imageViewerOpen,
+    deleteDialogOpen,
+    fileToDelete,
+    isDeleting,
     
     // Actions
     deleteFile,
+    openDeleteDialog,
+    closeDeleteDialog,
+    executeDelete,
     downloadFile,
     viewFile,
     closeImageViewer,
@@ -160,6 +167,18 @@ const FileManager: React.FC<FileManagerProps> = memo(({ contestId }) => {
         isOpen={imageViewerOpen}
         onClose={closeImageViewer}
         onDownload={downloadFile}
+      />
+
+      {/* 파일 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={executeDelete}
+        title="파일 삭제"
+        description={fileToDelete ? `"${fileToDelete.name}" 파일을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.` : ''}
+        confirmText={isDeleting ? "삭제 중..." : "삭제"}
+        cancelText="취소"
+        variant="destructive"
       />
     </Tabs>
   );
