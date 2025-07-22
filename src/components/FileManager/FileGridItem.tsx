@@ -52,8 +52,8 @@ const FileGridItem = memo(({
             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
         )}
-        {/* 호버 시 액션 버튼 (다운로드) */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* 호버 시 액션 버튼 (다운로드, 삭제) */}
+        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"
             size="icon"
@@ -62,6 +62,17 @@ const FileGridItem = memo(({
           >
             <Download className="h-5 w-5" />
           </Button>
+          {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
+          {file.canDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={e => { e.stopPropagation(); file.id && onDelete(file.id); }}
+              className="text-white hover:text-red-300"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -124,15 +135,18 @@ const FileGridItem = memo(({
             >
               <Download className="h-3 w-3" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => file.id && onDelete(file.id)}
-              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-              title="파일 삭제"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
+            {file.canDelete && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => file.id && onDelete(file.id)}
+                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                title="파일 삭제"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </div>
         {/* 프롬프트가 있는 파일 표시 */}
