@@ -20,6 +20,7 @@ interface ContestCardProps {
   updated_at?: string;
   user_id?: string; // 작성자 ID
   showOwner?: boolean; // 작성자 표시 여부
+  isExpired?: boolean; // 마감 여부
   onClick?: () => void;
 }
 
@@ -40,6 +41,7 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
   updated_at,
   user_id,
   showOwner = false,
+  isExpired = false,
   onClick
 }) => {
   // 실시간으로 D-day 계산 (메모이제이션)
@@ -110,7 +112,9 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
 
   return (
     <div 
-      className={`contest-card p-4 sm:p-6 animate-fade-in min-h-[320px] sm:h-[400px] flex flex-col ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+      className={`contest-card p-4 sm:p-6 animate-fade-in min-h-[320px] sm:h-[400px] flex flex-col ${
+        onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''
+      } ${isExpired ? 'opacity-60 grayscale' : ''}`}
       onClick={handleClick}
     >
       {/* Header with status and D-day */}
@@ -127,12 +131,14 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
           )}
         </div>
         <div className="flex flex-col items-end gap-1 sm:gap-2 flex-shrink-0 ml-2 sm:ml-3">
-          <Badge className={`text-xs ${statusBadge.className}`}>
-            {statusBadge.label}
+          <Badge className={`text-xs ${statusBadge.className} ${isExpired ? 'bg-gray-100 text-gray-600' : ''}`}>
+            {isExpired ? '마감됨' : statusBadge.label}
           </Badge>
           {/* D-day를 상태 배지와 같은 위치에 배치 */}
-          <div className={`text-xs sm:text-sm font-bold px-2 sm:px-3 py-1 rounded-full ${deadlineClassName}`}>
-            {displayDaysLeft > 0 ? `D-${displayDaysLeft}` : '마감'}
+          <div className={`text-xs sm:text-sm font-bold px-2 sm:px-3 py-1 rounded-full ${
+            isExpired ? 'bg-gray-100 text-gray-600' : deadlineClassName
+          }`}>
+            {isExpired ? '마감' : (displayDaysLeft > 0 ? `D-${displayDaysLeft}` : '마감')}
           </div>
         </div>
       </div>
@@ -158,13 +164,15 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
         </div>
         <div className="w-full bg-secondary rounded-full h-2 mb-2 sm:mb-3">
           <div 
-            className="bg-contest-gradient h-2 rounded-full transition-all duration-300"
+            className={`h-2 rounded-full transition-all duration-300 ${
+              isExpired ? 'bg-gray-400' : 'bg-contest-gradient'
+            }`}
             style={{ width: `${progress}%` }}
           ></div>
         </div>
         
         {/* 다음 할 일 표시 */}
-        {nextAction && (
+        {nextAction && !isExpired && (
           <div className="flex items-center gap-2 text-xs sm:text-sm">
             <nextAction.icon className={`h-3 w-3 sm:h-4 sm:w-4 ${nextAction.color} flex-shrink-0`} />
             <span className={`${nextAction.color} truncate`}>{nextAction.text}</span>
@@ -198,14 +206,28 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
 
       {/* Footer - 경고 표시만 남김 */}
       <div className="flex items-center mt-auto flex-shrink-0">
-        {/* Urgency Warning */}
-        {displayDaysLeft <= 7 && displayDaysLeft > 0 && (
+        {/* Urgency Warning - 마감되지 않은 공모전만 표시 */}
+        {!isExpired && displayDaysLeft <= 7 && displayDaysLeft > 0 && (
           <div className="flex-1">
             <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2 text-red-700">
                 <AlertTriangle className="h-3 w-3 flex-shrink-0" />
                 <span className="text-xs font-medium truncate">
                   {displayDaysLeft <= 3 ? '마감 임박!' : '마감이 가까워졌습니다'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* 마감된 공모전 상태 표시 */}
+        {isExpired && (
+          <div className="flex-1">
+            <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-600">
+                <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                <span className="text-xs font-medium truncate">
+                  마감된 공모전
                 </span>
               </div>
             </div>

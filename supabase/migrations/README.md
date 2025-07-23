@@ -55,10 +55,14 @@ supabase db push
 15. **20241201000015_create_user_activities_table.sql** - User activity tracking
 16. **20241201000016_create_profile_images_bucket.sql** - Profile image storage
 17. **20241201000017_fix_duplicate_user_records.sql** - Data cleanup
+18. **20241201000018_add_is_public_to_contests.sql** - Public contest visibility
+19. **20241201000019_fix_contests_rls.sql** - Fix RLS policies for contests table
 
 ### Utility Files
 - **complete_setup.sql** - Complete database setup (for fresh installations)
 - **rollback_all.sql** - Complete rollback (for development/testing)
+- **fix_all_rls_issues.sql** - Comprehensive RLS fix for all tables
+- **verify_rls_status.sql** - RLS status verification script
 
 ## Table Descriptions
 
@@ -142,6 +146,25 @@ All tables implement RLS with user-specific policies:
 - Users can only access their own data
 - Automatic user_id filtering
 - Secure by default
+
+#### RLS Policy Structure
+Each table has comprehensive RLS policies:
+- **SELECT**: Users can read their own data + public data where applicable
+- **INSERT**: Users can only insert their own data
+- **UPDATE**: Users can only update their own data
+- **DELETE**: Users can only delete their own data
+
+#### Public Contest Visibility
+The `contests` table includes special handling for public contests:
+- Users can read public contests (`is_public = true`)
+- Users can only manage their own contests
+- Public contests are visible to all authenticated users
+
+#### RLS Troubleshooting
+If you encounter RLS issues:
+1. Run `verify_rls_status.sql` to check current status
+2. Use `fix_all_rls_issues.sql` to resolve common problems
+3. Ensure all tables have RLS enabled: `ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;`
 
 ### Data Integrity
 - Foreign key constraints with CASCADE DELETE

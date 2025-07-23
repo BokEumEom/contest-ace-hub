@@ -1,11 +1,13 @@
 
 import React, { useCallback, useMemo } from 'react';
-import { Plus, Search, Calendar, Sparkles } from 'lucide-react';
+import { Plus, Search, Calendar, Sparkles, Target, Users, TrendingUp, Clock, FileText, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/components/AuthProvider';
 
 const QuickActions = React.memo(() => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // 네비게이션 핸들러들 (메모이제이션)
   const handleNewContest = useCallback(() => navigate('/new-contest'), [navigate]);
@@ -13,76 +15,141 @@ const QuickActions = React.memo(() => {
   const handleCalendar = useCallback(() => navigate('/calendar'), [navigate]);
   const handleAIHelper = useCallback(() => navigate('/ai-helper'), [navigate]);
 
-  // 액션 배열 (메모이제이션)
-  const actions = useMemo(() => [
-    {
-      icon: Plus,
-      label: '새 공모전 등록',
-      description: '참여할 공모전을 추가하세요',
-      color: 'orange',
-      onClick: handleNewContest
-    },
-    {
-      icon: Search,
-      label: '공모전 탐색',
-      description: '새로운 기회를 찾아보세요',
-      color: 'blue',
-      onClick: handleExplore
-    },
-    {
-      icon: Calendar,
-      label: '일정 확인',
-      description: '마감일과 일정을 관리하세요',
-      color: 'coral',
-      onClick: handleCalendar
-    },
-    {
-      icon: Sparkles,
-      label: 'AI 어시스턴트',
-      description: 'AI로 아이디어와 검토를 받아보세요',
-      color: 'light-blue',
-      onClick: handleAIHelper
-    }
-  ], [handleNewContest, handleExplore, handleCalendar, handleAIHelper]);
+  // 사용자 상태에 따른 액션 배열 (메모이제이션)
+  const actions = useMemo(() => {
+    const baseActions = [
+      {
+        icon: Plus,
+        label: '공모전 등록',
+        description: '새로운 공모전을 등록하고 관리하세요',
+        color: 'orange',
+        onClick: handleNewContest,
+        priority: 'primary',
+        gradient: 'from-contest-orange to-contest-coral',
+        iconBg: 'bg-contest-orange/10 text-contest-orange'
+      },
+      {
+        icon: Search,
+        label: '공모전 탐색',
+        description: '다양한 공모전을 찾아보세요',
+        color: 'blue',
+        onClick: handleExplore,
+        priority: 'secondary',
+        gradient: 'from-contest-blue to-contest-light-blue',
+        iconBg: 'bg-contest-blue/10 text-contest-blue'
+      }
+    ];
 
-  // 색상 클래스 매핑 (메모이제이션)
-  const getColorClasses = useCallback((color: string) => {
-    const colorMap = {
-      orange: 'hover:bg-contest-orange/5 border-contest-orange/20 hover:border-contest-orange/40',
-      blue: 'hover:bg-contest-blue/5 border-contest-blue/20 hover:border-contest-blue/40',
-      coral: 'hover:bg-contest-coral/5 border-contest-coral/20 hover:border-contest-coral/40',
-      'light-blue': 'hover:bg-contest-light-blue/5 border-contest-light-blue/20 hover:border-contest-light-blue/40'
-    };
-    return colorMap[color as keyof typeof colorMap];
-  }, []);
+    const userActions = user ? [
+      {
+        icon: Calendar,
+        label: '일정 관리',
+        description: '마감일과 진행상황을 확인하세요',
+        color: 'green',
+        onClick: handleCalendar,
+        priority: 'secondary',
+        gradient: 'from-green-500 to-emerald-500',
+        iconBg: 'bg-green-500/10 text-green-600'
+      },
+      {
+        icon: Sparkles,
+        label: 'AI 도우미',
+        description: 'AI로 아이디어와 피드백을 받아보세요',
+        color: 'purple',
+        onClick: handleAIHelper,
+        priority: 'primary',
+        gradient: 'from-purple-500 to-pink-500',
+        iconBg: 'bg-purple-500/10 text-purple-600'
+      }
+    ] : [
+      {
+        icon: Calendar,
+        label: '일정 미리보기',
+        description: '공모전 일정을 확인해보세요',
+        color: 'green',
+        onClick: handleCalendar,
+        priority: 'secondary',
+        gradient: 'from-green-500 to-emerald-500',
+        iconBg: 'bg-green-500/10 text-green-600'
+      },
+      {
+        icon: Sparkles,
+        label: 'AI 체험',
+        description: 'AI 기능을 미리 체험해보세요',
+        color: 'purple',
+        onClick: handleAIHelper,
+        priority: 'secondary',
+        gradient: 'from-purple-500 to-pink-500',
+        iconBg: 'bg-purple-500/10 text-purple-600'
+      }
+    ];
 
-  // 아이콘 색상 매핑 (메모이제이션)
-  const getIconColor = useCallback((color: string) => {
-    const colorMap = {
-      orange: 'text-contest-orange',
-      blue: 'text-contest-blue',
-      coral: 'text-contest-coral',
-      'light-blue': 'text-contest-light-blue'
-    };
-    return colorMap[color as keyof typeof colorMap];
-  }, []);
+    return [...baseActions, ...userActions];
+  }, [handleNewContest, handleExplore, handleCalendar, handleAIHelper, user]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {actions.map((action, index) => (
-        <Button
-          key={index}
-          variant="outline"
-          onClick={action.onClick}
-          className={`h-auto p-4 flex flex-col items-center text-center space-y-2 transition-all duration-300 cursor-pointer ${getColorClasses(action.color)}`}
-        >
-          <action.icon className={`h-8 w-8 ${getIconColor(action.color)}`} />
-          <div>
-            <p className="font-medium text-sm">{action.label}</p>
-            <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
+    <div className="space-y-6">
+      {/* 헤더 섹션 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-semibold text-foreground">빠른 작업</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {user ? '자주 사용하는 기능에 빠르게 접근하세요' : '주요 기능을 미리 체험해보세요'}
+          </p>
+        </div>
+      </div>
+      
+      {/* 액션 그리드 - 현대적인 카드 디자인 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {actions.map((action, index) => (
+          <div
+            key={index}
+            onClick={action.onClick}
+            className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer overflow-hidden"
+          >
+            {/* 그라데이션 배경 효과 */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-200`} />
+            
+            <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+              <div className={`p-3 rounded-xl ${action.iconBg} group-hover:scale-110 transition-all duration-200`}>
+                <action.icon className="h-8 w-8" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm mb-1 text-gray-900 group-hover:text-gray-800">
+                  {action.label}
+                </p>
+                <p className="text-xs text-gray-600 leading-relaxed group-hover:text-gray-700">
+                  {action.description}
+                </p>
+              </div>
+            </div>
           </div>
-        </Button>
-      ))}
+        ))}
+      </div>
+      
+      {/* 사용자별 맞춤 팁 - 비로그인 사용자만 */}
+      {!user && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+          <div className="flex items-start gap-4">
+            <div className="p-2 rounded-lg bg-blue-100">
+              <Users className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900 mb-2">💡 시작하기</p>
+              <p className="text-sm text-blue-700 mb-4">
+                로그인하면 더 많은 기능을 사용할 수 있어요!
+              </p>
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-contest-orange to-contest-coral text-white hover:shadow-lg transition-all duration-200"
+                onClick={() => navigate('/auth')}
+              >
+                로그인하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

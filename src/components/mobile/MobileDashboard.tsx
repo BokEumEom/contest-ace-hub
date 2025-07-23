@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, TrendingUp, AlertTriangle, ChevronRight, Search, Bell, Users, Target, Trophy } from 'lucide-react';
+import { Plus, Calendar, TrendingUp, AlertTriangle, ChevronRight, Search, Bell, Users, Target, Trophy, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/components/AuthProvider';
@@ -59,8 +59,22 @@ const MobileDashboard = () => {
 
   if (!isMobile) return null;
 
+  const currentHour = new Date().getHours();
+  const getGreeting = () => {
+    if (currentHour < 12) return '좋은 아침이에요';
+    if (currentHour < 18) return '좋은 오후에요';
+    return '좋은 저녁이에요';
+  };
+
+  const getUserName = () => {
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return '사용자';
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* 헤더 */}
       <header className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="px-4">
@@ -125,20 +139,35 @@ const MobileDashboard = () => {
       <div className="pb-20"> {/* 하단 네비게이션 공간 */}
         <div className="space-y-6 p-4">
           {/* 환영 메시지 */}
-          <div className="bg-gradient-to-r from-contest-orange to-contest-coral rounded-xl p-4 text-white">
-            <h2 className="text-lg font-bold mb-1">
-              안녕하세요, {user?.email?.split('@')[0] || '사용자'}님!
-            </h2>
-            <p className="text-sm opacity-90">
-              오늘도 공모전 준비 화이팅하세요 💪
-            </p>
+          <div className="bg-gradient-to-r from-contest-orange to-contest-coral rounded-2xl p-6 text-white shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-5 w-5" />
+                  <span className="text-sm font-medium opacity-90">
+                    {getGreeting()}, {getUserName()}님! 👋
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold mb-2">
+                  오늘도 공모전 준비
+                  <br />
+                  화이팅하세요!
+                </h2>
+                <p className="text-sm opacity-90">
+                  체계적인 관리로 성공을 위한 모든 준비를 도와드릴게요.
+                </p>
+              </div>
+              <div className="bg-white/20 p-3 rounded-xl">
+                <Trophy className="h-8 w-8" />
+              </div>
+            </div>
           </div>
 
           {/* 통계 카드 */}
           {user && (
             <div className="grid grid-cols-2 gap-3">
               {stats.slice(0, 4).map((stat, index) => (
-                <div key={index} className="bg-white rounded-xl p-4 shadow-sm">
+                <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center justify-between">
                     <stat.icon className="h-5 w-5 text-contest-orange" />
                     <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
@@ -151,19 +180,28 @@ const MobileDashboard = () => {
 
           {/* 빠른 액션 */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-gray-900">빠른 작업</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">빠른 작업</h3>
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+                <Target className="h-4 w-4" />
+                <span>핵심 기능</span>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={() => navigate('/new-contest')}
-                className="h-16 bg-contest-gradient text-white font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                className="h-16 bg-contest-gradient text-white font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden group"
               >
-                <Plus className="h-5 w-5 mr-2" />
-                새 공모전
+                <div className="absolute inset-0 bg-white/20 group-hover:bg-white/30 transition-colors"></div>
+                <div className="relative flex items-center justify-center">
+                  <Plus className="h-5 w-5 mr-2" />
+                  새 공모전
+                </div>
               </Button>
               <Button
                 onClick={() => navigate('/explore')}
                 variant="outline"
-                className="h-16 hover:bg-gray-50"
+                className="h-16 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300"
               >
                 <Calendar className="h-5 w-5 mr-2" />
                 탐색하기
@@ -186,8 +224,10 @@ const MobileDashboard = () => {
               </div>
               
               {myContests.length === 0 ? (
-                <div className="bg-white rounded-xl p-6 text-center">
-                  <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <div className="bg-white rounded-xl p-6 text-center border border-gray-100">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-full inline-block mb-4">
+                    <Calendar className="h-8 w-8 text-blue-600" />
+                  </div>
                   <h4 className="text-base font-medium text-gray-900 mb-2">
                     첫 번째 공모전을 등록해보세요!
                   </h4>
@@ -230,7 +270,10 @@ const MobileDashboard = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">마감 임박</h3>
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <div className="flex items-center gap-1 text-red-500">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="text-sm font-medium">긴급</span>
+                </div>
               </div>
               <div className="space-y-2">
                 {urgentContests.slice(0, 3).map((contest) => (
@@ -249,7 +292,7 @@ const MobileDashboard = () => {
           {user && (
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-gray-900">최근 활동</h3>
-              <div className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-contest-orange rounded-full"></div>
