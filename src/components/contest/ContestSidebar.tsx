@@ -1,15 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Users, ExternalLink, Trash2 } from 'lucide-react';
+import { 
+  Calendar, 
+  Users, 
+  Clock, 
+  Trophy, 
+  Edit, 
+  Trash2,
+  AlertCircle
+} from 'lucide-react';
+import { Contest } from '@/services/contestService';
 import { TeamMember, Schedule } from '@/services/contestDetailService';
-import { Contest } from '@/types/contest';
 import { EditContestModal } from './EditContestModal';
 import { TeamManagementModal } from './TeamManagementModal';
 import { ScheduleManagementModal } from './ScheduleManagementModal';
+import { supabase } from '@/lib/supabase';
 
 interface ContestSidebarProps {
   contest: Contest;
@@ -40,7 +49,7 @@ interface ContestSidebarProps {
   handleAddSchedule: () => void;
   handleRemoveSchedule: (id: string) => void;
   handleDeleteContest: () => Promise<boolean>;
-  openEditModal: () => void;
+  openEditModal: () => Promise<void>;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
   getDaysLeftColor: (daysLeft: number) => string;
@@ -78,6 +87,21 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
   getDaysLeftColor
 }) => {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isOwner, setIsOwner] = useState(false);
+
+  // 현재 사용자 정보 로드
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      setIsOwner(user?.id === contest?.user_id);
+    };
+
+    if (contest) {
+      loadCurrentUser();
+    }
+  }, [contest]);
 
   return (
     <div className="space-y-6">
@@ -87,14 +111,24 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
           <CardTitle className="text-lg">빠른 작업</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <EditContestModal
-            open={editModalOpen}
-            onOpenChange={setEditModalOpen}
-            editForm={editForm}
-            setEditForm={setEditForm}
-            onSubmit={handleEditSubmit}
-            onOpen={openEditModal}
-          />
+          {/* 권한이 있는 경우에만 수정 버튼 표시 */}
+          {isOwner ? (
+            <EditContestModal
+              open={editModalOpen}
+              onOpenChange={setEditModalOpen}
+              editForm={editForm}
+              setEditForm={setEditForm}
+              onSubmit={handleEditSubmit}
+              onOpen={openEditModal}
+            />
+          ) : (
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border">
+              <AlertCircle className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-600">
+                공모전 작성자만 수정할 수 있습니다
+              </span>
+            </div>
+          )}
 
           {/* 상태 변경 모달 */}
           <div className="relative">
@@ -204,7 +238,7 @@ export const ContestSidebar: React.FC<ContestSidebarProps> = ({
               size="sm"
               onClick={() => window.open(contest.contest_url, '_blank')}
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
+              <Users className="h-4 w-4 mr-2" />
               공식 사이트
             </Button>
           )}

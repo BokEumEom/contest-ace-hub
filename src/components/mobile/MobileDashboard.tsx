@@ -167,12 +167,12 @@ const MobileDashboard = () => {
           {user && (
             <div className="grid grid-cols-2 gap-3">
               {stats.slice(0, 4).map((stat, index) => (
-                <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 h-24 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <stat.icon className="h-5 w-5 text-contest-orange" />
                     <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">{stat.title}</p>
+                  <p className="text-xs text-gray-600">{stat.title}</p>
                 </div>
               ))}
             </div>

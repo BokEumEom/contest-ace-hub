@@ -31,10 +31,10 @@ const StatsCard: React.FC<StatsCardProps> = React.memo(({ title, value, icon: Ic
 
   return (
     <div 
-      className={`bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 ${onClick ? 'cursor-pointer hover:scale-105' : ''}`}
+      className={`bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200 h-32 flex flex-col justify-between ${onClick ? 'cursor-pointer hover:scale-105' : ''}`}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
           <p className="text-2xl font-bold text-foreground">{value}</p>
@@ -44,21 +44,25 @@ const StatsCard: React.FC<StatsCardProps> = React.memo(({ title, value, icon: Ic
         </div>
       </div>
       
-      {trend && (
-        <div className="flex items-center gap-2">
-          <div className={`flex items-center gap-1 text-xs font-medium ${
-            trend.isPositive ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {trend.isPositive ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : (
-              <TrendingDown className="h-3 w-3" />
-            )}
-            <span>{trend.value}</span>
-          </div>
-          <span className="text-xs text-muted-foreground">vs 지난주</span>
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        {trend ? (
+          <>
+            <div className={`flex items-center gap-1 text-xs font-medium ${
+              trend.isPositive ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {trend.isPositive ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              <span>{trend.value}</span>
+            </div>
+            <span className="text-xs text-muted-foreground">vs 지난주</span>
+          </>
+        ) : (
+          <span className="text-xs text-muted-foreground">진행 상황</span>
+        )}
+      </div>
     </div>
   );
 });

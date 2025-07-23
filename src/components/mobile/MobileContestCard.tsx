@@ -135,7 +135,7 @@ const MobileContestCard: React.FC<MobileContestCardProps> = ({
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full transition-all duration-300"
+                  className="bg-contest-gradient h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>

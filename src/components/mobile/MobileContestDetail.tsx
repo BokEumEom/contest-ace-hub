@@ -1,41 +1,37 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Edit, 
-  Share, 
+  Share2, 
   Trash2, 
-  Calendar, 
-  Users, 
-  Target, 
   Upload, 
-  Lightbulb, 
-  Trophy,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  FileText,
-  Settings,
-  Award,
-  Globe,
-  Info,
-  Plus,
+  Download, 
+  Eye, 
+  File, 
+  Image, 
+  Video, 
+  Music,
   X,
-  Download,
-  Eye,
-  Image,
-  File,
-  Video,
-  Music
+  Plus,
+  Calendar,
+  Users,
+  Clock,
+  Trophy,
+  AlertCircle,
+  Info,
+  Lightbulb,
+  Globe,
+  Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useContestDetail } from '@/hooks/useContestDetail';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/components/AuthProvider';
 import { useFileManager } from '@/components/FileManager/hooks/useFileManager';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/lib/supabase';
 import { FileItem } from '@/services/fileService';
+import { useAuth } from '@/components/AuthProvider';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const MobileContestDetail = () => {
@@ -44,11 +40,23 @@ const MobileContestDetail = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   
-  const [showActions, setShowActions] = useState(false);
-  const [showFileUpload, setShowFileUpload] = useState(false);
+  // 상태 관리
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [imageViewerFile, setImageViewerFile] = useState<FileItem | null>(null);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerFile, setImageViewerFile] = useState<FileItem | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isOwner, setIsOwner] = useState(false);
+
+  // 현재 사용자 정보 로드
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+
+    loadCurrentUser();
+  }, []);
 
   const {
     contest,
@@ -86,6 +94,13 @@ const MobileContestDetail = () => {
     getDaysLeftColor
   } = useContestDetail(id);
 
+  // 소유자 권한 확인
+  useEffect(() => {
+    if (contest && currentUser) {
+      setIsOwner(currentUser.id === contest.user_id);
+    }
+  }, [contest, currentUser]);
+
   // 파일 관리 훅 사용
   const {
     files,
@@ -105,8 +120,8 @@ const MobileContestDetail = () => {
     navigate(-1);
   }, [navigate]);
 
-  const handleEdit = useCallback(() => {
-    openEditModal();
+  const handleEdit = useCallback(async () => {
+    await openEditModal();
   }, [openEditModal]);
 
   const handleShare = useCallback(() => {
@@ -199,7 +214,7 @@ const MobileContestDetail = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <AlertTriangle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">공모전을 찾을 수 없습니다</h2>
           <p className="text-gray-600 mb-4">요청하신 공모전이 존재하지 않거나 접근 권한이 없습니다.</p>
           <Button onClick={handleBack} className="bg-contest-gradient text-white">
@@ -233,29 +248,23 @@ const MobileContestDetail = () => {
 
             {/* 액션 버튼들 */}
             <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10"
-                onClick={handleEdit}
-              >
-                <Edit className="h-5 w-5" />
-              </Button>
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={handleEdit}
+                >
+                  <Edit className="h-5 w-5" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-10 w-10"
                 onClick={handleShare}
               >
-                <Share className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10"
-                onClick={() => setShowActions(!showActions)}
-              >
-                <Settings className="h-5 w-5" />
+                <Share2 className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -666,25 +675,27 @@ const MobileContestDetail = () => {
       </div>
 
       {/* 액션 메뉴 */}
-      {showActions && (
+      {/* showActions && ( */}
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl p-4">
             <div className="space-y-2">
-              <button
-                onClick={handleEdit}
-                className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Edit className="h-5 w-5 text-gray-600" />
-                  <span className="font-medium">편집</span>
-                </div>
-              </button>
+              {isOwner && (
+                <button
+                  onClick={handleEdit}
+                  className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Edit className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">편집</span>
+                  </div>
+                </button>
+              )}
               <button
                 onClick={handleShare}
                 className="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <Share className="h-5 w-5 text-gray-600" />
+                  <Share2 className="h-5 w-5 text-gray-600" />
                   <span className="font-medium">공유</span>
                 </div>
               </button>
@@ -701,7 +712,7 @@ const MobileContestDetail = () => {
             <Button
               variant="outline"
               className="w-full mt-4"
-              onClick={() => setShowActions(false)}
+              onClick={() => {/* setShowActions(false) */}}
             >
               취소
             </Button>
@@ -710,10 +721,10 @@ const MobileContestDetail = () => {
           {/* 배경 클릭으로 닫기 */}
           <div 
             className="absolute inset-0 -z-10"
-            onClick={() => setShowActions(false)}
+            onClick={() => {/* setShowActions(false) */}}
           />
         </div>
-      )}
+      {/* ) */}
 
       {/* 팀원 추가 모달 */}
       {teamModalOpen && (

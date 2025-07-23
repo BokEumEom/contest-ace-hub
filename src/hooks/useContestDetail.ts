@@ -132,6 +132,12 @@ export const useContestDetail = (contestId: string | undefined) => {
   const handleEditSubmit = async () => {
     if (contest) {
       try {
+        // 현재 사용자 정보 확인
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Debug - Submitting edit for contest:', contest.id);
+        console.log('Debug - Current user:', user?.id);
+        console.log('Debug - Contest owner:', contest.user_id);
+        
         // Transform camelCase field names to snake_case for database compatibility
         const transformedUpdates = {
           title: editForm.title,
@@ -157,11 +163,13 @@ export const useContestDetail = (contestId: string | undefined) => {
           setEditModalOpen(false);
           alert('공모전 정보가 성공적으로 수정되었습니다.');
         } else {
-          alert('공모전 정보 수정에 실패했습니다.');
+          // 더 구체적인 오류 메시지 제공
+          console.error('Failed to update contest. Check console for details.');
+          alert('공모전 정보 수정에 실패했습니다. 권한을 확인하거나 다시 시도해주세요.');
         }
       } catch (error) {
         console.error('Error updating contest:', error);
-        alert('공모전 정보 수정 중 오류가 발생했습니다.');
+        alert('공모전 정보 수정 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
     }
   };
@@ -347,7 +355,7 @@ export const useContestDetail = (contestId: string | undefined) => {
     return false; // 삭제 취소 시 false 반환
   };
 
-  const openEditModal = () => {
+  const openEditModal = async () => {
     if (contest) {
       setEditForm({
         title: contest.title,

@@ -161,19 +161,48 @@ export class ContestService {
       const userId = user?.id;
 
       if (!userId) {
+        console.error('User not authenticated');
         return null;
       }
 
+      // 먼저 공모전이 존재하고 현재 사용자가 소유자인지 확인
+      const { data: existingContest, error: fetchError } = await supabase
+        .from('contests')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching contest for permission check:', fetchError);
+        return null;
+      }
+
+      if (!existingContest) {
+        console.error('Contest not found');
+        return null;
+      }
+
+      if (existingContest.user_id !== userId) {
+        console.error('User does not have permission to update this contest');
+        console.error('Contest owner:', existingContest.user_id);
+        console.error('Current user:', userId);
+        return null;
+      }
+
+      // 권한 확인 후 업데이트 실행
       const { data, error } = await supabase
         .from('contests')
         .update(updates)
         .eq('id', id)
-        .eq('user_id', userId) // 작성자만 수정 가능
+        .eq('user_id', userId)
         .select()
         .single();
 
       if (error) {
         console.error('Error updating contest:', error);
+        console.error('Update data:', updates);
+        console.error('Contest ID:', id);
+        console.error('User ID:', userId);
         return null;
       }
 

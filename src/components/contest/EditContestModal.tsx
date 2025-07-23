@@ -19,7 +19,7 @@ interface EditContestModalProps {
   editForm: EditForm;
   setEditForm: (form: EditForm) => void;
   onSubmit: () => Promise<void>;
-  onOpen: () => void;
+  onOpen: () => Promise<void>;
 }
 
 export const EditContestModal: React.FC<EditContestModalProps> = ({
@@ -33,7 +33,12 @@ export const EditContestModal: React.FC<EditContestModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full justify-start" size="sm" onClick={onOpen}>
+        <Button 
+          variant="outline" 
+          className="w-full justify-start" 
+          size="sm" 
+          onClick={async () => await onOpen()}
+        >
           <Edit className="h-4 w-4 mr-2" />
           정보 수정
         </Button>
