@@ -76,6 +76,9 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
 
   const { updateContest } = useContestDetail(contest.id);
   const { user } = useAuth();
+  
+  // 디버깅 로그
+  console.log('ContestTabs - contest.id:', contest.id);
 
   // tasks와 progress를 함께 업데이트
   const handleTasksUpdate = (tasks: any, progress: number) => {

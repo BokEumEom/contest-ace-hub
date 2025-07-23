@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
 import { preloadImages } from '../utils/imageCache';
 import { useFileDelete } from './useFileDelete';
+import { PromptService } from '@/services/promptService';
 
 export const useFileManager = (contestId: string) => {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -189,6 +190,64 @@ export const useFileManager = (contestId: string) => {
     });
   }, [toast]);
 
+  // 프롬프트와 함께 파일 업로드 핸들러
+  const handleFilesUploadWithPrompt = useCallback(async (uploadFiles: File[], promptData: {
+    prompt_text: string;
+    prompt_type: 'image' | 'document' | 'video' | 'audio' | 'other';
+    ai_model?: string;
+    applyToAll: boolean;
+  }) => {
+    console.log('handleFilesUploadWithPrompt called', { uploadFiles, promptData });
+    for (const file of uploadFiles) {
+      try {
+        // 중복 파일 체크 - 기존 파일 목록과 비교
+        const existingFile = files.find(f => f.name === file.name);
+        if (existingFile) {
+          toast({ 
+            title: "오류", 
+            description: `"${file.name}" 파일이 이미 존재합니다.`,
+            variant: "destructive"
+          });
+          continue;
+        }
+
+        const promptText = promptData.prompt_text.trim() || '';
+        console.log('Uploading file with prompt', { fileName: file.name, promptText, aiModel: promptData.ai_model });
+        
+        // FileService.uploadFileWithPrompt 호출 시 AI 모델 정보도 전달
+        const uploadedFile = await FileService.uploadFileWithPrompt(file, contestId, promptText, promptData.ai_model);
+        
+        if (uploadedFile) {
+          if (promptText) {
+            await PromptService.createPrompt({
+              contest_id: parseInt(contestId),
+              file_id: uploadedFile.id,
+              prompt_type: promptData.prompt_type,
+              prompt_text: promptText,
+              ai_model: promptData.ai_model || undefined,
+              generation_params: {}
+            });
+          }
+          setFiles(prev => [uploadedFile, ...prev]);
+          toast({ title: "성공", description: `${file.name} 파일이 프롬프트와 함께 업로드되었습니다.` });
+        } else {
+          toast({ 
+            title: "오류", 
+            description: `${file.name} 파일 업로드에 실패했습니다.`,
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error('Error uploading file with prompt:', error);
+        toast({ 
+          title: "오류", 
+          description: `${file.name} 파일 업로드 중 오류가 발생했습니다.`,
+          variant: "destructive"
+        });
+      }
+    }
+  }, [contestId, toast, files]);
+
   // 드래그 앤 드롭 핸들러
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -276,6 +335,7 @@ export const useFileManager = (contestId: string) => {
     deleteDialogOpen,
     fileToDelete,
     isDeleting,
+    setFiles,
     
     // Actions
     deleteFile,
@@ -287,6 +347,7 @@ export const useFileManager = (contestId: string) => {
     closeImageViewer,
     handleFilesUpload,
     handleFileUploadComplete,
+    handleFilesUploadWithPrompt,
     handleDragOver,
     handleDragEnter,
     handleDragLeave,

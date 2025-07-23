@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Eye, Download, Trash2, MessageSquare, File, Video, Music, Image } from 'lucide-react';
+import { Eye, Download, Trash2, MessageSquare, File, Video, Music, Image, Wand2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileItem as FileItemType } from '@/services/fileService';
@@ -13,6 +13,7 @@ interface FileItemProps {
   onView: (file: FileItemType) => void;
   onDownload: (file: FileItemType) => void;
   onDelete: (fileId: number) => void;
+  onEdit?: (file: FileItemType) => void;
   getFileTypeColor: (type: string) => string;
 }
 
@@ -21,6 +22,7 @@ const FileItem = memo(({
   onView, 
   onDownload, 
   onDelete, 
+  onEdit,
   getFileTypeColor 
 }: FileItemProps) => {
   // 이미지 캐싱 훅 사용
@@ -164,6 +166,13 @@ const FileItem = memo(({
                   프롬프트
                 </Badge>
               )}
+              {/* AI 모델 정보 표시 */}
+              {file.ai_model && (
+                <Badge variant="outline" className="text-xs flex-shrink-0 bg-purple-50 text-purple-700 border-purple-200">
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  {file.ai_model}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -187,6 +196,18 @@ const FileItem = memo(({
             >
               <Download className="h-4 w-4" />
             </Button>
+            {/* 편집 권한이 있는 경우에만 편집 버튼 표시 */}
+            {file.canEdit && onEdit && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onEdit(file)}
+                className="h-8 w-8 p-0"
+                title="파일 정보 편집"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
             {file.canDelete && (
               <Button 

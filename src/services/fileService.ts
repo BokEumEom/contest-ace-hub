@@ -9,6 +9,7 @@ export interface FileItem {
   type: string;
   size: number;
   prompt?: string;
+  ai_model?: string;
   uploaded_at?: string;
   created_at?: string;
   updated_at?: string;
@@ -74,7 +75,7 @@ export class FileService {
   }
 
   // 프롬프트와 함께 파일 업로드
-  static async uploadFileWithPrompt(file: File, contestId: string, prompt: string): Promise<FileItem | null> {
+  static async uploadFileWithPrompt(file: File, contestId: string, prompt: string, ai_model?: string): Promise<FileItem | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
@@ -105,7 +106,8 @@ export class FileService {
         url: urlData.publicUrl,
         type: this.getFileType(file.type),
         size: file.size,
-        prompt: prompt || undefined
+        prompt: prompt || undefined,
+        ai_model: ai_model || undefined
       };
 
       if (!userId) {
@@ -326,6 +328,75 @@ export class FileService {
     } catch (error) {
       console.error('Error in updateFilePrompt:', error);
       return false;
+    }
+  }
+
+  // 파일 정보 업데이트
+  static async updateFile(fileId: number, updates: Partial<FileItem>): Promise<FileItem | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
+      if (!userId) {
+        return null;
+      }
+
+      // 파일 정보 조회
+      const { data: fileData, error: fetchError } = await supabase
+        .from('contest_files')
+        .select('contest_id, user_id')
+        .eq('id', fileId)
+        .single();
+
+      if (fetchError || !fileData) {
+        console.error('Error fetching file:', fetchError);
+        return null;
+      }
+
+      // 공모전 작성자 확인
+      const { data: contestData, error: contestError } = await supabase
+        .from('contests')
+        .select('user_id')
+        .eq('id', fileData.contest_id)
+        .single();
+
+      if (contestError || !contestData) {
+        console.error('Error fetching contest:', contestError);
+        return null;
+      }
+
+      const isContestOwner = contestData.user_id === userId;
+      const isFileOwner = fileData.user_id === userId;
+
+      // 권한 확인: 작성자이거나 파일 업로더만 편집 가능
+      if (!isContestOwner && !isFileOwner) {
+        console.error('User does not have permission to edit this file');
+        return null;
+      }
+
+      // 업데이트할 데이터 준비
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.prompt !== undefined) updateData.prompt = updates.prompt;
+      if (updates.ai_model !== undefined) updateData.ai_model = updates.ai_model;
+
+      // DB에서 파일 정보 업데이트
+      const { data, error } = await supabase
+        .from('contest_files')
+        .update(updateData)
+        .eq('id', fileId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating file:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateFile:', error);
+      return null;
     }
   }
 

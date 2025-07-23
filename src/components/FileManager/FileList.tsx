@@ -25,6 +25,7 @@ interface FileListProps {
   onView: (file: FileItemType) => void;
   onDownload: (file: FileItemType) => void;
   onDelete: (fileId: number) => void;
+  onEdit?: (file: FileItemType) => void;
   getFileTypeColor: (type: string) => string;
 }
 
@@ -44,6 +45,7 @@ const FileList = memo(({
   onView,
   onDownload,
   onDelete,
+  onEdit,
   getFileTypeColor
 }: FileListProps) => {
   // 검색 핸들러 메모이제이션
@@ -295,6 +297,7 @@ const FileList = memo(({
                 onView={onView}
                 onDownload={onDownload}
                 onDelete={onDelete}
+                onEdit={onEdit}
                 getFileTypeColor={getFileTypeColor}
               />
             ) : (
@@ -304,6 +307,7 @@ const FileList = memo(({
                 onView={onView}
                 onDownload={onDownload}
                 onDelete={onDelete}
+                onEdit={onEdit}
                 getFileTypeColor={getFileTypeColor}
               />
             )

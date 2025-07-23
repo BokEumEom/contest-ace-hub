@@ -26,6 +26,8 @@ interface FileManagerProps {
 }
 
 const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
+  console.log('FileManager - contestId prop:', contestId);
+  
   const {
     // State
     files,
@@ -58,6 +60,7 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
     closeImageViewer,
     handleFilesUpload,
     handleFileUploadComplete,
+    handleFilesUploadWithPrompt,
     handleDragOver,
     handleDragEnter,
     handleDragLeave,
@@ -95,14 +98,24 @@ const FileManager: React.FC<FileManagerProps> = ({ contestId }) => {
   }, [setActiveTab]);
 
   // 파일 업로드 영역 props 메모이제이션
-  const fileUploadAreaProps = useMemo(() => ({
-    onFileSelect: handleFileUpload,
-    onDrop: handleDrop,
-    onDragOver: handleDragOver,
-    onDragEnter: handleDragEnter,
-    onDragLeave: handleDragLeave,
-    onPromptUpload: handlePromptUpload,
-  }), [handleFileUpload, handleDrop, handleDragOver, handleDragEnter, handleDragLeave, handlePromptUpload]);
+  const fileUploadAreaProps = useMemo(() => {
+    console.log('Creating fileUploadAreaProps', { 
+      handleFilesUploadWithPrompt: !!handleFilesUploadWithPrompt,
+      handleFilesUploadWithPromptType: typeof handleFilesUploadWithPrompt,
+      contestId: contestId
+    });
+    
+    return {
+      onFileSelect: handleFileUpload,
+      onDrop: handleDrop,
+      onDragOver: handleDragOver,
+      onDragEnter: handleDragEnter,
+      onDragLeave: handleDragLeave,
+      onPromptUpload: handlePromptUpload,
+      onFileUploadWithPrompt: handleFilesUploadWithPrompt,
+      contestId: contestId,
+    };
+  }, [handleFileUpload, handleDrop, handleDragOver, handleDragEnter, handleDragLeave, handlePromptUpload, handleFilesUploadWithPrompt, contestId]);
 
   // 파일 목록 props 메모이제이션
   const fileListProps = useMemo(() => ({

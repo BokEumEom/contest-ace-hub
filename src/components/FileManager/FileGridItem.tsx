@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Eye, Download, Trash2, MessageSquare, File, Video, Music, Image } from 'lucide-react';
+import { Eye, Download, Trash2, MessageSquare, File, Video, Music, Image, Wand2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileItem as FileItemType } from '@/services/fileService';
@@ -13,6 +13,7 @@ interface FileGridItemProps {
   onView: (file: FileItemType) => void;
   onDownload: (file: FileItemType) => void;
   onDelete: (fileId: number) => void;
+  onEdit?: (file: FileItemType) => void;
   getFileTypeColor: (type: string) => string;
   gridMode?: boolean; // grid 모드 여부 prop 추가 (추후 확장성)
 }
@@ -22,6 +23,7 @@ const FileGridItem = memo(({
   onView, 
   onDownload, 
   onDelete, 
+  onEdit,
   getFileTypeColor,
   gridMode = true // 기본값 true (FileList에서 grid 모드만 사용)
 }: FileGridItemProps) => {
@@ -199,6 +201,17 @@ const FileGridItem = memo(({
           >
             <Download className="h-5 w-5" />
           </Button>
+          {/* 편집 권한이 있는 경우에만 편집 버튼 표시 */}
+          {file.canEdit && onEdit && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => onEdit(file)}
+              className="text-white"
+            >
+              <Edit className="h-5 w-5" />
+            </Button>
+          )}
           {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
           {file.canDelete && (
             <Button
@@ -239,6 +252,18 @@ const FileGridItem = memo(({
             >
               <Download className="h-3 w-3" />
             </Button>
+            {/* 편집 권한이 있는 경우에만 편집 버튼 표시 */}
+            {file.canEdit && onEdit && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onEdit(file)}
+                className="h-6 w-6 p-0"
+                title="파일 정보 편집"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
             {/* 삭제 권한이 있는 경우에만 삭제 버튼 표시 */}
             {file.canDelete && (
               <Button 
@@ -258,6 +283,13 @@ const FileGridItem = memo(({
           <Badge variant="secondary" className="text-xs">
             <MessageSquare className="h-3 w-3 mr-1" />
             프롬프트 포함
+          </Badge>
+        )}
+        {/* AI 모델 정보 표시 */}
+        {file.ai_model && (
+          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+            <Wand2 className="h-3 w-3 mr-1" />
+            {file.ai_model}
           </Badge>
         )}
       </div>
