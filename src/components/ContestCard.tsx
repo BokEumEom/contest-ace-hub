@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
-import { Calendar, Target, Users, Clock, ArrowRight, AlertTriangle, CheckCircle, Lightbulb } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar, Target, Users, Clock, ArrowRight, AlertTriangle, CheckCircle, Lightbulb, Trophy } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface ContestCardProps {
@@ -109,131 +109,135 @@ const ContestCard: React.FC<ContestCardProps> = React.memo(({
   }, [onClick]);
 
   return (
-    <div 
-      className={`bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 min-h-[320px] sm:h-[400px] flex flex-col ${
+    <Card 
+      className={`feature-card bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 h-[320px] flex flex-col ${
         onClick ? 'cursor-pointer hover:scale-105' : ''
       } ${isExpired ? 'opacity-60 grayscale' : ''}`}
       onClick={handleClick}
     >
-      {/* Header with status and D-day */}
-      <div className="flex items-start justify-between mb-4 flex-shrink-0">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg sm:text-xl text-foreground mb-2 leading-tight">
-            {title}
-          </h3>
-          {organization && (
-            <p className="text-sm text-muted-foreground mb-2">{organization}</p>
-          )}
-          {showOwner && user_id && (
-            <p className="text-xs text-blue-600">
-              작성자: {user_id.slice(0, 8)}...
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3">
-          <Badge className={`text-xs ${statusBadge.className} ${isExpired ? 'bg-gray-100 text-gray-600' : ''}`}>
-            {isExpired ? '마감됨' : statusBadge.label}
-          </Badge>
-          <div className={`text-xs font-bold px-3 py-1 rounded-full ${
-            isExpired ? 'bg-gray-100 text-gray-600' : deadlineClassName
-          }`}>
-            {isExpired ? '마감' : (displayDaysLeft > 0 ? `D-${displayDaysLeft}` : '마감')}
+      <CardHeader className="flex-shrink-0">
+        {/* Header with title and status badges */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg font-semibold text-foreground mb-1 leading-tight line-clamp-1">
+              {title}
+            </CardTitle>
+            {organization && (
+              <CardDescription className="text-xs text-muted-foreground mb-1 line-clamp-1">{organization}</CardDescription>
+            )}
+            {showOwner && user_id && (
+              <CardDescription className="text-xs text-blue-600 line-clamp-1">
+                작성자: {user_id.slice(0, 8)}...
+              </CardDescription>
+            )}
           </div>
-        </div>
-      </div>
-
-      {/* 공모전 주제 표시 */}
-      {contest_theme && (
-        <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg flex-shrink-0">
-          <div className="flex items-start gap-2">
-            <Lightbulb className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-purple-600 font-medium">공모주제</p>
-              <p className="text-sm font-semibold text-purple-700 leading-tight">{contest_theme}</p>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <Badge className={`text-xs ${statusBadge.className} ${isExpired ? 'bg-gray-100 text-gray-600' : ''}`}>
+              {isExpired ? '마감됨' : statusBadge.label}
+            </Badge>
+            <div className={`text-xs font-bold px-2 py-1 rounded-full ${
+              isExpired ? 'bg-gray-100 text-gray-600' : deadlineClassName
+            }`}>
+              {isExpired ? '마감' : (displayDaysLeft > 0 ? `D-${displayDaysLeft}` : '마감')}
             </div>
           </div>
         </div>
-      )}
 
-      {/* Progress Section */}
-      <div className="mb-4 flex-shrink-0">
-        <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-muted-foreground">진행률</span>
-          <span className="font-semibold">{progress}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-          <div 
-            className={`h-2 rounded-full transition-all duration-300 ${
-              isExpired ? 'bg-gray-400' : 'bg-contest-gradient'
-            }`}
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        
-        {/* 다음 할 일 표시 */}
-        {nextAction && !isExpired && (
-          <div className="flex items-center gap-2 text-sm">
-            <nextAction.icon className={`h-4 w-4 ${nextAction.color} flex-shrink-0`} />
-            <span className={`${nextAction.color} font-medium`}>{nextAction.text}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Project Status Section */}
-      <div className="space-y-3 mb-4 flex-shrink-0">
-        {/* 마감일 */}
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>마감: {deadline || '미정'}</span>
-        </div>
-        
-        {/* 팀원 수 */}
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Users className="h-4 w-4 mr-2 flex-shrink-0" />
-          <span>{memberCount}명</span>
-        </div>
-
-        {/* 카테고리 */}
-        {category && (
-          <div className="flex items-center">
-            <span className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-medium">
-              {category}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Footer - 경고 표시 */}
-      <div className="flex items-center mt-auto flex-shrink-0">
-        {/* Urgency Warning */}
-        {!isExpired && displayDaysLeft <= 7 && displayDaysLeft > 0 && (
-          <div className="flex-1">
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-700">
-                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                <span className="text-sm font-medium">
-                  {displayDaysLeft <= 3 ? '마감 임박!' : '마감이 가까워졌습니다'}
-                </span>
+        {/* 공모전 주제 표시 */}
+        {contest_theme && (
+          <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Lightbulb className="h-3 w-3 text-purple-600 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-purple-600 font-medium">공모주제</p>
+                <p className="text-sm font-semibold text-purple-700 leading-tight line-clamp-2">{contest_theme}</p>
               </div>
             </div>
           </div>
         )}
-        
-        {/* 마감된 공모전 상태 표시 */}
-        {isExpired && (
-          <div className="flex-1">
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center gap-2 text-gray-600">
-                <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                <span className="text-sm font-medium">
-                  마감된 공모전
-                </span>
+      </CardHeader>
+
+      <CardContent className="flex-1 flex flex-col">
+        {/* Progress Section */}
+        <div className="mb-3 flex-shrink-0">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="text-muted-foreground">진행률</span>
+            <span className="font-semibold">{progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+            <div 
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                isExpired ? 'bg-gray-400' : 'bg-contest-gradient'
+              }`}
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          
+          {/* 다음 할 일 표시 */}
+          {nextAction && !isExpired && (
+            <div className="flex items-center gap-1 text-xs">
+              <nextAction.icon className={`h-3 w-3 ${nextAction.color} flex-shrink-0`} />
+              <span className={`${nextAction.color} font-medium`}>{nextAction.text}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Project Status Section */}
+        <div className="space-y-2 mb-3 flex-shrink-0">
+          {/* 마감일 */}
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="line-clamp-1">마감: {deadline || '미정'}</span>
+          </div>
+          
+          {/* 팀원 수 */}
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Users className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span>{memberCount}명</span>
+          </div>
+
+          {/* 카테고리 */}
+          {category && (
+            <div className="flex items-center">
+              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full font-medium line-clamp-1">
+                {category}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer - 경고 표시 */}
+        <div className="flex items-center mt-auto flex-shrink-0">
+          {/* Urgency Warning */}
+          {!isExpired && displayDaysLeft <= 7 && displayDaysLeft > 0 && (
+            <div className="flex-1">
+              <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-1 text-red-700">
+                  <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                  <span className="text-xs font-medium line-clamp-1">
+                    {displayDaysLeft <= 3 ? '마감 임박!' : '마감이 가까워졌습니다'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+          
+          {/* 마감된 공모전 상태 표시 */}
+          {isExpired && (
+            <div className="flex-1">
+              <div className="p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                  <span className="text-xs font-medium line-clamp-1">
+                    마감된 공모전
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 });
 
