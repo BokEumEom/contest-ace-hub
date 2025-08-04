@@ -445,23 +445,53 @@ export const useContestDetail = (contestId: string | undefined) => {
       ];
 
       // contest_details 테이블 업데이트
-      const { error } = await supabase
+      // First, check if a record already exists
+      const { data: existingRecord } = await supabase
         .from('contest_details')
-        .upsert({
-          user_id: contest.user_id,
-          contest_id: contest.id,
-          detail_type: 'team_members',
-          data: updatedTeamMembers
-        });
+        .select('id')
+        .eq('contest_id', contest.id)
+        .eq('detail_type', 'team_members')
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error adding team member:', error);
-        toast({
-          title: "팀원 추가 실패",
-          description: "팀원을 추가하는 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-        return;
+      if (existingRecord) {
+        // Update existing record
+        const { error } = await supabase
+          .from('contest_details')
+          .update({
+            data: updatedTeamMembers,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+
+        if (error) {
+          console.error('Error updating team members:', error);
+          toast({
+            title: "팀원 추가 실패",
+            description: "팀원을 추가하는 중 오류가 발생했습니다.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('contest_details')
+          .insert({
+            user_id: contest.user_id,
+            contest_id: contest.id,
+            detail_type: 'team_members',
+            data: updatedTeamMembers
+          });
+
+        if (error) {
+          console.error('Error inserting team members:', error);
+          toast({
+            title: "팀원 추가 실패",
+            description: "팀원을 추가하는 중 오류가 발생했습니다.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       // 로컬 상태 업데이트

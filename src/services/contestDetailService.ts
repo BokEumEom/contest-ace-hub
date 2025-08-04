@@ -61,18 +61,43 @@ export class ContestDetailService {
         return true;
       }
 
-      const { error } = await supabase
+      // First, check if a record already exists
+      const { data: existingRecord } = await supabase
         .from('contest_details')
-        .upsert({
-          user_id: userId,
-          contest_id: contestId,
-          detail_type: 'team_members',
-          data: teamMembers
-        });
+        .select('id')
+        .eq('contest_id', contestId)
+        .eq('detail_type', 'team_members')
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error saving team members:', error);
-        return false;
+      if (existingRecord) {
+        // Update existing record
+        const { error } = await supabase
+          .from('contest_details')
+          .update({
+            data: teamMembers,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+
+        if (error) {
+          console.error('Error updating team members:', error);
+          return false;
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('contest_details')
+          .insert({
+            user_id: userId,
+            contest_id: contestId,
+            detail_type: 'team_members',
+            data: teamMembers
+          });
+
+        if (error) {
+          console.error('Error inserting team members:', error);
+          return false;
+        }
       }
 
       return true;
@@ -115,18 +140,43 @@ export class ContestDetailService {
         return true;
       }
 
-      const { error } = await supabase
+      // First, check if a record already exists
+      const { data: existingRecord } = await supabase
         .from('contest_details')
-        .upsert({
-          user_id: userId,
-          contest_id: contestId,
-          detail_type: 'schedules',
-          data: schedules
-        });
+        .select('id')
+        .eq('contest_id', contestId)
+        .eq('detail_type', 'schedules')
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error saving schedules:', error);
-        return false;
+      if (existingRecord) {
+        // Update existing record
+        const { error } = await supabase
+          .from('contest_details')
+          .update({
+            data: schedules,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+
+        if (error) {
+          console.error('Error updating schedules:', error);
+          return false;
+        }
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('contest_details')
+          .insert({
+            user_id: userId,
+            contest_id: contestId,
+            detail_type: 'schedules',
+            data: schedules
+          });
+
+        if (error) {
+          console.error('Error inserting schedules:', error);
+          return false;
+        }
       }
 
       return true;
