@@ -120,14 +120,8 @@ const FileUploadArea = memo(({
     setSelectedFiles(files);
     
     if (files.length > 0) {
-      // 이미지 파일이 있으면 프롬프트 입력 모달 표시
-      const hasImageFiles = files.some(file => file.type.startsWith('image/'));
-      if (hasImageFiles) {
-        setShowPromptModal(true);
-      } else {
-        // 일반 파일은 기존 방식으로 업로드
-        onFileSelect(event);
-      }
+      // 모든 파일 타입에 대해 프롬프트 입력 모달 표시
+      setShowPromptModal(true);
     }
   };
 
@@ -140,12 +134,8 @@ const FileUploadArea = memo(({
     setSelectedFiles(files);
     
     if (files.length > 0) {
-      const hasImageFiles = files.some(file => file.type.startsWith('image/'));
-      if (hasImageFiles) {
-        setShowPromptModal(true);
-      } else {
-        onDrop(e);
-      }
+      // 모든 파일 타입에 대해 프롬프트 입력 모달 표시
+      setShowPromptModal(true);
     }
   };
 

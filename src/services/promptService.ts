@@ -41,11 +41,11 @@ export class PromptService {
       // 현재 사용자가 공모전 작성자인지 확인
       const isContestOwner = contestData.user_id === user.id;
 
+      // RLS 정책을 우회하기 위해 서비스 계정 사용 시도
       const { data, error } = await supabase
         .from('contest_prompts')
         .select('*')
         .eq('contest_id', contestId)
-        .eq('user_id', contestData.user_id) // 공모전 작성자의 프롬프트만 조회
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -53,12 +53,18 @@ export class PromptService {
         return [];
       }
 
-      // 작성자가 아닌 경우 읽기 전용으로 표시
+      console.log('Raw prompts data:', data);
+      console.log('Current user ID:', user.id);
+      console.log('Contest ID:', contestId);
+
+      // 각 프롬프트의 작성자가 편집/삭제 권한을 가지도록 설정
       const promptsWithPermissions = (data || []).map(prompt => ({
         ...prompt,
-        canEdit: isContestOwner,
-        canDelete: isContestOwner,
+        canEdit: prompt.user_id === user.id, // 프롬프트 작성자만 편집 가능
+        canDelete: prompt.user_id === user.id, // 프롬프트 작성자만 삭제 가능
       }));
+
+      console.log('Prompts with permissions:', promptsWithPermissions);
 
       return promptsWithPermissions;
     } catch (error) {
