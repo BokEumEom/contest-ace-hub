@@ -31,12 +31,36 @@ export interface Contest {
   tasks?: Task[]; // 추가: 진행상황 체크리스트
 }
 
+// 공모전 결과 관련 타입 추가
+export interface ContestResult {
+  id?: number;
+  contest_id: number;
+  description?: string;
+  status: string;
+  prize_amount?: string;
+  feedback?: string;
+  announcement_date: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  // 작품과의 연결
+  file_ids?: number[]; // 관련 파일 ID들
+}
+
+export interface ContestResultFormData {
+  description: string;
+  status: string;
+  prize_amount: string;
+  feedback: string;
+  announcement_date: string;
+  file_ids?: string[];
+}
+
 export interface ContestIdea {
   id: string;
   contestId: string;
   title: string;
   description: string;
-  aiGenerated: boolean;
   createdAt: string;
 }
 

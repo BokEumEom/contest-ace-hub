@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,27 +16,33 @@ import {
   Globe,
   Medal,
   Star,
-  Settings
+  Settings,
+  Plus,
+  Trash2,
+  Edit,
+  X
 } from 'lucide-react';
 import { useContestDetail } from '@/hooks/useContestDetail';
 import { useAuth } from '@/components/AuthProvider';
 import ProgressManager from '@/components/ProgressManager';
 import FileManager from '@/components/FileManager';
 import AIAssistant from '@/components/AIAssistant';
-import { ContestResultInput } from './ContestResultInput';
+import { ContestResultForm } from './ContestResultForm';
 import { Contest } from '@/types/contest';
+import { ContestResultService } from '@/services/contestResultService';
+import { ContestResultFormData, ContestResult } from '@/types/contest';
+import { Badge } from '@/components/ui/badge';
 
-interface ContestResult {
-  id: string;
-  teamName: string;
-  projectTitle: string;
-  description: string;
-  status: string;
-  rank?: number;
-  score?: number;
-  prizeAmount?: string;
-  feedback?: string;
-  announcementDate: string;
+interface ContestResultInputProps {
+  contestId: number;
+  onSave: (results: ContestResult[]) => void;
+}
+
+interface ContestResultFormProps {
+  contestId: number;
+  onSubmit: (result: ContestResultFormData) => Promise<void>;
+  onCancel: () => void;
+  isLoading?: boolean;
 }
 
 interface ContestTabsProps {
@@ -47,10 +53,10 @@ interface ContestTabsProps {
 }
 
 export const ContestTabs: React.FC<ContestTabsProps> = ({
-  activeTab,
   contest,
-  onProgressUpdate,
-  setActiveTab
+  activeTab,
+  setActiveTab,
+  onProgressUpdate
 }) => {
   // 실시간으로 남은 일수 계산하는 함수
   const calculateDaysLeft = (deadline: string) => {
@@ -74,6 +80,8 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
     }
   };
 
+
+
   const { updateContest } = useContestDetail(contest.id);
   const { user } = useAuth();
   
@@ -85,6 +93,57 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
     updateContest(parseInt(contest.id), { tasks, progress });
     onProgressUpdate(progress); // 기존 진행률도 갱신
   };
+
+  // 결과 목록 상태
+  const [results, setResults] = useState<ContestResult[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // 결과 목록 로드
+  const loadResults = async () => {
+    setLoadingResults(true);
+    try {
+      const contestResults = await ContestResultService.getResults(parseInt(contest.id));
+      setResults(contestResults);
+    } catch (error) {
+      console.error('Error loading results:', error);
+    } finally {
+      setLoadingResults(false);
+    }
+  };
+
+  // 결과 추가 후 목록 새로고침
+  const handleAddResult = async (resultData: ContestResultFormData) => {
+    try {
+      const newResult = await ContestResultService.addResult(parseInt(contest.id), resultData);
+      if (newResult) {
+        // 결과 목록 새로고침
+        await loadResults();
+        // 폼 숨기기
+        setShowAddForm(false);
+      }
+    } catch (error) {
+      console.error('Error adding result:', error);
+    }
+  };
+
+  // 결과 삭제
+  const handleDeleteResult = async (resultId: number) => {
+    try {
+      await ContestResultService.deleteResult(resultId);
+      // 결과 목록 새로고침
+      await loadResults();
+    } catch (error) {
+      console.error('Error deleting result:', error);
+    }
+  };
+
+  // 결과 탭 활성화 시 결과 목록 로드
+  useEffect(() => {
+    if (activeTab === 'results') {
+      loadResults();
+    }
+  }, [activeTab, contest.id]);
 
   if (activeTab === 'overview') {
     return (
@@ -470,17 +529,131 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-contest-orange" />
+              <Trophy className="h-5 w-5 text-yellow-600" />
               결과 관리
             </CardTitle>
+            <CardDescription>
+              공모전 결과를 관리하고 참가자들에게 피드백을 제공하세요
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ContestResultInput
-              contestId={contest.id}
-              onSave={handleSaveResults}
-              existingResults={[]}
-              isLoading={false}
-            />
+            {/* 권한 확인 및 안내 */}
+            {(contest as any).user_id === user?.id ? (
+              <div className="space-y-6">
+                {/* 결과 추가 버튼 */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">결과 관리</h3>
+                  <Button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {showAddForm ? (
+                      <>
+                        <X className="h-4 w-4 mr-2" />
+                        폼 숨기기
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        결과 추가
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* 결과 추가 폼 (토글) */}
+                {showAddForm && (
+                  <ContestResultForm
+                    contestId={parseInt(contest.id)}
+                    onSubmit={handleAddResult}
+                    onCancel={() => setShowAddForm(false)}
+                    isLoading={false}
+                  />
+                )}
+                
+                {/* 기존 결과 목록 */}
+                <div className="mt-8">
+                  <h4 className="text-lg font-semibold mb-4">등록된 결과</h4>
+                  
+                  {loadingResults ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                      <p className="text-muted-foreground">결과를 불러오는 중...</p>
+                    </div>
+                  ) : results.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>아직 등록된 결과가 없습니다.</p>
+                      <p className="text-sm">위 버튼을 클릭하여 첫 번째 결과를 추가해보세요.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {results.map((result) => (
+                        <Card key={result.id} className="border-l-4 border-l-blue-500">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Badge variant="default" className="bg-blue-600">
+                                    {result.status}
+                                  </Badge>
+                                  {result.prize_amount && (
+                                    <Badge variant="outline">
+                                      {result.prize_amount}
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                {result.description && (
+                                  <p className="text-sm text-gray-700 mb-2">{result.description}</p>
+                                )}
+                                
+                                {result.feedback && (
+                                  <div className="bg-gray-50 p-3 rounded-md">
+                                    <p className="text-xs font-medium text-gray-600 mb-1">심사 피드백</p>
+                                    <p className="text-sm text-gray-700">{result.feedback}</p>
+                                  </div>
+                                )}
+                                
+                                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                                  <span>발표일: {new Date(result.announcement_date).toLocaleDateString()}</span>
+                                  {result.file_ids && result.file_ids.length > 0 && (
+                                    <span>연결된 파일: {result.file_ids.length}개</span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteResult(result.id!)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Settings className="h-8 w-8 text-gray-400" />
+                </div>
+                <h4 className="text-lg font-medium text-foreground mb-2">
+                  결과 관리 권한이 없습니다
+                </h4>
+                <p className="text-muted-foreground">
+                  공모전 작성자만 결과를 관리할 수 있습니다.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

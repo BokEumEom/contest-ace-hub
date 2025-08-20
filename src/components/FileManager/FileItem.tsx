@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Eye, Download, Trash2, MessageSquare, File, Video, Music, Image, Wand2, Edit } from 'lucide-react';
+import { Eye, Download, Trash2, MessageSquare, File, Video, Music, Image, Wand2, Edit, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileItem as FileItemType } from '@/services/fileService';
@@ -7,6 +7,7 @@ import { FileService } from '@/services/fileService';
 import { useImageCache } from './hooks/useImageCache';
 import { useVideoThumbnail } from './hooks/useVideoThumbnail';
 import { isImageFile, isVideoFile, isAudioFile, getFileTypeColor } from './utils/fileUtils';
+import { ContestResult } from '@/types/contest';
 
 interface FileItemProps {
   file: FileItemType;
@@ -15,6 +16,8 @@ interface FileItemProps {
   onDelete: (fileId: number) => void;
   onEdit?: (file: FileItemType) => void;
   getFileTypeColor: (type: string) => string;
+  // 결과 연결 정보 추가 (선택사항)
+  contestResult?: ContestResult;
 }
 
 const FileItem = memo(({ 
@@ -22,8 +25,9 @@ const FileItem = memo(({
   onView, 
   onDownload, 
   onDelete, 
-  onEdit,
-  getFileTypeColor 
+  onEdit, 
+  getFileTypeColor,
+  contestResult
 }: FileItemProps) => {
   // 이미지 캐싱 훅 사용
   const { cachedUrl, isLoading: imageLoading } = useImageCache(
@@ -47,6 +51,31 @@ const FileItem = memo(({
 
   // 파일이 뷰어로 열릴 수 있는지 확인 (이미지, 비디오 파일)
   const canView = isImageFile(file.name) || isVideoFile(file.name);
+
+  // 결과 상태 배지 렌더링
+  const getResultStatusBadge = (status: string) => {
+    const statusConfig = {
+      awarded_1st: { label: '🥇 1등상', className: 'bg-yellow-100 text-yellow-800' },
+      awarded_2nd: { label: '🥈 2등상', className: 'bg-gray-100 text-gray-800' },
+      awarded_3rd: { label: '🥉 3등상', className: 'bg-amber-100 text-amber-800' },
+      special_award: { label: '🎖️ 특별상', className: 'bg-purple-100 text-purple-800' },
+      final_selected: { label: '🎯 최종 선정', className: 'bg-blue-100 text-blue-800' },
+      excellent_work: { label: '🌟 우수작', className: 'bg-green-100 text-green-800' },
+      idea_award: { label: '💡 아이디어상', className: 'bg-indigo-100 text-indigo-800' },
+      submitted: { label: '📝 제출 완료', className: 'bg-green-100 text-green-800' },
+      under_review: { label: '🔍 심사 중', className: 'bg-yellow-100 text-yellow-800' },
+      review_completed: { label: '📊 심사 완료', className: 'bg-blue-100 text-blue-800' },
+      not_selected: { label: '📋 1차 탈락', className: 'bg-red-100 text-red-800' },
+      needs_revision: { label: '📝 보완 필요', className: 'bg-orange-100 text-orange-800' }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return config ? (
+      <Badge className={`${config.className} text-xs`}>
+        {config.label}
+      </Badge>
+    ) : null;
+  };
 
   // 썸네일 렌더링 함수
   const renderThumbnail = () => {
@@ -107,7 +136,7 @@ const FileItem = memo(({
                   if (parent) {
                     const fallbackIcon = document.createElement('div');
                     fallbackIcon.className = `w-16 h-16 flex items-center justify-center ${getFileTypeColor('video')} rounded border`;
-                    fallbackIcon.innerHTML = '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
+                    fallbackIcon.innerHTML = '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z"></path></svg>';
                     parent.appendChild(fallbackIcon);
                   }
                 }}
@@ -159,6 +188,15 @@ const FileItem = memo(({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <p className="font-medium text-sm truncate" title={file.name}>{file.name}</p>
+              
+              {/* 결과 상태 배지 표시 */}
+              {contestResult && (
+                <div className="flex items-center gap-1">
+                  <Trophy className="h-3 w-3 text-yellow-600" />
+                  {getResultStatusBadge(contestResult.status)}
+                </div>
+              )}
+              
               {/* 프롬프트가 있는 파일 표시 */}
               {file.prompt && (
                 <Badge variant="secondary" className="text-xs flex-shrink-0">
@@ -222,6 +260,18 @@ const FileItem = memo(({
             )}
           </div>
         </div>
+        
+        {/* 연결된 결과 정보 표시 */}
+        {contestResult && (
+          <div className="mt-2 p-2 bg-blue-50 rounded text-xs border border-blue-200">
+            <div className="text-blue-700">
+              <strong>연결된 결과:</strong> {contestResult.project_title}
+              {contestResult.prize_amount && (
+                <span className="ml-2">• {contestResult.prize_amount}</span>
+              )}
+            </div>
+          </div>
+        )}
         
         {/* 프롬프트 표시 */}
         {file.prompt && (

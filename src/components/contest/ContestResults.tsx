@@ -3,23 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, Medal, Award, Users, Calendar } from 'lucide-react';
-
-interface ContestResult {
-  id: string;
-  rank: number;
-  team_name: string;
-  members: string[];
-  score: number;
-  status: 'winner' | 'shortlisted' | 'participant';
-  submitted_at: string;
-  feedback?: string;
-}
+import { ContestResult } from '@/types/contest';
 
 interface ContestStats {
-  total_participants: number;
-  total_teams: number;
+  total_results: number;
   winners_count: number;
+  runner_ups_count: number;
   shortlisted_count: number;
+  participants_count: number;
+  honorable_mentions_count: number;
   average_score: number;
 }
 
@@ -34,14 +26,16 @@ export const ContestResults: React.FC<ContestResultsProps> = ({
   stats,
   isLoading
 }) => {
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'awarded_1st':
         return <Trophy className="h-6 w-6 text-yellow-500" />;
-      case 2:
+      case 'awarded_2nd':
         return <Medal className="h-6 w-6 text-gray-400" />;
-      case 3:
+      case 'awarded_3rd':
         return <Medal className="h-6 w-6 text-amber-600" />;
+      case 'special_award':
+        return <Award className="h-6 w-6 text-purple-500" />;
       default:
         return <Award className="h-6 w-6 text-blue-500" />;
     }
@@ -49,12 +43,28 @@ export const ContestResults: React.FC<ContestResultsProps> = ({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      winner: { label: '우승', className: 'bg-yellow-100 text-yellow-800' },
-      shortlisted: { label: '최종후보', className: 'bg-blue-100 text-blue-800' },
-      participant: { label: '참가', className: 'bg-gray-100 text-gray-800' }
+      // 🏆 수상 그룹
+      awarded_1st: { label: '🥇 1등상', className: 'bg-yellow-100 text-yellow-800' },
+      awarded_2nd: { label: '🥈 2등상', className: 'bg-gray-100 text-gray-800' },
+      awarded_3rd: { label: '🥉 3등상', className: 'bg-amber-100 text-amber-800' },
+      special_award: { label: '🎖️ 특별상', className: 'bg-purple-100 text-purple-800' },
+      
+      // 📋 선정 그룹
+      final_selected: { label: '🎯 최종 선정', className: 'bg-blue-100 text-blue-800' },
+      excellent_work: { label: '🌟 우수작', className: 'bg-green-100 text-green-800' },
+      idea_award: { label: '💡 아이디어상', className: 'bg-indigo-100 text-indigo-800' },
+      
+      // ✅ 진행 상태 그룹
+      submitted: { label: '📝 제출 완료', className: 'bg-green-100 text-green-800' },
+      under_review: { label: '🔍 심사 중', className: 'bg-yellow-100 text-yellow-800' },
+      review_completed: { label: '📊 심사 완료', className: 'bg-blue-100 text-blue-800' },
+      
+      // ❌ 미선정 그룹
+      not_selected: { label: '📋 1차 탈락', className: 'bg-red-100 text-red-800' },
+      needs_revision: { label: '📝 보완 필요', className: 'bg-orange-100 text-orange-800' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.participant;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.submitted;
     
     return (
       <Badge className={config.className}>
@@ -117,7 +127,7 @@ export const ContestResults: React.FC<ContestResultsProps> = ({
           <CardContent>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />
-              <span className="text-2xl font-bold">{stats.total_participants}</span>
+              <span className="text-2xl font-bold">{stats.participants_count}</span>
             </div>
           </CardContent>
         </Card>
@@ -131,7 +141,7 @@ export const ContestResults: React.FC<ContestResultsProps> = ({
           <CardContent>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />
-              <span className="text-2xl font-bold">{stats.total_teams}</span>
+              <span className="text-2xl font-bold">{stats.total_results}</span>
             </div>
           </CardContent>
         </Card>
@@ -170,16 +180,20 @@ export const ContestResults: React.FC<ContestResultsProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                      {getRankIcon(result.rank)}
-                      <span className="text-lg font-semibold">#{result.rank}</span>
+                      {getStatusIcon(result.status)}
+                      <span className="text-lg font-semibold">
+                        {result.status.includes('awarded') ? '🏆' : 
+                         result.status.includes('selected') ? '📋' : 
+                         result.status.includes('progress') ? '✅' : '❌'}
+                      </span>
                     </div>
                     
                     <div>
-                      <h3 className="font-semibold text-lg">{result.team_name}</h3>
+                      <h3 className="font-semibold text-lg">{result.project_title}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {result.members.join(', ')}
+                          {result.team_name}
                         </span>
                       </div>
                     </div>
@@ -188,25 +202,33 @@ export const ContestResults: React.FC<ContestResultsProps> = ({
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-2xl font-bold text-primary">
-                        {result.score}
+                        {result.prize_amount || '-'}
                       </div>
-                      <div className="text-sm text-muted-foreground">점수</div>
+                      <div className="text-sm text-muted-foreground">상금</div>
                     </div>
                     
                     <div className="flex flex-col items-end gap-2">
                       {getStatusBadge(result.status)}
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3" />
-                        {new Date(result.submitted_at).toLocaleDateString()}
+                        {new Date(result.announcement_date).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
                 </div>
                 
+                {result.description && (
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>프로젝트 설명:</strong> {result.description}
+                    </p>
+                  </div>
+                )}
+                
                 {result.feedback && (
                   <div className="mt-4 p-3 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      <strong>피드백:</strong> {result.feedback}
+                      <strong>심사 피드백:</strong> {result.feedback}
                     </p>
                   </div>
                 )}
