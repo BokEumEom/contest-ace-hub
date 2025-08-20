@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useContests } from './useContests';
 import { ContestDetailService, TeamMember, Schedule } from '@/services/contestDetailService';
+import { ContestResultService } from '@/services/contestResultService';
 import { ContestService } from '@/services/contestService';
 import { useProfile } from '@/hooks/useProfile';
 import { UserSearchResult } from '@/services/userService';
@@ -98,6 +99,17 @@ export const useContestDetail = (contestId: string | undefined) => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newSchedule, setNewSchedule] = useState({ title: '', date: '', description: '' });
 
+  // 결과 관리 상태
+  const [results, setResults] = useState<any[]>([]);
+  const [newResult, setNewResult] = useState({
+    description: '',
+    status: '',
+    prize_amount: '',
+    feedback: '',
+    announcement_date: new Date().toISOString().split('T')[0],
+    file_ids: []
+  });
+
   // Contest 로딩 로직 개선
   useEffect(() => {
     if (!contestId) {
@@ -157,8 +169,77 @@ export const useContestDetail = (contestId: string | undefined) => {
         precautions: '',
         contestUrl: ''
       });
+
+      // 결과 데이터 로드
+      loadResults();
     }
   }, [contest, loading]);
+
+  // 결과 데이터 로드 함수
+  const loadResults = async () => {
+    if (!contest?.id) return;
+    
+    try {
+      const contestResults = await ContestResultService.getResults(contest.id);
+      setResults(contestResults);
+    } catch (error) {
+      console.error('Error loading results:', error);
+      setResults([]);
+    }
+  };
+
+  // 결과 추가 함수
+  const handleAddResult = async () => {
+    if (!contest?.id || !newResult.status || !newResult.announcement_date) {
+      alert('필수 항목을 모두 입력해주세요.');
+      return;
+    }
+
+    try {
+      const resultData = {
+        description: newResult.description || '',
+        status: newResult.status,
+        prize_amount: newResult.prize_amount || '',
+        feedback: newResult.feedback || '',
+        announcement_date: newResult.announcement_date,
+        file_ids: newResult.file_ids || []
+      };
+
+      await ContestResultService.addResult(contest.id, resultData);
+      
+      // 결과 목록 새로고침
+      await loadResults();
+      
+      // 폼 초기화
+      setNewResult({
+        description: '',
+        status: '',
+        prize_amount: '',
+        feedback: '',
+        announcement_date: new Date().toISOString().split('T')[0],
+        file_ids: []
+      });
+
+      alert('결과가 성공적으로 추가되었습니다.');
+    } catch (error) {
+      console.error('Error adding result:', error);
+      alert('결과 추가 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 결과 삭제 함수
+  const handleDeleteResult = async (resultId: number) => {
+    if (!confirm('정말로 이 결과를 삭제하시겠습니까?')) return;
+
+    try {
+      await ContestResultService.deleteResult(resultId);
+      await loadResults();
+      alert('결과가 삭제되었습니다.');
+    } catch (error) {
+      console.error('Error deleting result:', error);
+      alert('결과 삭제 중 오류가 발생했습니다.');
+    }
+  };
 
   // 팀원 데이터 Supabase에서 불러오기
   useEffect(() => {
@@ -616,6 +697,9 @@ export const useContestDetail = (contestId: string | undefined) => {
     schedules,
     newSchedule,
     setNewSchedule,
+    results,
+    newResult,
+    setNewResult,
     handleProgressUpdate,
     handleEditSubmit,
     handleStatusChange,
@@ -630,6 +714,8 @@ export const useContestDetail = (contestId: string | undefined) => {
     getStatusText,
     getDaysLeftColor,
     updateContest, // 추가: 외부에서 updateContest 사용 가능
-    addTeamMemberFromSearch // 추가: 사용자 검색 결과에서 팀원 추가 함수
+    addTeamMemberFromSearch, // 추가: 사용자 검색 결과에서 팀원 추가 함수
+    handleAddResult, // 추가: 결과 추가 함수
+    handleDeleteResult // 추가: 결과 삭제 함수
   };
 }; 

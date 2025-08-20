@@ -22,7 +22,8 @@ import {
   Info,
   Lightbulb,
   Globe,
-  Target
+  Target,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +49,7 @@ const MobileContestDetail = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [showResultForm, setShowResultForm] = useState(false);
 
   // 현재 사용자 정보 로드
   useEffect(() => {
@@ -92,7 +94,12 @@ const MobileContestDetail = () => {
     openEditModal,
     getStatusColor,
     getStatusText,
-    getDaysLeftColor
+    getDaysLeftColor,
+    results,
+    newResult,
+    setNewResult,
+    handleAddResult,
+    handleDeleteResult
   } = useContestDetail(id);
 
   // 소유자 권한 확인
@@ -251,10 +258,10 @@ const MobileContestDetail = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10"
+              className="h-12 w-12 -ml-2"
               onClick={handleBack}
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-6 w-6" />
             </Button>
 
             {/* 제목 */}
@@ -263,24 +270,24 @@ const MobileContestDetail = () => {
             </h1>
 
             {/* 액션 버튼들 */}
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-2">
               {isOwner && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10"
+                  className="h-12 w-12"
                   onClick={() => setShowActions(true)}
                 >
-                  <Edit className="h-5 w-5" />
+                  <Edit className="h-6 w-6" />
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10"
+                className="h-12 w-12"
                 onClick={() => setShowActions(true)}
               >
-                <Share2 className="h-5 w-5" />
+                <Share2 className="h-6 w-6" />
               </Button>
             </div>
           </div>
@@ -290,63 +297,73 @@ const MobileContestDetail = () => {
       {/* 컨텐츠 영역 */}
       <div className="pb-20">
         {/* 공모전 정보 카드 */}
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="space-y-3">
+        <div className="bg-white border-b border-gray-200 p-6">
+          <div className="space-y-4">
             {/* 상태 및 마감일 */}
             <div className="flex items-center justify-between">
-              <Badge className={getStatusColor(contest.status)}>
+              <Badge className={`${getStatusColor(contest.status)} px-3 py-1.5 text-sm font-medium`}>
                 {getStatusText(contest.status)}
               </Badge>
-              <div className={`text-sm font-bold px-3 py-1 rounded-full ${getDaysLeftColor(contest.days_left)}`}>
+              <div className={`text-sm font-bold px-4 py-2 rounded-full ${getDaysLeftColor(contest.days_left)}`}>
                 {contest.days_left > 0 ? `D-${contest.days_left}` : '마감'}
               </div>
             </div>
 
             {/* 진행률 */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">진행률</span>
-                <span className="font-medium">{contest.progress || 0}%</span>
+                <span className="text-gray-600 font-medium">진행률</span>
+                <span className="font-bold text-lg">{contest.progress || 0}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
-                  className="bg-contest-gradient h-2 rounded-full transition-all duration-300"
+                  className="bg-contest-gradient h-3 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${contest.progress || 0}%` }}
                 />
               </div>
             </div>
 
             {/* 기본 정보 */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Calendar className="h-4 w-4" />
-                <span>{contest.deadline || '미정'}</span>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <Calendar className="h-5 w-5 text-gray-600" />
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">마감일</p>
+                  <p className="text-sm font-semibold text-gray-900">{contest.deadline || '미정'}</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <Users className="h-4 w-4" />
-                <span>{contest.team_members_count || 0}명</span>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <Users className="h-5 w-5 text-gray-600" />
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">팀원</p>
+                  <p className="text-sm font-semibold text-gray-900">{contest.team_members_count || 0}명</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* 스크롤 컨텐츠 */}
-        <div className="space-y-6 p-4">
+        <div className="space-y-6 p-6">
           {/* 공모전 개요 섹션 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Info className="h-5 w-5 text-contest-orange" />
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="p-2 bg-contest-orange bg-opacity-10 rounded-lg">
+                <Info className="h-6 w-6 text-contest-orange" />
+              </div>
               공모전 개요
             </h3>
 
             {/* 공모전 주제 */}
             {contest.contest_theme && (
-              <div className="bg-purple-50 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <Lightbulb className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-5 border border-purple-200">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-purple-100 rounded-xl">
+                    <Lightbulb className="h-6 w-6 text-purple-600" />
+                  </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-purple-900 mb-1">공모주제</h4>
-                    <p className="text-sm text-purple-700">{contest.contest_theme}</p>
+                    <h4 className="font-bold text-purple-900 mb-2 text-lg">공모주제</h4>
+                    <p className="text-purple-800 leading-relaxed">{contest.contest_theme}</p>
                   </div>
                 </div>
               </div>
@@ -354,30 +371,43 @@ const MobileContestDetail = () => {
 
             {/* 조직 정보 */}
             {contest.organization && (
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Globe className="h-4 w-4 text-gray-600" />
-                  <h4 className="font-semibold text-gray-900">주최기관</h4>
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Globe className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-lg">주최기관</h4>
                 </div>
-                <p className="text-sm text-gray-600">{contest.organization}</p>
-              </div>
-            )}
-
-            {/* 카테고리 */}
-            {contest.category && (
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-2">카테고리</h4>
-                <Badge variant="outline">{contest.category}</Badge>
+                <p className="text-gray-700 text-lg font-medium">{contest.organization}</p>
               </div>
             )}
 
             {/* 설명 */}
             {contest.description && (
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-2">공모전 소개</h4>
-                <p className="text-sm text-gray-600 leading-relaxed">{contest.description}</p>
+              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <h4 className="font-bold text-gray-900 mb-3 text-lg">공모전 소개</h4>
+                <p className="text-gray-700 leading-relaxed text-base">{contest.description}</p>
               </div>
             )}
+          </div>
+
+          {/* AI 어시스턴트 섹션 */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Lightbulb className="h-6 w-6 text-yellow-600" />
+              </div>
+              AI 어시스턴트
+            </h3>
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-5 border border-yellow-200">
+              <p className="text-gray-700 mb-4 text-base leading-relaxed">
+                AI를 활용하여 공모전 준비를 도와드립니다. 아이디어 구상부터 제출까지 모든 과정을 지원합니다.
+              </p>
+              <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+                <Lightbulb className="h-5 w-5 mr-2" />
+                AI와 대화하기
+              </Button>
+            </div>
           </div>
 
           {/* 진행 상황 섹션 */}
@@ -655,34 +685,115 @@ const MobileContestDetail = () => {
             )}
           </div>
 
-          {/* AI 어시스턴트 섹션 */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-contest-orange" />
-              AI 어시스턴트
-            </h3>
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-sm text-gray-600 mb-4">
-                AI를 활용하여 공모전 준비를 도와드립니다.
-              </p>
-              <Button className="w-full bg-contest-gradient text-white">
-                <Lightbulb className="h-4 w-4 mr-2" />
-                AI와 대화하기
-              </Button>
-            </div>
-          </div>
-
           {/* 결과 섹션 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-contest-orange" />
-              결과
-            </h3>
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-sm text-gray-600">
-                공모전 결과가 발표되면 여기에 표시됩니다.
-              </p>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Trophy className="h-6 w-6 text-yellow-600" />
+                </div>
+                결과
+              </h3>
+              {isOwner && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowResultForm(true)}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  결과 추가
+                </Button>
+              )}
             </div>
+            
+            {/* 결과 목록 */}
+            {results && results.length > 0 ? (
+              <div className="space-y-4">
+                {results.map((result, index) => (
+                  <div key={result.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className="bg-blue-600 text-white text-xs px-3 py-1.5 font-medium">
+                          {result.status}
+                        </Badge>
+                        {result.prize_amount && (
+                          <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50 text-xs px-3 py-1.5 font-medium">
+                            🏆 {result.prize_amount}
+                          </Badge>
+                        )}
+                        {index === 0 && (
+                          <Badge variant="outline" className="border-yellow-300 text-yellow-700 bg-yellow-50 text-xs px-3 py-1.5 font-medium">
+                            ✨ 최신
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {isOwner && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteResult(result.id!)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2 h-10 w-10 rounded-full"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {result.description && (
+                      <p className="text-gray-700 mb-4 leading-relaxed text-base">{result.description}</p>
+                    )}
+                    
+                    {result.feedback && (
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 mb-4">
+                        <p className="text-xs font-bold text-blue-700 mb-2 flex items-center gap-2">
+                          <MessageSquare className="h-3 w-3" />
+                          심사 피드백
+                        </p>
+                        <p className="text-blue-800 leading-relaxed text-sm">{result.feedback}</p>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                      <span className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span className="font-medium">{new Date(result.announcement_date).toLocaleDateString()}</span>
+                      </span>
+                      {result.file_ids && result.file_ids.length > 0 && (
+                        <span className="flex items-center gap-2">
+                          <File className="h-4 w-4" />
+                          <span className="font-medium">파일 {result.file_ids.length}개</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8 text-center border border-gray-200">
+                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Trophy className="h-10 w-10 text-gray-400" />
+                </div>
+                <h4 className="text-lg font-bold text-gray-900 mb-3">
+                  {isOwner ? '아직 등록된 결과가 없습니다' : '결과가 발표되지 않았습니다'}
+                </h4>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  {isOwner 
+                    ? '공모전 결과를 추가하여 참가자들에게 피드백을 제공하세요'
+                    : '결과가 발표되면 여기에 표시됩니다'
+                  }
+                </p>
+                {isOwner && (
+                  <Button
+                    onClick={() => setShowResultForm(true)}
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    첫 번째 결과 추가
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 하단 여백 */}
@@ -1015,6 +1126,125 @@ const MobileContestDetail = () => {
         cancelText="취소"
         variant="destructive"
       />
+
+      {/* 결과 추가 폼 모달 */}
+      {showResultForm && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Trophy className="h-6 w-6 text-yellow-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">결과 추가</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowResultForm(false)}
+                className="h-10 w-10 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="space-y-5">
+              {/* 결과 상태 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  결과 상태 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newResult.status}
+                  onChange={(e) => setNewResult({ ...newResult, status: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base transition-all duration-200"
+                  placeholder="예: 1등상, 특별상, 최종선정"
+                />
+              </div>
+              
+              {/* 상금 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  상금
+                </label>
+                <input
+                  type="text"
+                  value={newResult.prize_amount}
+                  onChange={(e) => setNewResult({ ...newResult, prize_amount: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base transition-all duration-200"
+                  placeholder="예: 100만원 또는 특별상"
+                />
+              </div>
+              
+              {/* 발표일 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  발표일 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={newResult.announcement_date}
+                  onChange={(e) => setNewResult({ ...newResult, announcement_date: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base transition-all duration-200"
+                />
+              </div>
+              
+              {/* 설명 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  설명
+                </label>
+                <textarea
+                  value={newResult.description}
+                  onChange={(e) => setNewResult({ ...newResult, description: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base transition-all duration-200 resize-none"
+                  placeholder="결과에 대한 설명"
+                  rows={3}
+                />
+              </div>
+              
+              {/* 피드백 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  심사 피드백
+                </label>
+                <textarea
+                  value={newResult.feedback}
+                  onChange={(e) => setNewResult({ ...newResult, feedback: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-base transition-all duration-200 resize-none"
+                  placeholder="참가자에게 전달할 피드백"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-6">
+                <Button
+                  onClick={handleAddResult}
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+                  disabled={!newResult.status || !newResult.announcement_date}
+                >
+                  <Trophy className="h-5 w-5 mr-2" />
+                  결과 추가
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowResultForm(false)}
+                  className="flex-1 py-3 text-base font-medium border-2 border-gray-200 hover:border-gray-300 rounded-xl"
+                >
+                  취소
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          {/* 배경 클릭으로 닫기 */}
+          <div 
+            className="absolute inset-0 -z-10"
+            onClick={() => setShowResultForm(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
