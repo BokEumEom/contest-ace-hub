@@ -20,7 +20,9 @@ import {
   Plus,
   Trash2,
   Edit,
-  X
+  X,
+  MessageSquare,
+  File
 } from 'lucide-react';
 import { useContestDetail } from '@/hooks/useContestDetail';
 import { useAuth } from '@/components/AuthProvider';
@@ -121,20 +123,32 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
         await loadResults();
         // 폼 숨기기
         setShowAddForm(false);
+        // 성공 피드백 (실제로는 toast나 notification 사용 권장)
+        console.log('✅ 결과가 성공적으로 추가되었습니다!');
       }
     } catch (error) {
-      console.error('Error adding result:', error);
+      console.error('❌ 결과 추가 중 오류 발생:', error);
+      // 에러 피드백 (실제로는 toast나 notification 사용 권장)
+      alert('결과 추가 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
 
   // 결과 삭제
   const handleDeleteResult = async (resultId: number) => {
+    if (!confirm('정말로 이 결과를 삭제하시겠습니까?')) {
+      return;
+    }
+    
     try {
       await ContestResultService.deleteResult(resultId);
       // 결과 목록 새로고침
       await loadResults();
+      // 성공 피드백
+      console.log('✅ 결과가 성공적으로 삭제되었습니다!');
     } catch (error) {
-      console.error('Error deleting result:', error);
+      console.error('❌ 결과 삭제 중 오류 발생:', error);
+      // 에러 피드백
+      alert('결과 삭제 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -540,95 +554,167 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             {/* 권한 확인 및 안내 */}
             {(contest as any).user_id === user?.id ? (
               <div className="space-y-6">
-                {/* 결과 추가 버튼 */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">결과 관리</h3>
-                  <Button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    {showAddForm ? (
-                      <>
-                        <X className="h-4 w-4 mr-2" />
-                        폼 숨기기
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        결과 추가
-                      </>
+                {/* 결과 추가 버튼 및 상태 표시 */}
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <Trophy className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-blue-900">결과 관리</h4>
+                      <p className="text-sm text-blue-700">
+                        {results.length > 0 
+                          ? `${results.length}개의 결과가 등록되어 있습니다` 
+                          : '아직 등록된 결과가 없습니다'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {results.length > 0 && (
+                      <Badge variant="outline" className="bg-white">
+                        총 {results.length}개
+                      </Badge>
                     )}
-                  </Button>
+                    <Button
+                      onClick={() => setShowAddForm(!showAddForm)}
+                      className={`transition-all duration-200 ${
+                        showAddForm 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+                      }`}
+                    >
+                      {showAddForm ? (
+                        <>
+                          <X className="h-4 w-4 mr-2" />
+                          폼 닫기
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          새 결과 추가
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* 결과 추가 폼 (토글) */}
-                {showAddForm && (
-                  <ContestResultForm
-                    contestId={parseInt(contest.id)}
-                    onSubmit={handleAddResult}
-                    onCancel={() => setShowAddForm(false)}
-                    isLoading={false}
-                  />
-                )}
+                <div className={`transition-all duration-300 ease-in-out ${
+                  showAddForm 
+                    ? 'max-h-[2000px] opacity-100' 
+                    : 'max-h-0 opacity-0 overflow-hidden'
+                }`}>
+                  {showAddForm && (
+                    <div className="pt-4">
+                      <ContestResultForm
+                        contestId={parseInt(contest.id)}
+                        onSubmit={handleAddResult}
+                        onCancel={() => setShowAddForm(false)}
+                        isLoading={false}
+                      />
+                    </div>
+                  )}
+                </div>
                 
                 {/* 기존 결과 목록 */}
-                <div className="mt-8">
-                  <h4 className="text-lg font-semibold mb-4">등록된 결과</h4>
-                  
+                <div className={`transition-all duration-300 ease-in-out ${
+                  results.length > 0 ? 'opacity-100' : 'opacity-50'
+                }`}>
                   {loadingResults ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-                      <p className="text-muted-foreground">결과를 불러오는 중...</p>
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-muted-foreground font-medium">결과를 불러오는 중...</p>
                     </div>
                   ) : results.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>아직 등록된 결과가 없습니다.</p>
-                      <p className="text-sm">위 버튼을 클릭하여 첫 번째 결과를 추가해보세요.</p>
+                    <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-medium text-gray-600 mb-2">아직 등록된 결과가 없습니다</h4>
+                      <p className="text-sm text-gray-500 mb-4">
+                        첫 번째 결과를 추가하여 공모전을 완성해보세요
+                      </p>
+                      <Button
+                        onClick={() => setShowAddForm(true)}
+                        variant="outline"
+                        className="border-gray-400 text-gray-600 hover:bg-gray-100"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        첫 번째 결과 추가
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {results.map((result) => (
-                        <Card key={result.id} className="border-l-4 border-l-blue-500">
-                          <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-semibold text-gray-800">등록된 결과</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>총 {results.length}개</span>
+                          <span>•</span>
+                          <span>최신순</span>
+                        </div>
+                      </div>
+                      
+                      {results.map((result, index) => (
+                        <Card 
+                          key={result.id} 
+                          className={`border-l-4 border-l-blue-500 hover:shadow-md transition-all duration-200 ${
+                            index === 0 ? 'ring-2 ring-blue-100' : ''
+                          }`}
+                        >
+                          <CardContent className="p-6">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Badge variant="default" className="bg-blue-600">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <Badge variant="default" className="bg-blue-600 text-white px-3 py-1">
                                     {result.status}
                                   </Badge>
                                   {result.prize_amount && (
-                                    <Badge variant="outline">
-                                      {result.prize_amount}
+                                    <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
+                                      🏆 {result.prize_amount}
+                                    </Badge>
+                                  )}
+                                  {index === 0 && (
+                                    <Badge variant="outline" className="border-yellow-300 text-yellow-700 bg-yellow-50">
+                                      ✨ 최신
                                     </Badge>
                                   )}
                                 </div>
                                 
                                 {result.description && (
-                                  <p className="text-sm text-gray-700 mb-2">{result.description}</p>
+                                  <p className="text-gray-700 mb-3 leading-relaxed">{result.description}</p>
                                 )}
                                 
                                 {result.feedback && (
-                                  <div className="bg-gray-50 p-3 rounded-md">
-                                    <p className="text-xs font-medium text-gray-600 mb-1">심사 피드백</p>
-                                    <p className="text-sm text-gray-700">{result.feedback}</p>
+                                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-3">
+                                    <p className="text-xs font-medium text-blue-700 mb-2 flex items-center gap-2">
+                                      <MessageSquare className="h-3 w-3" />
+                                      심사 피드백
+                                    </p>
+                                    <p className="text-sm text-blue-800 leading-relaxed">{result.feedback}</p>
                                   </div>
                                 )}
                                 
-                                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                                  <span>발표일: {new Date(result.announcement_date).toLocaleDateString()}</span>
+                                <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    발표일: {new Date(result.announcement_date).toLocaleDateString()}
+                                  </span>
                                   {result.file_ids && result.file_ids.length > 0 && (
-                                    <span>연결된 파일: {result.file_ids.length}개</span>
+                                    <span className="flex items-center gap-1">
+                                      <File className="h-3 w-3" />
+                                      연결된 파일: {result.file_ids.length}개
+                                    </span>
                                   )}
                                 </div>
                               </div>
                               
-                              <div className="flex gap-2">
+                              <div className="flex gap-2 ml-4">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteResult(result.id!)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                  title="결과 삭제"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
