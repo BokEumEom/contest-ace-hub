@@ -22,7 +22,12 @@ import {
   Edit,
   X,
   MessageSquare,
-  File
+  File,
+  Download,
+  Eye,
+  Image,
+  Video,
+  Music
 } from 'lucide-react';
 import { useContestDetail } from '@/hooks/useContestDetail';
 import { useAuth } from '@/components/AuthProvider';
@@ -34,6 +39,9 @@ import { Contest } from '@/types/contest';
 import { ContestResultService } from '@/services/contestResultService';
 import { ContestResultFormData, ContestResult } from '@/types/contest';
 import { Badge } from '@/components/ui/badge';
+import { FileService, FileItem } from '@/services/fileService';
+import { isImageFile, isVideoFile, isAudioFile, getFileTypeColor } from '@/components/FileManager/utils/fileUtils';
+import ImageViewerModal from '@/components/FileManager/ImageViewerModal';
 
 interface ContestResultInputProps {
   contestId: number;
@@ -100,6 +108,13 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
   const [results, setResults] = useState<ContestResult[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  
+  // 파일 정보 상태 추가
+  const [fileDetails, setFileDetails] = useState<{ [key: number]: FileItem[] }>({});
+  
+  // 이미지 뷰어 상태 추가
+  const [imageViewerFile, setImageViewerFile] = useState<FileItem | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
 
   // 결과 목록 로드
   const loadResults = async () => {
@@ -107,6 +122,24 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
     try {
       const contestResults = await ContestResultService.getResults(parseInt(contest.id));
       setResults(contestResults);
+      
+      // 각 결과의 연결된 파일 상세 정보 로드
+      const fileDetailsMap: { [key: number]: FileItem[] } = {};
+      for (const result of contestResults) {
+        if (result.file_ids && result.file_ids.length > 0) {
+          try {
+            const files = await FileService.getFiles(contest.id);
+            const resultFiles = files.filter(file => 
+              result.file_ids!.includes(file.id!)
+            );
+            fileDetailsMap[result.id!] = resultFiles;
+          } catch (error) {
+            console.error('Error loading file details for result:', result.id, error);
+            fileDetailsMap[result.id!] = [];
+          }
+        }
+      }
+      setFileDetails(fileDetailsMap);
     } catch (error) {
       console.error('Error loading results:', error);
     } finally {
@@ -150,6 +183,110 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
       // 에러 피드백
       alert('결과 삭제 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
+  };
+
+  // 파일 다운로드 핸들러
+  const handleFileDownload = (file: FileItem) => {
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 파일 보기 핸들러 수정
+  const handleFileView = (file: FileItem) => {
+    if (isImageFile(file.name) || isVideoFile(file.name)) {
+      setImageViewerFile(file);
+      setImageViewerOpen(true);
+    } else {
+      handleFileDownload(file);
+    }
+  };
+
+  // 이미지 뷰어 닫기
+  const handleCloseImageViewer = () => {
+    setImageViewerOpen(false);
+    setImageViewerFile(null); // 모달 닫을 때 파일 정보도 초기화
+  };
+
+  // 파일 타입별 아이콘 결정
+  const getFileIcon = (fileName: string) => {
+    if (isImageFile(fileName)) return <Image className="h-4 w-4" />;
+    if (isVideoFile(fileName)) return <Video className="h-4 w-4" />;
+    if (isAudioFile(fileName)) return <Music className="h-4 w-4" />;
+    return <File className="h-4 w-4" />;
+  };
+
+  // 파일 타입별 색상 결정
+  const getFileTypeColor = (fileName: string) => {
+    if (isImageFile(fileName)) return 'text-blue-600';
+    if (isVideoFile(fileName)) return 'text-purple-600';
+    if (isAudioFile(fileName)) return 'text-green-600';
+    return 'text-gray-600';
+  };
+
+  // 썸네일 렌더링 함수
+  const renderThumbnail = (file: FileItem) => {
+    if (isImageFile(file.name)) {
+      return (
+        <div className="relative flex-shrink-0 cursor-pointer" onClick={() => handleFileView(file)}>
+          <img 
+            src={file.url} 
+            alt={file.name}
+            className="w-16 h-16 object-cover rounded-md border border-gray-200 hover:scale-105 transition-transform duration-200"
+            onError={(e) => {
+              // 이미지 로드 실패 시 아이콘으로 대체
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                const fallbackIcon = document.createElement('div');
+                fallbackIcon.className = `w-16 h-16 flex items-center justify-center bg-blue-100 rounded-md border border-gray-200`;
+                fallbackIcon.innerHTML = '<svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+                parent.appendChild(fallbackIcon);
+              }
+            }}
+          />
+          {/* 호버 시 확대 아이콘 표시 */}
+          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 rounded-md flex items-center justify-center opacity-0 hover:opacity-100 pointer-events-none">
+            <Eye className="h-5 w-5 text-white" />
+          </div>
+        </div>
+      );
+    }
+
+    if (isVideoFile(file.name)) {
+      return (
+        <div className="relative flex-shrink-0 cursor-pointer" onClick={() => handleFileView(file)}>
+          <div className="w-16 h-16 bg-purple-100 rounded-md border border-gray-200 flex items-center justify-center">
+            <Video className="h-6 w-6 text-purple-600" />
+          </div>
+          {/* 호버 시 재생 아이콘 표시 */}
+          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 rounded-md flex items-center justify-center opacity-0 hover:opacity-100 pointer-events-none">
+            <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+              <div className="w-0 h-0 border-l-[8px] border-l-purple-600 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent ml-1"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isAudioFile(file.name)) {
+      return (
+        <div className="w-16 h-16 bg-green-100 rounded-md border border-gray-200 flex items-center justify-center">
+          <Music className="h-6 w-6 text-green-600" />
+        </div>
+      );
+    }
+
+    // 일반 파일
+    return (
+      <div className="w-16 h-16 bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
+        <File className="h-6 w-6 text-gray-600" />
+      </div>
+    );
   };
 
   // 결과 탭 활성화 시 결과 목록 로드
@@ -706,6 +843,60 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
                                     </span>
                                   )}
                                 </div>
+                                
+                                {/* 연결된 파일 상세 정보 표시 */}
+                                {result.file_ids && result.file_ids.length > 0 && fileDetails[result.id!] && (
+                                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h5 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                      <File className="h-4 w-4" />
+                                      연결된 파일 목록
+                                    </h5>
+                                    <div className="space-y-2">
+                                      {fileDetails[result.id!].map((file) => (
+                                        <div key={file.id} className="flex items-center justify-between p-3 bg-white rounded-md border border-gray-200 hover:bg-gray-50 transition-colors">
+                                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            {/* 썸네일 표시 */}
+                                            {renderThumbnail(file)}
+                                            
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-medium text-sm truncate" title={file.name}>
+                                                  {file.name}
+                                                </span>
+                                                <Badge variant="outline" className="text-xs">
+                                                  {file.type}
+                                                </Badge>
+                                              </div>
+                                              <div className="text-xs text-muted-foreground">
+                                                {FileService.formatFileSize(file.size)} • {file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString() : 'N/A'}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-1">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => handleFileView(file)}
+                                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                              title="파일 보기"
+                                            >
+                                              <Eye className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => handleFileDownload(file)}
+                                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                              title="파일 다운로드"
+                                            >
+                                              <Download className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="flex gap-2 ml-4">
@@ -742,6 +933,14 @@ export const ContestTabs: React.FC<ContestTabsProps> = ({
             )}
           </CardContent>
         </Card>
+
+        {/* 이미지 뷰어 모달 */}
+        <ImageViewerModal
+          file={imageViewerFile}
+          isOpen={imageViewerOpen}
+          onClose={handleCloseImageViewer}
+          onDownload={handleFileDownload}
+        />
       </div>
     );
   }
