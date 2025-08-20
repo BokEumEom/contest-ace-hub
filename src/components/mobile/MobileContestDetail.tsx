@@ -47,6 +47,7 @@ const MobileContestDetail = () => {
   const [imageViewerFile, setImageViewerFile] = useState<FileItem | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   // 현재 사용자 정보 로드
   useEffect(() => {
@@ -101,6 +102,13 @@ const MobileContestDetail = () => {
     }
   }, [contest, currentUser]);
 
+  // contest 데이터가 로드될 때 showActions 초기화
+  useEffect(() => {
+    if (contest && !loading) {
+      setShowActions(false);
+    }
+  }, [contest, loading]);
+
   // 파일 관리 훅 사용
   const {
     files,
@@ -121,8 +129,16 @@ const MobileContestDetail = () => {
   }, [navigate]);
 
   const handleEdit = useCallback(async () => {
-    await openEditModal();
-  }, [openEditModal]);
+    try {
+      await openEditModal();
+      // 편집 모달이 열렸는지 확인
+      if (!editModalOpen) {
+        console.warn('편집 모달을 열 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('편집 모달 열기 실패:', error);
+    }
+  }, [openEditModal, editModalOpen]);
 
   const handleShare = useCallback(() => {
     // 공유 기능 구현
@@ -253,7 +269,7 @@ const MobileContestDetail = () => {
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10"
-                  onClick={handleEdit}
+                  onClick={() => setShowActions(true)}
                 >
                   <Edit className="h-5 w-5" />
                 </Button>
@@ -262,7 +278,7 @@ const MobileContestDetail = () => {
                 variant="ghost"
                 size="icon"
                 className="h-10 w-10"
-                onClick={handleShare}
+                onClick={() => setShowActions(true)}
               >
                 <Share2 className="h-5 w-5" />
               </Button>
@@ -675,7 +691,7 @@ const MobileContestDetail = () => {
       </div>
 
       {/* 액션 메뉴 */}
-      {/* showActions && ( */}
+      {showActions && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl p-4">
             <div className="space-y-2">
@@ -712,7 +728,7 @@ const MobileContestDetail = () => {
             <Button
               variant="outline"
               className="w-full mt-4"
-              onClick={() => {/* setShowActions(false) */}}
+              onClick={() => setShowActions(false)}
             >
               취소
             </Button>
@@ -721,10 +737,10 @@ const MobileContestDetail = () => {
           {/* 배경 클릭으로 닫기 */}
           <div 
             className="absolute inset-0 -z-10"
-            onClick={() => {/* setShowActions(false) */}}
+            onClick={() => setShowActions(false)}
           />
         </div>
-      {/* ) */}
+      )}
 
       {/* 팀원 추가 모달 */}
       {teamModalOpen && (

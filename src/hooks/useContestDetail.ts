@@ -38,6 +38,39 @@ export const useContestDetail = (contestId: string | undefined) => {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+
+  // 안전한 모달 상태 설정 함수들
+  const safeSetEditModalOpen = (open: boolean) => {
+    if (!contest || loading) {
+      console.warn('공모전이 로드되지 않은 상태에서는 편집 모달을 열 수 없습니다.');
+      return;
+    }
+    setEditModalOpen(open);
+  };
+
+  const safeSetStatusModalOpen = (open: boolean) => {
+    if (!contest || loading) {
+      console.warn('공모전이 로드되지 않은 상태에서는 상태 모달을 열 수 없습니다.');
+      return;
+    }
+    setStatusModalOpen(open);
+  };
+
+  const safeSetTeamModalOpen = (open: boolean) => {
+    if (!contest || loading) {
+      console.warn('공모전이 로드되지 않은 상태에서는 팀 모달을 열 수 없습니다.');
+      return;
+    }
+    setTeamModalOpen(open);
+  };
+
+  const safeSetScheduleModalOpen = (open: boolean) => {
+    if (!contest || loading) {
+      console.warn('공모전이 로드되지 않은 상태에서는 일정 모달을 열 수 없습니다.');
+      return;
+    }
+    setScheduleModalOpen(open);
+  };
   
   // 수정 폼 상태
   const [editForm, setEditForm] = useState<EditForm>({
@@ -89,6 +122,43 @@ export const useContestDetail = (contestId: string | undefined) => {
 
     loadContest();
   }, [contestId]);
+
+  // contestId가 변경될 때 모든 모달 상태 초기화
+  useEffect(() => {
+    setEditModalOpen(false);
+    setStatusModalOpen(false);
+    setTeamModalOpen(false);
+    setScheduleModalOpen(false);
+  }, [contestId]);
+
+  // contest 데이터가 로드될 때 모달 상태 초기화
+  useEffect(() => {
+    if (contest && !loading) {
+      // 모든 모달 상태를 강제로 false로 설정
+      setEditModalOpen(false);
+      setStatusModalOpen(false);
+      setTeamModalOpen(false);
+      setScheduleModalOpen(false);
+      
+      // 편집 폼도 초기화
+      setEditForm({
+        title: '',
+        organization: '',
+        deadline: '',
+        category: '',
+        prize: '',
+        description: '',
+        contestTheme: '',
+        submissionFormat: '',
+        contestSchedule: '',
+        submissionMethod: '',
+        prizeDetails: '',
+        resultAnnouncement: '',
+        precautions: '',
+        contestUrl: ''
+      });
+    }
+  }, [contest, loading]);
 
   // 팀원 데이터 Supabase에서 불러오기
   useEffect(() => {
@@ -357,6 +427,11 @@ export const useContestDetail = (contestId: string | undefined) => {
 
   const openEditModal = async () => {
     if (contest) {
+      // 다른 모달들을 모두 닫기
+      setStatusModalOpen(false);
+      setTeamModalOpen(false);
+      setScheduleModalOpen(false);
+      
       setEditForm({
         title: contest.title,
         organization: contest.organization,
